@@ -84,7 +84,7 @@ class OMXPlayer(object):
     subtitles_visible = True
 
     #****** KenT added argument to control dictionary generation
-    def __init__(self, mediafile, args=None, start_playback=False, dict=False):
+    def __init__(self, mediafile, args=None, start_playback=False, do_dict=False):
         if not args:
             args = ""
         #******* KenT signals to tell the gui playing has started and ended
@@ -96,7 +96,7 @@ class OMXPlayer(object):
         # self._process.logfile_send = sys.stdout
         
         # ******* KenT dictionary generation moved to a function so it can be omitted.
-        if dict:
+        if do_dict:
             self.make_dict()
             
         self._position_thread = Thread(target=self._get_position)
@@ -425,15 +425,15 @@ class TBOPlayer:
             self.break_required_signal=False
             # fall out of the state machine
             return
-        elif self.mode=='single':
+        elif self.options.mode=='single':
             self.monitor("What next, single track so exit")
             # fall out of the state machine
             return
-        elif self.mode=='repeat':
+        elif self.options.mode=='repeat':
             self.monitor("What next, Starting repeat track")
             self.play()
             return
-        elif self.mode=='playlist':
+        elif self.options.mode=='playlist':
             self.monitor("What next, Starting playlist track")
             self.select_next_track()
             self.play()
@@ -447,9 +447,9 @@ class TBOPlayer:
 
     def start_omx(self,track):
         """ Loads and plays the track"""
-        options= self.omx_user_options + self.omx_audio_option
-        self.omx = OMXPlayer(track, options, start_playback=True, dict=self.generate_track_info)
-        self.monitor("            >Play: " + track + " with " + options)
+        opts= self.options.omx_user_options + self.options.omx_audio_option
+        self.omx = OMXPlayer(track, opts, start_playback=True, do_dict=self.options.generate_track_info)
+        self.monitor("            >Play: " + track + " with " + opts)
 
 
     def stop_omx(self):
@@ -487,22 +487,10 @@ class TBOPlayer:
 
     def __init__(self):
 
-        # a set of options that will be overidden
-        self.omx_audio_option = "-ohdmi" # omx audio option
-        self.mode = "single"
-        self.initial_track_dir =""   #initial directory for add track.
-        self.initial_playlist_dir =""   #initial directory for open playlist      
-        self.omx_user_options = ""  # omx options suppplied by user, audio overidden by audio option (HDMI or local)
-        self.debug = False  # print debug information to terminal
-        self.generate_track_info = False  #generate track information from omxplayer output
 
+        # initialise options class and do initial reading/creation of options
+        self.options=Options()
 
-    # create an options file if necessary
-        self.options_file = 'tboplayer.cfg'
-        if os.path.exists(self.options_file):
-            self.read_options(self.options_file)
-        else:
-            self.create_options(self.options_file)
  
         #initialise the play state machine
         self.init_play_state_machine()
@@ -641,6 +629,12 @@ class TBOPlayer:
 # ***************************************
 
 
+    def edit_options(self):
+        """edit the options then read them from file"""
+        eo = OptionsDialog(self.root, self.options.options_file,'Edit Options')
+        self.options.read(self.options.options_file)
+
+
     def show_help (self):
         tkMessageBox.showinfo("Help",
           " To control playing type a character\n p - pause/play\n spacebar - pause/play\n q - quit\n"
@@ -657,7 +651,7 @@ class TBOPlayer:
                    +"Version dated: " + datestring + "\nAuthor: Ken Thompson  - KenT")
 
     def monitor(self,text):
-        if self.debug: print text
+        if self.options.debug: print text
 
 # Key Press callbacks
 
@@ -715,7 +709,7 @@ class TBOPlayer:
     def display_selected_track(self,index):
         if self.playlist.track_is_selected:
             self.track_titles_display.activate(index)
-            self.display_selected_track_title.set(self.playlist.selected_track_title)
+            self.display_selected_track_title.set(self.playlist.selected_track()[PlayList.TITLE])
         else:
             self.display_selected_track_title.set("")
 
@@ -726,7 +720,7 @@ class TBOPlayer:
         self.track_titles_display.delete(0,self.track_titles_display.size())
         for index in range(self.playlist.length()):
             self.playlist.select(index)
-            self.track_titles_display.insert(END, self.playlist.selected_track_title)
+            self.track_titles_display.insert(END, self.playlist.selected_track()[PlayList.TITLE])
 
 
 # ***************************************
@@ -739,7 +733,7 @@ class TBOPlayer:
         then stores the  track in the playlist.
         """
         # get the file
-        self.filename.set(tkFileDialog.askopenfilename(initialdir=self.initial_track_dir,
+        self.filename.set(tkFileDialog.askopenfilename(initialdir=self.options.initial_track_dir,
 			multiple=False))
 
         self.file = self.filename.get()
@@ -749,13 +743,13 @@ class TBOPlayer:
         self.file_pieces = self.file.split("/")
         
         # append it to the playlist
-        self.playlist.append(self.file, self.file_pieces[-1])
+        self.playlist.append([self.file, self.file_pieces[-1],'',''])
         # add title to playlist display
         self.track_titles_display.insert(END, self.file_pieces[-1])
         
         # and set it as the selected track
         self.playlist.select(self.playlist.length()-1)
-        self.display_selected_track(self.playlist.selected_track())
+        self.display_selected_track(self.playlist.selected_track_index())
         
 
     def add_url(self):
@@ -764,16 +758,16 @@ class TBOPlayer:
                                 "Title", "")
         if d.result != None:
             # append it to the playlist
-            self.playlist.append(d.result[0], d.result[1])
+            self.playlist.append(d.result)
             # add title to playlist display
             self.track_titles_display.insert(END, d.result[1])  
             # and set it as the selected track
             self.playlist.select(self.playlist.length()-1)
-            self.display_selected_track(self.playlist.selected_track())
+            self.display_selected_track(self.playlist.selected_track_index())
    
     def remove_track(self):
         if  self.playlist.length()>0 and self.playlist.track_is_selected():
-            index= self.playlist.selected_track()
+            index= self.playlist.selected_track_index()
             self.track_titles_display.delete(index,index)
             self.playlist.remove(index)
             self.blank_selected_track()
@@ -782,7 +776,7 @@ class TBOPlayer:
 
     def edit_track(self):
         if self.playlist.track_is_selected():
-            index= self.playlist.selected_track()
+            index= self.playlist.selected_track_index()
             d = EditTrackDialog(self.root,"Edit Track",
                                 "Location", self.playlist.selected_track_location,
                                 "Title", self.playlist.selected_track_title)
@@ -806,10 +800,10 @@ class TBOPlayer:
     	
     def select_next_track(self):
         if self.playlist.length()>0:
-            if self.playlist.selected_track()== self.playlist.length()-1:
+            if self.playlist.selected_track_index()== self.playlist.length()-1:
                 index=0
             else:
-                index= self.playlist.selected_track()+1
+                index= self.playlist.selected_track_index()+1
             self.playlist.select(index)
             self.display_selected_track(index)
 
@@ -817,10 +811,10 @@ class TBOPlayer:
                 
     def select_previous_track(self):
         if self.playlist.length()>0:
-            if self.playlist.selected_track()== 0:
+            if self.playlist.selected_track_index()== 0:
                 index=self.playlist.length()-1
             else:
-               index = self.playlist.selected_track()- 1
+               index = self.playlist.selected_track_index()- 1
             self.playlist.select(index)               
             self.display_selected_track(index)
 
@@ -835,7 +829,7 @@ class TBOPlayer:
         playlists are stored as textfiles each record being "path","title"
         """
 
-        self.filename.set(tkFileDialog.askopenfilename(initialdir=self.initial_playlist_dir,
+        self.filename.set(tkFileDialog.askopenfilename(initialdir=self.options.initial_playlist_dir,
                         defaultextension = ".csv",
                         filetypes = [('csv files', '.csv')],
 			multiple=False))
@@ -848,7 +842,7 @@ class TBOPlayer:
         self.track_titles_display.delete(0,self.track_titles_display.size())
         for pl_row in pl:
             if len(pl_row) != 0:
-                self.playlist.append(pl_row[0],pl_row[1])
+                self.playlist.append([pl_row[0],pl_row[1],'',''])
                 self.track_titles_display.insert(END, pl_row[1])
         ifile.close()
         self.playlist.select(0)
@@ -876,24 +870,52 @@ class TBOPlayer:
         ofile  = open(filename, "wb")
         for idx in range(self.playlist.length()):
                 self.playlist.select(idx)
-                ofile.write ('"' + self.playlist.selected_track_location + '","' + self.playlist.selected_track_title+'"\n')
+                ofile.write ('"' + self.playlist.selected_track()[PlayList.LOCATION] + '","' + self.playlist.selected_track()[PlayList.TITLE]+'"\n')
         ofile.close()
         return
 
     
     def show_omx_track_info(self):
 
-        if self.generate_track_info:
-            tkMessageBox.showinfo("Track Information", self.playlist.selected_track_location  +"\n"+ pformat(self.omx.__dict__))
+        if self.options.generate_track_info:
+            tkMessageBox.showinfo("Track Information", self.playlist.selected_track()[PlayList.LOCATION]  +"\n"+ pformat(self.omx.__dict__))
         else:
             tkMessageBox.showinfo("Track Information","Not Enabled")
 
 
 # ***************************************
-# OPTIONS
+# OPTIONS CLASS
 # ***************************************
 
-    def read_options(self,filename):
+class Options:
+
+
+# store associated with the object is the tins file. Variables used by the player
+# is just a cached interface.
+# options dialog class is a second class that reads and saves the otions from the options file
+
+    def __init__(self):
+
+        # define options for interface with player
+        self.omx_audio_option = "" # omx audio option
+        self.mode = ""
+        self.initial_track_dir =""   #initial directory for add track.
+        self.initial_playlist_dir =""   #initial directory for open playlist      
+        self.omx_user_options = ""  # omx options suppplied by user, audio overidden by audio option (HDMI or local)
+        self.debug = False  # print debug information to terminal
+        self.generate_track_info = False  #generate track information from omxplayer output
+
+    # create an options file if necessary
+        self.options_file = 'tboplayer.cfg'
+        if os.path.exists(self.options_file):
+            self.read(self.options_file)
+        else:
+            self.create(self.options_file)
+            self.read(self.options_file)
+
+    
+    def read(self,filename):
+        """reads options from options file to interface"""
         config=ConfigParser.ConfigParser()
         config.read(filename)
         
@@ -918,7 +940,7 @@ class TBOPlayer:
             self.generate_track_info = False          
          
 
-    def create_options(self,filename):
+    def create(self,filename):
         config=ConfigParser.ConfigParser()
         config.add_section('config')
         config.set('config','audio','hdmi')
@@ -932,58 +954,17 @@ class TBOPlayer:
             config.write(configfile)
 
 
-    def edit_options(self):
-        eo = ConfigurationDialog(self.root, self.options_file,'Edit Options')
-        self.read_options(self.options_file)
-
 
 # *************************************
-# EDIT TRACK DIALOG CLASS
+# OPTIONS DIALOG CLASS
 # ************************************
 
-class EditTrackDialog(tkSimpleDialog.Dialog):
-
-    def __init__(self, parent, title=None, *args):
-        #save the extra args to instance variables
-        self.label_location=args[0]
-        self.default_location=args[1]       
-        self.label_title=args[2]
-        self.default_title=args[3]
-        #and call the base class _init_which uses the args in body
-        tkSimpleDialog.Dialog.__init__(self, parent, title)
-
-
-    def body(self, master):
-        Label(master, text=self.label_location).grid(row=0)
-        Label(master, text=self.label_title).grid(row=1)
-
-        self.field1 = Entry(master)
-        self.field2 = Entry(master)
-
-        self.field1.grid(row=0, column=1)
-        self.field2.grid(row=1, column=1)
-
-        self.field1.insert(0,self.default_location)
-        self.field2.insert(0,self.default_title)
-
-        return self.field2 # initial focus on title
-
-
-    def apply(self):
-        first = self.field1.get()
-        second = self.field2.get()
-        self.result = first, second
-        return self.result
-
-
-# *************************************
-# CONFIGURATION DIALOG CLASS
-# ************************************
-
-class ConfigurationDialog(tkSimpleDialog.Dialog):
+class OptionsDialog(tkSimpleDialog.Dialog):
 
     def __init__(self, parent, options_file, title=None, ):
+        # store subclass attributes
         self.options_file=options_file
+        # init the super class
         tkSimpleDialog.Dialog.__init__(self, parent, title)
 
 
@@ -1051,8 +1032,9 @@ class ConfigurationDialog(tkSimpleDialog.Dialog):
     def apply(self):
         self.save_options()
         return True
-    
+
     def save_options(self):
+        """ save the output of the options edit dialog to file"""
         config=ConfigParser.ConfigParser()
         config.add_section('config')
         config.set('config','audio',self.audio_var.get())
@@ -1064,6 +1046,46 @@ class ConfigurationDialog(tkSimpleDialog.Dialog):
         config.set('config','track_info',self.track_info_var.get())
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
+    
+
+
+# *************************************
+# EDIT TRACK DIALOG CLASS
+# ************************************
+
+class EditTrackDialog(tkSimpleDialog.Dialog):
+
+    def __init__(self, parent, title=None, *args):
+        #save the extra args to instance variables
+        self.label_location=args[0]
+        self.default_location=args[1]       
+        self.label_title=args[2]
+        self.default_title=args[3]
+        #and call the base class _init_which uses the args in body
+        tkSimpleDialog.Dialog.__init__(self, parent, title)
+
+
+    def body(self, master):
+        Label(master, text=self.label_location).grid(row=0)
+        Label(master, text=self.label_title).grid(row=1)
+
+        self.field1 = Entry(master)
+        self.field2 = Entry(master)
+
+        self.field1.grid(row=0, column=1)
+        self.field2.grid(row=1, column=1)
+
+        self.field1.insert(0,self.default_location)
+        self.field2.insert(0,self.default_title)
+
+        return self.field2 # initial focus on title
+
+
+    def apply(self):
+        first = self.field1.get()
+        second = self.field2.get()
+        self.result = first, second,'',''
+        return self.result
 
 
 
@@ -1074,20 +1096,27 @@ class ConfigurationDialog(tkSimpleDialog.Dialog):
 
 class PlayList():
     """
-    controls  the current playlist and the track selected from the playlist
+    manages a playlist of tracks and the track selected from the playlist
     """
 
+    #field definition constants
+    LOCATION=0
+    TITLE=1
+    DURATION=2
+    ARTIST=3
+    # template for a new track
+    _new_track=['','','','']
+    
+
     def __init__(self):
-
-        self._track_titles = []      # list of track titles
-        self._track_locations = []   # list of track locations
+        self._num_tracks=0
+        self._tracks = []      # list of track titles
+        self._selected_track = PlayList._new_track
         self._selected_track_index =  -1 # index of currently selected track
-        self.selected_track_location = "" # location of currently selected track
-        self.selected_track_title = "" # title of currently selected track.
-
+        self._tracks=[]     #playlist, stored as a list of lists
 
     def length(self):
-        return len(self._track_locations)
+        return self._num_tracks
 
     def track_is_selected(self):
             if self._selected_track_index>=0:
@@ -1095,40 +1124,46 @@ class PlayList():
             else:
                 return False
             
-    def selected_track(self):
+    def selected_track_index(self):
         return self._selected_track_index
 
-    def append(self, location, title):
+    def selected_track(self):
+        return self._selected_track
+
+    def append(self, track):
         """appends a track to the end of the playlist store"""
-        self._track_titles.append(title)
-        self._track_locations.append(location)
+        self._tracks.append(track)
+        self._num_tracks+=1
 
 
     def remove(self,index):
-        self._track_titles.pop(index)
-        self._track_locations.pop(index)
+        self._tracks.pop(index)
+        self._num_tracks-=1
+        # is the deleted track always the selcted one?
         self._selected_track_index=-1
 
+
     def clear(self):
-            self._track_titles = []
+            self._tracks = []
+            self._num_tracks=0
             self._track_locations = []
             self._selected_track_index=-1
             self.selected_track_title=""
             self.selected_track_location=""
 
 
-    def replace(self,index,result):
-        self._track_locations[index]= result[0]
-        self._track_titles[index]= result[1]
+    def replace(self,index,replacement):
+        self._tracks[index]= replacement
             
 
     def select(self,index):
         """does housekeeping necessary when a track is selected"""
-        if self.length()>0 and index<= self.length():
+        if self._num_tracks>0 and index<= self._num_tracks:
         # save location and title to currently selected variables
             self._selected_track_index=index
-            self.selected_track_location = self._track_locations[index]
-            self.selected_track_title = self._track_titles[index]
+            self._selected_track = self._tracks[index]
+            self.selected_track_location = self._selected_track[PlayList.LOCATION]
+            self.selected_track_title = self._selected_track[PlayList.TITLE]
 
 
 
@@ -1138,6 +1173,6 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 16 Aug 2012"
+    datestring=" 29 Aug 2012"
     bplayer = TBOPlayer()
 
