@@ -33,6 +33,8 @@ Menus
 	
     * Initial directory for playlists - where Open Playlist starts looking
 	
+	* Subtitles
+	
     * OMX player options - add your own (no validation so be careful)
 	
     * Debug - prints some debug text to the command line

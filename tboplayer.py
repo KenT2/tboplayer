@@ -22,6 +22,7 @@ Menus
  Options -
     Audio Output - play sound to hdmi or local output, auto does not send an audio option to omxplayer.
     Mode - play the Single selected track, Repeat the single track or rotate around the Playlist starting from the selected track.
+    Subtitles - adjust with your own options if required
     Initial directory for tracks - where Add Track starts looking.
     Initial directory for playlists - where Open Playlist starts looking
     OMX player options - add your own (no validation so be careful)
@@ -81,7 +82,8 @@ class OMXPlayer(object):
     _QUIT_CMD = 'q'
 
     paused = False
-    subtitles_visible = True
+    # KRT turn subtitles off as a command option is used
+    subtitles_visible = False
 
     #****** KenT added argument to control dictionary generation
     def __init__(self, mediafile, args=None, start_playback=False, do_dict=False):
@@ -103,7 +105,8 @@ class OMXPlayer(object):
         self._position_thread.start()
         if not start_playback:
             self.toggle_pause()
-        self.toggle_subtitles()
+        # don't use toggle as it seems to have a delay
+        # self.toggle_subtitles()
 
 
     def _get_position(self):
@@ -447,7 +450,7 @@ class TBOPlayer:
 
     def start_omx(self,track):
         """ Loads and plays the track"""
-        opts= self.options.omx_user_options + self.options.omx_audio_option
+        opts= self.options.omx_user_options + " "+ self.options.omx_audio_option + " " + self.options.omx_subtitles_option + " "
         self.omx = OMXPlayer(track, opts, start_playback=True, do_dict=self.options.generate_track_info)
         self.monitor("            >Play: " + track + " with " + opts)
 
@@ -898,6 +901,7 @@ class Options:
 
         # define options for interface with player
         self.omx_audio_option = "" # omx audio option
+        self.omx_subtitles_option = "" # omx subtitle option
         self.mode = ""
         self.initial_track_dir =""   #initial directory for add track.
         self.initial_playlist_dir =""   #initial directory for open playlist      
@@ -922,7 +926,7 @@ class Options:
         if  config.get('config','audio',0)=='auto':
              self.omx_audio_option=""
         else:
-            self.omx_audio_option = "-o"+config.get('config','audio',0)
+            self.omx_audio_option = "-o "+config.get('config','audio',0)
             
         self.mode = config.get('config','mode',0)
         self.initial_track_dir =config.get('config','tracks',0)
@@ -934,6 +938,11 @@ class Options:
         else:
             self.debug=False
 
+        if config.get('config','subtitles',0) == 'on':
+            self.omx_subtitles_option  = "-t on"
+        else:
+            self.omx_subtitles_option=""
+
         if config.get('config','track_info',0) == 'on':
             self.generate_track_info  = True
         else:
@@ -944,6 +953,7 @@ class Options:
         config=ConfigParser.ConfigParser()
         config.add_section('config')
         config.set('config','audio','hdmi')
+        config.set('config','subtitles','off')       
         config.set('config','mode','single')
         config.set('config','playlists','')
         config.set('config','tracks','')
@@ -1005,6 +1015,14 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.e_playlists.grid(row=32)
         self.e_playlists.insert(0,config.get('config','playlists',0))
 
+        self.subtitles_var = StringVar()
+        self.cb_subtitles = Checkbutton(master,text="Subtitles",variable=self.subtitles_var, onvalue="on",offvalue="off")
+        self.cb_subtitles.grid(row=34,columnspan=2, sticky = W)
+        if config.get('config','subtitles',0)=="on":
+            self.cb_subtitles.select()
+        else:
+            self.cb_subtitles.deselect()
+
         Label(master, text="").grid(row=40, sticky=W)
         Label(master, text="OMXPlayer options:").grid(row=41, sticky=W)
         self.e_omx_options = Entry(master)
@@ -1038,6 +1056,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config=ConfigParser.ConfigParser()
         config.add_section('config')
         config.set('config','audio',self.audio_var.get())
+        config.set('config','subtitles',self.subtitles_var.get())
         config.set('config','mode',self.mode_var.get())
         config.set('config','playlists',self.e_playlists.get())
         config.set('config','tracks',self.e_tracks.get())
@@ -1173,6 +1192,6 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 29 Aug 2012"
+    datestring=" 04 Sept 2012"
     bplayer = TBOPlayer()
 
