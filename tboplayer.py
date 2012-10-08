@@ -450,6 +450,7 @@ class TBOPlayer:
 
     def start_omx(self,track):
         """ Loads and plays the track"""
+        track="'"+track+"'"
         opts= self.options.omx_user_options + " "+ self.options.omx_audio_option + " " + self.options.omx_subtitles_option + " "
         self.omx = OMXPlayer(track, opts, start_playback=True, do_dict=self.options.generate_track_info)
         self.monitor("            >Play: " + track + " with " + opts)
@@ -507,7 +508,7 @@ class TBOPlayer:
 
         self.root.configure(background='grey')
         # width, height, xoffset, yoffset
-        self.root.geometry('420x300+750+300')
+        self.root.geometry('408x300+750+300')
         self.root.resizable(False,False)
 
         #defne response to main window closing
@@ -563,49 +564,53 @@ class TBOPlayer:
 
 # define buttons 
 
-        stop_button = Button(self.root, width = 7, height = 1, text='Stop',
+        add_button = Button(self.root, width = 5, height = 1, text='Add',
+                              fg='black', command = self.add_track, bg="light grey")
+        add_button.grid(row=0, column=1)
+
+        stop_button = Button(self.root, width = 5, height = 1, text='Stop',
                              fg='black', command = self.stop_track, bg="light grey")
-        stop_button.grid(row=0, column=0)
+        stop_button.grid(row=0, column=4)
 
-        pause_button = Button(self.root, width = 7, height = 1, text='Pause',
+        pause_button = Button(self.root, width = 5, height = 1, text='Pause',
                               fg='black', command = self.toggle_pause, bg="light grey")
-        pause_button.grid(row=0, column=1)
+        pause_button.grid(row=0, column=3)
 
-        play_button = Button(self.root, width = 7, height = 1, text='Play',
+        play_button = Button(self.root, width = 5, height = 1, text='Play',
                              fg='black', command = self.play_track, bg="light grey")
         play_button.grid(row=0, column=2)
 
-        volplus_button = Button(self.root, width = 7, height = 1,
+        volplus_button = Button(self.root, width = 5, height = 1,
                            text = 'Vol +', command = self.volplus,fg='black', bg='light grey')
-        volplus_button.grid(row=0, column=3)
+        volplus_button.grid(row=0, column=5)
 
-        volminus_button = Button(self.root, width = 7, height = 1,
+        volminus_button = Button(self.root, width = 5, height = 1,
                            text = 'Vol -', command = self.volminus,fg='black', bg='light grey')
-        volminus_button.grid(row=0, column=4)
+        volminus_button.grid(row=0, column=6)
 
 # define display of file that is selected
-        file_name_label = Label(self.root, font=('Comic Sans', 12),
+        file_name_label = Label(self.root, font=('Comic Sans', 10),
                                 fg = 'black', wraplength = 300,
                                 textvariable=self.display_selected_track_title, bg="grey")
-        file_name_label.grid(row=3, column=0, columnspan=4)
+        file_name_label.grid(row=3, column=0, columnspan=5)
 
 # define time/status display for selected track
-        time_label = Label(self.root, font=('Comic Sans', 12),
+        time_label = Label(self.root, font=('Comic Sans', 11),
                                 fg = 'black', wraplength = 300,
                                 textvariable=self.display_time, bg="grey")
-        time_label.grid(row=3, column=4, columnspan=1)
+        time_label.grid(row=3, column=6, columnspan=1)
 
 
 # define display of playlist
         self.track_titles_display = Listbox(self.root, selectmode=SINGLE, height=15,
                                     width = 40, bg="white",
                                     fg="black")
-        self.track_titles_display.grid(row=4, column=0, columnspan=5)
+        self.track_titles_display.grid(row=4, column=0, columnspan=7)
         self.track_titles_display.bind("<ButtonRelease-1>", self.select_track)
 
 # scrollbar for displaylist
         scrollbar = Scrollbar(self.root, command=self.track_titles_display.yview, orient=tk.VERTICAL)
-        scrollbar.grid(row = 4, column=4,sticky='ns')
+        scrollbar.grid(row = 4, column=6,sticky='ns')
         self.track_titles_display.config(yscrollcommand=scrollbar.set)
 
 
@@ -1192,6 +1197,6 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 04 Sept 2012"
+    datestring=" 08 Oct 2012"
     bplayer = TBOPlayer()
 

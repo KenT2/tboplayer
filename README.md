@@ -1,30 +1,49 @@
-A GUI interface using jbaiter's pyomxplayer to control omxplayer
+A GUI interface using jbaiter's pyomxplayer wrapper to control omxplayer
 
 INSTALLATION
+============
 
-*** Instructions for installation on the official Debian Wheezy Raspbian image
+Instructions for installation on the official Debian Wheezy Raspbian image
 
-  *  requires the latest bug fixed version of omxplayer which you can get by doing apt-get update then apt-get upgrade
+*  requires the latest bug fixed version of omxplayer which you can get by doing apt-get update then apt-get upgrade
   
-  *  install pexpect by following the instructions at www.noah.org/wiki/pexpect
+*  install pexpect by following the instructions at www.noah.org/wiki/pexpect
   
-  *  pyomxplayer is currently included inline in the code as I have made some modifications to jbaiter's version, his original can be seen at https://github.com/jbaiter/pyomxplayer
+*  pyomxplayer is currently included inline in the code as I have made some modifications to jbaiter's version, his original can be seen at https://github.com/jbaiter/pyomxplayer
   
-  *  download tboplayer.py into a directory
+*  download tboplayer.py into a directory
   
-  *  type python tboplayer.py from a terminal opened in the directory within which tboplayer.py is stored. 
+*  type python tboplayer.py from a terminal opened in the directory within which tboplayer.py is stored. 
   
-  *  developed on raspbian wheezy with python 2.7
-  
+*  developed on raspbian wheezy with python 2.7
+ 
+ 
 OPERATION
+=========
+
+Buttons
+-------
+
+* ADD - duplicates the Track>Add menu item
+
+* PLAY - Play the selected track
+
+* PAUSE - Pause playing, operational only during playing
+
+* STOP - Stop playing, operational only during playing
+
+* VOL +- - Volume control, operational only during playing
+
 Menus
- Track - add  edit or remove a track from the current playlist
+-----
+* Track - add  edit or remove a track from the current playlist
  
- Playlist - save the current playlist or open a saved one
+* Playlist - save the current playlist or open a saved one
  
- OMX - display the track information for the last played track (needs to be enabled in options)
+* OMX - display the track information for the last played track (needs to be enabled in options)
  
- Options -
+* Options -
+
     * Audio Output - play sound to hdmi or local output, auto does not send an audio option to omxplayer.
 	
     * Mode - play the Single selected track, Repeat the single track or rotate around the Playlist starting from the selected track.
@@ -33,7 +52,7 @@ Menus
 	
     * Initial directory for playlists - where Open Playlist starts looking
 	
-	* Subtitles
+	* Enable subtitles
 	
     * OMX player options - add your own (no validation so be careful)
 	
@@ -43,8 +62,6 @@ Menus
 
 A track is selected using a single click of the mouse, playing is started by pressing the Play button or the . key
 
-During playing of a track a slightly modified set of  omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer.
+During playing of a track a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer. A list  of commands is provided in the help menu. Note: some of the commands are not implemented by omxplayer.
 
-A list  of comands is provided in the help menu. Note: some of the commands are not implemented by omxplayer.
-
-If you have problems playing a track try it from the command line with omxplayer ohdmi file or omxplayer -olocal file
+If you have problems playing a track try it from the command line with omxplayer -ohdmi file or omxplayer -olocal file
