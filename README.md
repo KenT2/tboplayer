@@ -3,6 +3,8 @@ A GUI interface using jbaiter's pyomxplayer wrapper to control omxplayer
 INSTALLATION
 ============
 
+The instructions below are a bit unclear. There is more help at   http://www.raspberrypi.org/phpBB3/viewtopic.php?f=38&t=16462#p198849 pending me writing a proper installer.
+
 Instructions for installation on the official Debian Wheezy Raspbian image
 
 *  requires the latest bug fixed version of omxplayer which you can get by doing apt-get update then apt-get upgrade
