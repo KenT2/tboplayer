@@ -450,7 +450,7 @@ class TBOPlayer:
 
     def start_omx(self,track):
         """ Loads and plays the track"""
-        track="'"+track+"'"
+        track= "'"+ track.replace("'","'\\''") + "'"
         opts= self.options.omx_user_options + " "+ self.options.omx_audio_option + " " + self.options.omx_subtitles_option + " "
         self.omx = OMXPlayer(track, opts, start_playback=True, do_dict=self.options.generate_track_info)
         self.monitor("            >Play: " + track + " with " + opts)
@@ -1197,6 +1197,6 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 08 Oct 2012"
+    datestring=" 20 Nov 2012"
     bplayer = TBOPlayer()
 
