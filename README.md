@@ -3,21 +3,46 @@ A GUI interface using jbaiter's pyomxplayer wrapper to control omxplayer
 INSTALLATION
 ============
 
-The instructions below are a bit unclear. There is more help at   http://www.raspberrypi.org/phpBB3/viewtopic.php?f=38&t=16462#p198849 pending me writing a proper installer.
+Instructions for installation on the official Raspbian image
 
-Instructions for installation on the official Debian Wheezy Raspbian image
+Update omxplayer
+---------------
 
-*  requires the latest bug fixed version of omxplayer which you can get by doing apt-get update then apt-get upgrade
-  
-*  install pexpect by following the instructions at www.noah.org/wiki/pexpect
-  
-*  pyomxplayer is currently included inline in the code as I have made some modifications to jbaiter's version, his original can be seen at https://github.com/jbaiter/pyomxplayer
-  
-*  download tboplayer.py into a directory
-  
-*  type python tboplayer.py from a terminal opened in the directory within which tboplayer.py is stored. 
-  
-*  developed on raspbian wheezy with python 2.7
+Ensure you have the latest version of omxplayer by typing the following in a terminal window open in the home directory:
+
+         sudo apt-get update
+		 
+		 sudo apt-get upgrade
+
+		 
+Download and Install pexpect
+-----------------------------
+
+This is specified here http://www.noah.org/wiki/pexpect#Download_and_Installation and copied below:
+
+From a terminal window open in your home directory type:
+
+         wget http://pexpect.sourceforge.net/pexpect-2.3.tar.gz
+         tar xzf pexpect-2.3.tar.gz
+         cd pexpect-2.3
+         sudo python ./setup.py install
+
+
+Download and Install TBOPlayer
+------------------------------
+
+From a terminal window open in your home directory type:
+
+         wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
+
+There should now be a directory 'KenT2-tboplayer-xxxx' in your home directory. Rename the directory to tboplayer
+
+Open the tboplayer directory and from a terminal opened in THIS directory:
+
+		python tboplayer.py
+
+		
+TBOPlayer is developed on Raspbian Wheezy with python 2.7
  
  
 OPERATION
