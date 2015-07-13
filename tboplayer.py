@@ -740,25 +740,24 @@ class TBOPlayer:
         Opens a dialog box to open a file,
         then stores the  track in the playlist.
         """
-        # get the file
-        self.filename.set(tkFileDialog.askopenfilename(initialdir=self.options.initial_track_dir,
-			multiple=False))
-
-        self.file = self.filename.get()
-        if self.file=="":
-            return
-        # split it to use leaf as the initial title
-        self.file_pieces = self.file.split("/")
-        
-        # append it to the playlist
-        self.playlist.append([self.file, self.file_pieces[-1],'',''])
-        # add title to playlist display
-        self.track_titles_display.insert(END, self.file_pieces[-1])
-        
-        # and set it as the selected track
-        self.playlist.select(self.playlist.length()-1)
-        self.display_selected_track(self.playlist.selected_track_index())
-        
+        # get the filez
+        filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
+        filez = self.root.tk.splitlist(filez)
+        for file in filez:
+            self.file = file
+            if self.file=="":
+                return
+            # split it to use leaf as the initial title
+            self.file_pieces = self.file.split("/")
+            
+            # append it to the playlist
+            self.playlist.append([self.file, self.file_pieces[-1],'',''])
+            # add title to playlist display
+            self.track_titles_display.insert(END, self.file_pieces[-1])
+            
+            # and set it as the selected track
+            self.playlist.select(self.playlist.length()-1)
+            self.display_selected_track(self.playlist.selected_track_index())
 
     def add_url(self):
         d = EditTrackDialog(self.root,"Add URL",
@@ -836,7 +835,6 @@ class TBOPlayer:
         opens a saved playlist
         playlists are stored as textfiles each record being "path","title"
         """
-
         self.filename.set(tkFileDialog.askopenfilename(initialdir=self.options.initial_playlist_dir,
                         defaultextension = ".csv",
                         filetypes = [('csv files', '.csv')],
