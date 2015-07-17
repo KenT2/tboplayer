@@ -737,8 +737,8 @@ class TBOPlayer:
 
     def add_track(self):                                
         """
-        Opens a dialog box to open a file,
-        then stores the  track in the playlist.
+        Opens a dialog box to open files,
+        then stores the tracks in the playlist.
         """
         # get the filez
         filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
@@ -754,10 +754,14 @@ class TBOPlayer:
             self.playlist.append([self.file, self.file_pieces[-1],'',''])
             # add title to playlist display
             self.track_titles_display.insert(END, self.file_pieces[-1])
-            
-            # and set it as the selected track
-            self.playlist.select(self.playlist.length()-1)
-            self.display_selected_track(self.playlist.selected_track_index())
+	
+	# and set the selected track
+	if len(filez)>1:
+	    index = self.playlist.length() - len(filez)
+	else:
+	    index = self.playlist.length() - 1
+	self.playlist.select(index)
+	self.display_selected_track(self.playlist.selected_track_index())
 
     def add_url(self):
         d = EditTrackDialog(self.root,"Add URL",
