@@ -218,6 +218,7 @@ class OMXPlayer(object):
 #from pyomxplayer import OMXPlayer
 from pprint import pformat
 from pprint import pprint
+from random import randint
 from Tkinter import *
 import Tkinter as tk
 import tkFileDialog
@@ -440,6 +441,11 @@ class TBOPlayer:
         elif self.options.mode=='playlist':
             self.monitor("What next, Starting playlist track")
             self.select_next_track()
+            self.play()
+            return     
+        elif self.options.mode=='shuffle':
+            self.monitor("What next, Starting random track")
+            self.random_next_track()
             self.play()
             return     
 
@@ -819,8 +825,14 @@ class TBOPlayer:
             self.playlist.select(index)
             self.display_selected_track(index)
 
+    	
+    def random_next_track(self):
+        if self.playlist.length()>0:
+            index= randint(0,self.playlist.length()-1)
+            self.playlist.select(index)
+            self.display_selected_track(index)
 
-                
+    	
     def select_previous_track(self):
         if self.playlist.length()>0:
             if self.playlist.selected_track_index()== 0:
@@ -1010,6 +1022,8 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_repeat.grid(row=12,column=0,sticky=W)
         rb_playlist=Radiobutton(master, text="Playlist", variable=self.mode_var,value="playlist")
         rb_playlist.grid(row=13,column=0,sticky=W)
+        rb_shuffle=Radiobutton(master, text="Shuffle", variable=self.mode_var,value="shuffle")
+        rb_shuffle.grid(row=14,column=0,sticky=W)
 
         Label(master, text="").grid(row=20, sticky=W)
         Label(master, text="Initial directory for tracks:").grid(row=21, sticky=W)
