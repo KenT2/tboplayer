@@ -587,7 +587,7 @@ class TBOPlayer:
                               fg='black', command = self.add_track, bg="light grey")
         add_button.grid(row=0, column=1)
 
-        addurl_button = Button(self.root, width = 5, height = 1, text='Add Url',
+        addurl_button = Button(self.root, width = 5, height = 1, text='Add URL',
                              fg='black', command = self.add_url, bg="light grey")
         addurl_button.grid(row=0, column=2)
         
