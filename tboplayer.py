@@ -614,6 +614,7 @@ class TBOPlayer:
                                     fg="black")
         self.track_titles_display.grid(row=4, column=0, columnspan=7)
         self.track_titles_display.bind("<ButtonRelease-1>", self.select_track)
+        self.track_titles_display.bind("<Delete>", self.remove_track)
 
 # scrollbar for displaylist
         scrollbar = Scrollbar(self.root, command=self.track_titles_display.yview, orient=tk.VERTICAL)
@@ -783,7 +784,7 @@ class TBOPlayer:
             self.playlist.select(self.playlist.length()-1)
             self.display_selected_track(self.playlist.selected_track_index())
    
-    def remove_track(self):
+    def remove_track(self,event):
         if  self.playlist.length()>0 and self.playlist.track_is_selected():
             index= self.playlist.selected_track_index()
             self.track_titles_display.delete(index,index)
