@@ -277,6 +277,7 @@ class TBOPlayer:
                 self.paused = False
                 self.stop_required_signal=False     # signal that user has pressed stop
                 self.quit_sent_signal = False          # signal  that q has been sent
+                self.root.title(self.playlist.selected_track_title[:30] + (self.playlist.selected_track_title[30:] and '..') + " - OMXPlayer")
                 self.play_state=self._OMX_STARTING
                 
                 #play the selelected track
