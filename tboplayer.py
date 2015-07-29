@@ -809,12 +809,19 @@ class TBOPlayer:
         then stores the tracks in the playlist.
         """
         # get the filez
+        if self.options.initial_track_dir=='':
+        	    filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
+        	
+        else:
+        	    filez = tkFileDialog.askopenfilenames(initialdir=self.options.initial_track_dir,parent=self.root,title='Choose the file(s)')
+        
         filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
         filez = self.root.tk.splitlist(filez)
         for file in filez:
             self.file = file
             if self.file=="":
                 return
+            self.options.initial_track_dir = ''
             # split it to use leaf as the initial title
             self.file_pieces = self.file.split("/")
             
@@ -913,13 +920,20 @@ class TBOPlayer:
         opens a saved playlist
         playlists are stored as textfiles each record being "path","title"
         """
-        self.filename.set(tkFileDialog.askopenfilename(initialdir=self.options.initial_playlist_dir,
+        if self.options.initial_playlist_dir=='':
+        	    self.filename.set(tkFileDialog.askopenfilename(defaultextension = ".csv",
+                        filetypes = [('csv files', '.csv')],
+        	    multiple=False))
+        	
+        else:
+        	    self.filename.set(tkFileDialog.askopenfilename(initialdir=self.options.initial_playlist_dir,
                         defaultextension = ".csv",
                         filetypes = [('csv files', '.csv')],
-			multiple=False))
+        	    multiple=False))
         filename = self.filename.get()
         if filename=="":
             return
+        self.options.initial_playlist_dir = ''
         ifile  = open(filename, 'rb')
         pl=csv.reader(ifile)
         self.playlist.clear()
