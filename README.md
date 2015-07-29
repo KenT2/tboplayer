@@ -53,11 +53,19 @@ Buttons
 
 * ADD - duplicates the Track>Add menu item
 
-* PLAY - Play the selected track
+* ADD URL - duplicates the Track>Add URL menu item
 
-* PAUSE - Pause playing, operational only during playing
+* EDIT - duplicates the Track>Edit menu item
+
+* OPEN/SAVE/CLEAR LIST - duplicates the Playlist>Open,Save,Clear menu item
+
+* PLAY/PAUSE - Play the selected track or pause if playing
 
 * STOP - Stop playing, operational only during playing
+
+* PREVIOUS - Play previous track, operational only after played some track
+
+* NEXT - Play next track, up to mode that you set
 
 * VOL +- - Volume control, operational only during playing
 
@@ -73,7 +81,7 @@ Menus
 
     * Audio Output - play sound to hdmi or local output, auto does not send an audio option to omxplayer.
 	
-    * Mode - play the Single selected track, Repeat the single track or rotate around the Playlist starting from the selected track.
+    * Mode - play the Single selected track, Repeat the single track, rotate around the Playlist starting from the selected track, randomly play a track from the Playlist.
 	
     * Initial directory for tracks - where Add Track starts looking.
 	
@@ -87,7 +95,9 @@ Menus
 	
     * Generate Track Information - parses the output of omxplayer, disabled by default as it may cause problems with some tracks.
 
-A track is selected using a single click of the mouse, playing is started by pressing the Play button or the . key
+A track is selected using a single click of the mouse or up-down arrow key, playing is started by pressing the Play/Pause button, the . key or the Return key.
+
+Remove the selected track can be done by pressing the Delete key.
 
 During playing of a track a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer. A list  of commands is provided in the help menu. Note: some of the commands are not implemented by omxplayer.
 
