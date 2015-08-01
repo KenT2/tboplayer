@@ -44,7 +44,6 @@ sort out black border around some videos
 gapless playback, by running two instances of pyomxplayer
 A proper installer
 read and write m3u and pls playlists
-Paste clipboard when use Ctrl+v
 Fit to every screen size (also resizeable)
 
 
@@ -231,6 +230,7 @@ import tkFont
 import csv
 import os
 import ConfigParser
+
 
 
 #**************************
@@ -544,8 +544,8 @@ class TBOPlayer:
         self.root.bind("<Shift-Left>", self.key_shiftleft)  #back 600
         self.root.bind("<Control-Right>", self.key_ctrlright)  #previous track      
         self.root.bind("<Control-Left>", self.key_ctrlleft)  #previous track
-        self.root.bind('<Control-v>', self.key_paste) #just open add url for now, paste will come later
-        self.root.bind('<Escape>', self.key_escape)
+        self.root.bind("<Control-v>", self.key_paste)
+        self.root.bind("<Escape>", self.key_escape)
 
         self.root.bind("<Key>", self.key_pressed)
 
@@ -736,8 +736,11 @@ class TBOPlayer:
     def key_paste(self,event):
         d = EditTrackDialog(self.root,"Add URL",
                                 "Title", "",
-                                "Location", "")
-        if d.result != None:
+                                "Location", self.root.clipboard_get())
+
+        if d.result[0] == '':
+            d.result = (d.result[1],d.result[1])
+        if d.result[1] != '':
             # append it to the playlist
             self.playlist.append(d.result)
             # add title to playlist display
@@ -842,7 +845,9 @@ class TBOPlayer:
         d = EditTrackDialog(self.root,"Add URL",
                                 "Title", "",
                                 "Location", "")
-        if d.result != None:
+        if d.result[0] == '':
+            d.result = (d.result[1],d.result[1])
+        if d.result[1] != '':
             # append it to the playlist
             self.playlist.append(d.result)
             # add title to playlist display
