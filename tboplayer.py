@@ -232,7 +232,6 @@ import os
 import ConfigParser
 
 
-
 #**************************
 # TBOPLAYER CLASS
 # *************************
@@ -737,14 +736,17 @@ class TBOPlayer:
         d = EditTrackDialog(self.root,"Add URL",
                                 "Title", "",
                                 "Location", self.root.clipboard_get())
-
+        if d.result == None:
+            return
         if d.result[0] == '':
             d.result = (d.result[1],d.result[1])
+        else:
+            d.result = (d.result[1],d.result[0])
         if d.result[1] != '':
             # append it to the playlist
             self.playlist.append(d.result)
             # add title to playlist display
-            self.track_titles_display.insert(END, d.result[0])  
+            self.track_titles_display.insert(END, d.result[1])  
             # and set it as the selected track
             self.playlist.select(self.playlist.length()-1)
             self.display_selected_track(self.playlist.selected_track_index())
@@ -817,8 +819,7 @@ class TBOPlayer:
         	
         else:
         	    filez = tkFileDialog.askopenfilenames(initialdir=self.options.initial_track_dir,parent=self.root,title='Choose the file(s)')
-        
-        filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
+        	    
         filez = self.root.tk.splitlist(filez)
         for file in filez:
             self.file = file
@@ -845,13 +846,17 @@ class TBOPlayer:
         d = EditTrackDialog(self.root,"Add URL",
                                 "Title", "",
                                 "Location", "")
+        if d.result == None:
+            return
         if d.result[0] == '':
             d.result = (d.result[1],d.result[1])
+        else:
+            d.result = (d.result[1],d.result[0])
         if d.result[1] != '':
             # append it to the playlist
             self.playlist.append(d.result)
             # add title to playlist display
-            self.track_titles_display.insert(END, d.result[0])  
+            self.track_titles_display.insert(END, d.result[1])  
             # and set it as the selected track
             self.playlist.select(self.playlist.length()-1)
             self.display_selected_track(self.playlist.selected_track_index())
