@@ -423,9 +423,13 @@ class TBOPlayer:
         # called when state machine is in the omx_closed state in order to decide what to do next.
         if self.play_next_track_signal ==True:
             self.monitor("What next, skip to next track")
-            self.select_next_track()
             self.play_next_track_signal=False
-            self.play()
+            if self.options.mode=='shuffle':
+            	self.random_next_track()
+            	self.play()
+            else:
+            	self.select_next_track()
+            	self.play()
             return
         elif self.play_previous_track_signal ==True:
             self.monitor("What next, skip to previous track")
@@ -541,7 +545,7 @@ class TBOPlayer:
         self.root.bind("<Down>", self.key_down)
         self.root.bind("<Shift-Right>", self.key_shiftright)  #forward 600
         self.root.bind("<Shift-Left>", self.key_shiftleft)  #back 600
-        self.root.bind("<Control-Right>", self.key_ctrlright)  #previous track      
+        self.root.bind("<Control-Right>", self.key_ctrlright)  #next track      
         self.root.bind("<Control-Left>", self.key_ctrlleft)  #previous track
         self.root.bind("<Control-v>", self.key_paste)
         self.root.bind("<Escape>", self.key_escape)
