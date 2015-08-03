@@ -881,6 +881,7 @@ class TBOPlayer:
                                 "Title", self.playlist.selected_track_title,
                                 "Location", self.playlist.selected_track_location)
             if d.result != None:
+                d.result = (d.result[1],d.result[0])
                 self.playlist.replace(index, d.result)
                 self.playlist.select(index)               
                 self.display_selected_track(index)
