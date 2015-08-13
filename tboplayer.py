@@ -44,7 +44,6 @@ sort out black border around some videos
 gapless playback, by running two instances of pyomxplayer
 A proper installer
 read and write m3u and pls playlists
-Paste clipboard when use Ctrl+v
 Fit to every screen size (also resizeable)
 
 
@@ -424,9 +423,13 @@ class TBOPlayer:
         # called when state machine is in the omx_closed state in order to decide what to do next.
         if self.play_next_track_signal ==True:
             self.monitor("What next, skip to next track")
-            self.select_next_track()
             self.play_next_track_signal=False
-            self.play()
+            if self.options.mode=='shuffle':
+            	self.random_next_track()
+            	self.play()
+            else:
+            	self.select_next_track()
+            	self.play()
             return
         elif self.play_previous_track_signal ==True:
             self.monitor("What next, skip to previous track")
@@ -542,10 +545,10 @@ class TBOPlayer:
         self.root.bind("<Down>", self.key_down)
         self.root.bind("<Shift-Right>", self.key_shiftright)  #forward 600
         self.root.bind("<Shift-Left>", self.key_shiftleft)  #back 600
-        self.root.bind("<Control-Right>", self.key_ctrlright)  #previous track      
+        self.root.bind("<Control-Right>", self.key_ctrlright)  #next track      
         self.root.bind("<Control-Left>", self.key_ctrlleft)  #previous track
-        self.root.bind('<Control-v>', self.key_paste) #just open add url for now, paste will come later
-        self.root.bind('<Escape>', self.key_escape)
+        self.root.bind("<Control-v>", self.key_paste)
+        self.root.bind("<Escape>", self.key_escape)
 
         self.root.bind("<Key>", self.key_pressed)
 
@@ -736,12 +739,18 @@ class TBOPlayer:
     def key_paste(self,event):
         d = EditTrackDialog(self.root,"Add URL",
                                 "Title", "",
-                                "Location", "")
-        if d.result != None:
+                                "Location", self.root.clipboard_get())
+        if d.result == None:
+            return
+        if d.result[0] == '':
+            d.result = (d.result[1],d.result[1])
+        else:
+            d.result = (d.result[1],d.result[0])
+        if d.result[1] != '':
             # append it to the playlist
             self.playlist.append(d.result)
             # add title to playlist display
-            self.track_titles_display.insert(END, d.result[0])  
+            self.track_titles_display.insert(END, d.result[1])  
             # and set it as the selected track
             self.playlist.select(self.playlist.length()-1)
             self.display_selected_track(self.playlist.selected_track_index())
@@ -814,8 +823,7 @@ class TBOPlayer:
         	
         else:
         	    filez = tkFileDialog.askopenfilenames(initialdir=self.options.initial_track_dir,parent=self.root,title='Choose the file(s)')
-        
-        filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
+        	    
         filez = self.root.tk.splitlist(filez)
         for file in filez:
             self.file = file
@@ -842,11 +850,17 @@ class TBOPlayer:
         d = EditTrackDialog(self.root,"Add URL",
                                 "Title", "",
                                 "Location", "")
-        if d.result != None:
+        if d.result == None:
+            return
+        if d.result[0] == '':
+            d.result = (d.result[1],d.result[1])
+        else:
+            d.result = (d.result[1],d.result[0])
+        if d.result[1] != '':
             # append it to the playlist
             self.playlist.append(d.result)
             # add title to playlist display
-            self.track_titles_display.insert(END, d.result[0])  
+            self.track_titles_display.insert(END, d.result[1])  
             # and set it as the selected track
             self.playlist.select(self.playlist.length()-1)
             self.display_selected_track(self.playlist.selected_track_index())
@@ -867,6 +881,7 @@ class TBOPlayer:
                                 "Title", self.playlist.selected_track_title,
                                 "Location", self.playlist.selected_track_location)
             if d.result != None:
+                d.result = (d.result[1],d.result[0])
                 self.playlist.replace(index, d.result)
                 self.playlist.select(index)               
                 self.display_selected_track(index)
