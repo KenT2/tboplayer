@@ -74,7 +74,7 @@ class OMXPlayer(object):
     _FILEPROP_REXP = re.compile(r".*audio streams (\d+) video streams (\d+) chapters (\d+) subtitles (\d+).*")
     _VIDEOPROP_REXP = re.compile(r".*Video codec ([\w-]+) width (\d+) height (\d+) profile (\d+) fps ([\d.]+).*")
     _AUDIOPROP_REXP = re.compile(r"Audio codec (\w+) channels (\d+) samplerate (\d+) bitspersample (\d+).*")
-    _STATUS_REXP = re.compile(r"V :\s*([\d.]+).*")
+    _STATUS_REXP = re.compile(r"M:\s*([\d.]+).*")
     _DONE_REXP = re.compile(r"have a nice day.*")
 
     _LAUNCH_CMD = '/usr/bin/omxplayer -s %s %s'
@@ -118,22 +118,26 @@ class OMXPlayer(object):
         self.start_play_signal = True  
 
         # **** KenT Added self.position=0. Required if dictionary creation is commented out. Possibly best to leave it in even if not
+        self.position=-60.0
         #         commented out in case gui reads position before it is first written.
-        self.position=-100.0
         
         while True:
-            index = self._process.expect([self._STATUS_REXP,
-                                            pexpect.TIMEOUT,
-                                            pexpect.EOF,
-                                            self._DONE_REXP])
-            if index == 1: continue
-            elif index in (2, 3):
-                # ******* KenT added
-                self.end_play_signal=True
-                break
-            else:
-                self.position = float(self._process.match.group(1))                
-            sleep(0.05)
+	    try:
+	        index = self._process.expect([self._STATUS_REXP,
+                                                pexpect.TIMEOUT,
+                                                pexpect.EOF,
+                                                self._DONE_REXP])
+                if index == 1: continue
+                elif index in (2, 3):
+                    # ******* KenT added
+                    self.end_play_signal=True
+		    self.position=0.0
+                    break
+                else:
+                    self.position = float(self._process.match.group(1)) / 1000000
+	    except Exception:
+		break
+	    sleep(0.05)
 
 
 
