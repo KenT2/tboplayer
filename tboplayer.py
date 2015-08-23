@@ -903,7 +903,7 @@ class TBOPlayer:
             self.playlist.select(self.playlist.length()-1)
             self.display_selected_track(self.playlist.selected_track_index())
    
-    def remove_track(self,event):
+    def remove_track(self,*event):
         if  self.playlist.length()>0 and self.playlist.track_is_selected():
             index= self.playlist.selected_track_index()
             self.track_titles_display.delete(index,index)
