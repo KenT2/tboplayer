@@ -52,7 +52,6 @@ PROBLEMS
 ---------------
 I think I might have fixed this but two tracks may play at the same time if you use the controls quickly, you may need to SSH in form another computer and use top -upi and k to kill the omxplayer.bin
 Position thread does not seem to take account of  pause
-mp3 tracks always show position as zero. -1:-40 ?
 
 """
 
@@ -65,6 +64,7 @@ mp3 tracks always show position as zero. -1:-40 ?
 
 import pexpect
 import re
+import os
 
 from threading import Thread
 from time import sleep
@@ -562,6 +562,7 @@ class TBOPlayer:
         filemenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
         menubar.add_cascade(label='Track', menu = filemenu)
         filemenu.add_command(label='Add', command = self.add_track)
+	filemenu.add_command(label='Add Dir', command = self.add_dir)
         filemenu.add_command(label='Add URL', command = self.add_url)
         filemenu.add_command(label='Remove', command = self.remove_track)
         filemenu.add_command(label='Edit', command = self.edit_track)
@@ -598,8 +599,8 @@ class TBOPlayer:
                              fg='black', command = self.add_url, bg="light grey")
         addurl_button.grid(row=0, column=2)
         
-        edit_button = Button(self.root, width = 5, height = 1, text='Edit',
-                              fg='black', command = self.edit_track, bg="light grey")
+        edit_button = Button(self.root, width = 5, height = 1, text='Add Dir',
+                              fg='black', command = self.add_dir, bg="light grey")
         edit_button.grid(row=0, column=3)
         
         open_button = Button(self.root, width = 5, height = 1, text='Open List',
@@ -849,6 +850,39 @@ class TBOPlayer:
 	    index = self.playlist.length() - 1
 	self.playlist.select(index)
 	self.display_selected_track(self.playlist.selected_track_index())
+
+
+    def ajoute(self,dir):
+        for f in os.listdir(dir):
+            n=os.path.join(dir,f)
+            if os.path.isdir(n):
+                self.ajoute(n)
+            if os.path.isfile(n) and n[-4:]==".mp3":
+                self.filename.set(n)
+                self.file = self.filename.get()
+                # split it to use leaf as the initial title
+                self.file_pieces = self.file.split("/")
+
+                # append it to the playlist
+                self.playlist.append([self.file, self.file_pieces[-1],'',''])
+                # add title to playlist display
+                self.track_titles_display.insert(END, self.file_pieces[-1])
+        
+	
+    def add_dir(self):
+        """
+        Opens a dialog box to open a file,
+        then stores the  track in the playlist.
+        """
+        # get the file
+        dirname=tkFileDialog.askdirectory(initialdir=self.options.initial_track_dir)
+        print dirname
+        if dirname =="" or dirname == ():
+            return
+        else:
+            self.ajoute(dirname)
+            return
+	    
 
     def add_url(self):
         d = EditTrackDialog(self.root,"Add URL",
