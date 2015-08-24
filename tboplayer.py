@@ -121,8 +121,8 @@ class OMXPlayer(object):
         #         commented out in case gui reads position before it is first written.
         
         while True:
-	    try:
-	        index = self._process.expect([self._STATUS_REXP,
+            try:
+                index = self._process.expect([self._STATUS_REXP,
                                                 pexpect.TIMEOUT,
                                                 pexpect.EOF,
                                                 self._DONE_REXP])
@@ -130,13 +130,13 @@ class OMXPlayer(object):
                 elif index in (2, 3):
                     # ******* KenT added
                     self.end_play_signal=True
-		    self.position=0.0
+                    self.position=0.0
                     break
                 else:
                     self.position = float(self._process.match.group(1)) / 1000000
-	    except Exception:
-		break
-	    sleep(0.05)
+            except Exception:
+                break
+            sleep(0.05)
 
 
 
@@ -561,7 +561,7 @@ class TBOPlayer:
         filemenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
         menubar.add_cascade(label='Track', menu = filemenu)
         filemenu.add_command(label='Add', command = self.add_track)
-	filemenu.add_command(label='Add Dir', command = self.add_dir)
+        filemenu.add_command(label='Add Dir', command = self.add_dir)
         filemenu.add_command(label='Add URL', command = self.add_url)
         filemenu.add_command(label='Remove', command = self.remove_track)
         filemenu.add_command(label='Edit', command = self.edit_track)
@@ -823,16 +823,16 @@ class TBOPlayer:
         """
         # get the filez
         if self.options.initial_track_dir=='':
-	    filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
+            filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
         else:
-	    filez = tkFileDialog.askopenfilenames(initialdir=self.options.initial_track_dir,parent=self.root,title='Choose the file(s)')
+            filez = tkFileDialog.askopenfilenames(initialdir=self.options.initial_track_dir,parent=self.root,title='Choose the file(s)')
 	
         filez = self.root.tk.splitlist(filez)
 	
-	if filez:
+        if filez:
 	    self.options.initial_track_dir = filez[0][:filez[0].rindex('/')]
-	else: 
-	    return
+        else: 
+            return
 	
         for file in filez:
 	    if not file:
@@ -879,12 +879,12 @@ class TBOPlayer:
         then stores the  tracks in the playlist.
         """
         # get the file
-	if self.options.initial_track_dir:
+        if self.options.initial_track_dir:
 	    dirname=tkFileDialog.askdirectory(initialdir=self.options.initial_track_dir,title="Choose a directory")
         else:
 	    dirname=tkFileDialog.askdirectory(parent=self.root,title="Choose a directory")
 	
-	if dirname:
+        if dirname:
 	    self.options.initial_track_dir = dirname
             self.ajoute(dirname)
             return
