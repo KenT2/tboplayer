@@ -64,7 +64,6 @@ Position thread does not seem to take account of  pause
 
 import pexpect
 import re
-import os
 
 from threading import Thread
 from time import sleep
@@ -824,17 +823,22 @@ class TBOPlayer:
         """
         # get the filez
         if self.options.initial_track_dir=='':
-        	    filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
-        	
+	    filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
         else:
-        	    filez = tkFileDialog.askopenfilenames(initialdir=self.options.initial_track_dir,parent=self.root,title='Choose the file(s)')
-        	    
+	    filez = tkFileDialog.askopenfilenames(initialdir=self.options.initial_track_dir,parent=self.root,title='Choose the file(s)')
+	
         filez = self.root.tk.splitlist(filez)
+	
+	if filez:
+	    self.options.initial_track_dir = filez[0][:filez[0].rindex('/')]
+	else: 
+	    return
+	
         for file in filez:
+	    if not file:
+                break
             self.file = file
-            if self.file=="":
-                return
-            self.options.initial_track_dir = ''
+	    
             # split it to use leaf as the initial title
             self.file_pieces = self.file.split("/")
             
@@ -871,18 +875,20 @@ class TBOPlayer:
 	
     def add_dir(self):
         """
-        Opens a dialog box to open a file,
-        then stores the  track in the playlist.
+        Opens a dialog box to open a directory,
+        then stores the  tracks in the playlist.
         """
         # get the file
-        dirname=tkFileDialog.askdirectory(initialdir=self.options.initial_track_dir)
-        print dirname
-        if dirname =="" or dirname == ():
-            return
+	if self.options.initial_track_dir:
+	    dirname=tkFileDialog.askdirectory(initialdir=self.options.initial_track_dir,title="Choose a directory")
         else:
+	    dirname=tkFileDialog.askdirectory(parent=self.root,title="Choose a directory")
+	
+	if dirname:
+	    self.options.initial_track_dir = dirname
             self.ajoute(dirname)
             return
-	    
+	
 
     def add_url(self):
         d = EditTrackDialog(self.root,"Add URL",
@@ -1342,6 +1348,6 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 30 July 2015"
+    datestring=" 23 August 2015"
     bplayer = TBOPlayer()
 
