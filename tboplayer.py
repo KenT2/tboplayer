@@ -17,7 +17,7 @@ INSTALLATION
 OPERATION
 Menus
 ====
- Track - add  edit or remove a track from the current playlist
+ Track - add, edit or remove tracks from the current playlist
  Playlist - save the current playlist or open a saved one
  OMX - display the track information for the last played track (needs to be enabled in options)
  Options -
@@ -35,7 +35,7 @@ A track is selected using a single click of the mouse, playing is started by pre
 During playing of a track a slightly modified set of  omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer.
 A list  of comands is provided in the help menu. Note: some of the commands are not implemented by omxplayer.
 
-If you have problems playing a track try it from the command line with omxplayer -ohdmi file or omxplayer -olocal file
+If you have problems playing a track try it from the command line with omxplayer -o hdmi file or omxplayer -o local file
 
 TODO (maybe)
 --------
@@ -51,7 +51,6 @@ Fit to every screen size (also resizeable)
 PROBLEMS
 ---------------
 I think I might have fixed this but two tracks may play at the same time if you use the controls quickly, you may need to SSH in form another computer and use top -upi and k to kill the omxplayer.bin
-Position thread does not seem to take account of  pause
 
 """
 
@@ -64,9 +63,13 @@ Position thread does not seem to take account of  pause
 
 import pexpect
 import re
+import string
+import json
 
 from threading import Thread
 from time import sleep
+from os.path import expanduser
+
 
 class OMXPlayer(object):
 
@@ -75,25 +78,49 @@ class OMXPlayer(object):
     _AUDIOPROP_REXP = re.compile(r"Audio codec (\w+) channels (\d+) samplerate (\d+) bitspersample (\d+).*")
     _STATUS_REXP = re.compile(r"M:\s*([\d.]+).*")
     _DONE_REXP = re.compile(r"have a nice day.*")
+    _YT_REXP = re.compile(r"(.+)")
 
     _LAUNCH_CMD = '/usr/bin/omxplayer -s %s %s'
+    _YTLAUNCH_CMD = '/usr/local/bin/youtube-dl -g -f %s %s'
     _PAUSE_CMD = 'p'
     _TOGGLE_SUB_CMD = 's'
     _QUIT_CMD = 'q'
-
+    
     paused = False
     playing_location = ''
     # KRT turn subtitles off as a command option is used
     subtitles_visible = False
 
     #****** KenT added argument to control dictionary generation
-    def __init__(self, mediafile, args=None, start_playback=False, do_dict=False):
+    def __init__(self, mediafile, args=None, start_playback=False, do_dict=False, yt_media_type='mp4'):
         if not args:
             args = ""
         #******* KenT signals to tell the gui playing has started and ended
         self.start_play_signal = False
-        self.end_play_signal=False
-        cmd = self._LAUNCH_CMD % (mediafile, args)
+        self.end_play_signal = False
+
+        if "youtube.com" not in mediafile:
+            cmd = self._LAUNCH_CMD % (mediafile, args)
+            #print "              cmd: " + cmd
+        else:
+            # krugg: retrieve youtube video url for playback with external youtube-dl
+            ytcmd = self._YTLAUNCH_CMD % (yt_media_type, mediafile)
+            #print "      Youtube URL: " + mediafile
+            #print "      Youtube cmd: " + ytcmd
+            self.ytprocess = pexpect.spawn(ytcmd)
+            #self.ytprocess.logfile = sys.stdout
+            ytmediafound = self.ytprocess.expect([self._YT_REXP,
+                                                     pexpect.TIMEOUT,
+                                                     pexpect.EOF])
+            if ytmediafound == 0:
+                ytmediafile = self.ytprocess.match.group(1)
+                #print "      Youtube video URL: " + ytmediafile
+                cmd = self._LAUNCH_CMD % ("\""+ytmediafile+"\"", args)
+                #print "      Youtube video playback cmd: " + cmd
+            else:
+                #print "      Youtube video playback failed"
+                self.end_play_signal=True
+                return
         self._process = pexpect.spawn(cmd)
         # fout= file('logfile.txt','w')
         # self._process.logfile_send = sys.stdout
@@ -261,6 +288,7 @@ class TBOPlayer:
         self._OMX_STARTING = "omx_starting"
         self._OMX_PLAYING = "omx_playing"
         self._OMX_ENDING = "omx_ending"
+        self._SUPPORTED_MEDIA_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".wav",".avi",".mp4",".mkv",".ogv")
 
         # what to do next signals
         self.break_required_signal=False         # signal to break out of Repeat or Playlist loop
@@ -279,7 +307,7 @@ class TBOPlayer:
         if  self.play_state==self._OMX_CLOSED:
             if self.playlist.track_is_selected():
                 #initialise all the state machine variables
-                self.iteration = 0                             # for debugging
+                self.iteration = 0                           # for debugging
                 self.paused = False
                 self.stop_required_signal=False     # signal that user has pressed stop
                 self.quit_sent_signal = False          # signal  that q has been sent
@@ -373,10 +401,10 @@ class TBOPlayer:
         if self.play_state == self._OMX_CLOSED:
             self.play()
         elif self.playing_location==self.playlist.selected_track_location:
-        		self.toggle_pause()
+            self.toggle_pause()
         else:
-        		self.stop_track()
-        		self.root.after(1000, self.play_track)
+            self.stop_track()
+            self.root.after(1000, self.play_track)
 
 
     def skip_to_next_track(self):
@@ -474,7 +502,8 @@ class TBOPlayer:
         """ Loads and plays the track"""
         track= "'"+ track.replace("'","'\\''") + "'"
         opts= self.options.omx_user_options + " "+ self.options.omx_audio_option + " " + self.options.omx_subtitles_option + " "
-        self.omx = OMXPlayer(track, opts, start_playback=True, do_dict=self.options.generate_track_info)
+        self.omx = OMXPlayer(track, opts, start_playback=True, do_dict = self.options.generate_track_info, 
+                                                         yt_media_type = self.options.youtube_media_format) 
         self.monitor("            >Play: " + track + " with " + opts)
 
 
@@ -562,14 +591,16 @@ class TBOPlayer:
         menubar.add_cascade(label='Track', menu = filemenu)
         filemenu.add_command(label='Add', command = self.add_track)
         filemenu.add_command(label='Add Dir', command = self.add_dir)
+        filemenu.add_command(label='Add Dirs', command = self.add_dirs)
         filemenu.add_command(label='Add URL', command = self.add_url)
         filemenu.add_command(label='Remove', command = self.remove_track)
         filemenu.add_command(label='Edit', command = self.edit_track)
         
         listmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
-        menubar.add_cascade(label='Playlist', menu = listmenu)
-        listmenu.add_command(label='Open', command = self.open_list)
-        listmenu.add_command(label='Save', command = self.save_list)
+        menubar.add_cascade(label='Playlists', menu = listmenu)
+        listmenu.add_command(label='Open playlist', command = self.open_list)
+        listmenu.add_command(label='Save playlist', command = self.save_list)
+        listmenu.add_command(label='Load Youtube playlist', command = self.load_yt_playlist)
         listmenu.add_command(label='Clear', command = self.clear_list)
 
         omxmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
@@ -589,79 +620,78 @@ class TBOPlayer:
 
 
 # define buttons 
+        # add track button
+        Button(self.root, width = 5, height = 1, text='Add',
+                              fg='black', command = self.add_track, 
+                              bg="light grey").grid(row=0, column=1)
+        # add url button
+        Button(self.root, width = 5, height = 1, text='Add URL',
+                              fg='black', command = self.add_url, 
+                              bg="light grey").grid(row=0, column=2)
+        # add dir button        
+        Button(self.root, width = 5, height = 1, text='Add Dir',
+                              fg='black', command = self.add_dir, 
+                              bg="light grey").grid(row=0, column=3)
+        # open list button        
+        Button(self.root, width = 5, height = 1, text='Open List',
+                              fg='black', command = self.open_list, 
+                              bg="light grey").grid(row=0, column=4)
+        # save list button
+        Button(self.root, width = 5, height = 1, text = 'Save List',
+                              fg='black', command = self.save_list, 
+                              bg='light grey').grid(row=0, column=5)
+        # clear list button
+        Button(self.root, width = 5, height = 1, text = 'Clear List',
+                              fg='black', command = self.clear_list, 
+                              bg='light grey').grid(row=0, column=6)
 
-        add_button = Button(self.root, width = 5, height = 1, text='Add',
-                              fg='black', command = self.add_track, bg="light grey")
-        add_button.grid(row=0, column=1)
-
-        addurl_button = Button(self.root, width = 5, height = 1, text='Add URL',
-                             fg='black', command = self.add_url, bg="light grey")
-        addurl_button.grid(row=0, column=2)
-        
-        edit_button = Button(self.root, width = 5, height = 1, text='Add Dir',
-                              fg='black', command = self.add_dir, bg="light grey")
-        edit_button.grid(row=0, column=3)
-        
-        open_button = Button(self.root, width = 5, height = 1, text='Open List',
-                             fg='black', command = self.open_list, bg="light grey")
-        open_button.grid(row=0, column=4)
-
-        save_button = Button(self.root, width = 5, height = 1, text = 'Save List',
-                           fg='black', command = self.save_list, bg='light grey')
-        save_button.grid(row=0, column=5)
-        
-        clear_button = Button(self.root, width = 5, height = 1, text = 'Clear List',
-                           fg='black', command = self.clear_list, bg='light grey')
-        clear_button.grid(row=0, column=6)
-
-# define buttons 
-
-        play_button = Button(self.root, width = 5, height = 1, text='Play/Pause',
-                             fg='black', command = self.play_track, bg="light grey")
-        play_button.grid(row=6, column=1)
-        
-        stop_button = Button(self.root, width = 5, height = 1, text='Stop',
-                             fg='black', command = self.stop_track, bg="light grey")
-        stop_button.grid(row=6, column=2)
-
-        previous_button = Button(self.root, width = 5, height = 1, text='Previous',
-                              fg='black', command = self.skip_to_previous_track, bg="light grey")
-        previous_button.grid(row=6, column=3)
-
-        next_button = Button(self.root, width = 5, height = 1, text='Next',
-                              fg='black', command = self.skip_to_next_track, bg="light grey")
-        next_button.grid(row=6, column=4)
-
-        volplus_button = Button(self.root, width = 5, height = 1, text = 'Vol +',
-                           fg='black', command = self.volplus, bg='light grey')
-        volplus_button.grid(row=6, column=5)
-
-        volminus_button = Button(self.root, width = 5, height = 1, text = 'Vol -',
-                           fg='black', command = self.volminus, bg='light grey')
-        volminus_button.grid(row=6, column=6)
+        # play/pause button
+        Button(self.root, width = 5, height = 1, text='Play/Pause',
+                              fg='black', command = self.play_track, 
+                              bg="light grey").grid(row=6, column=1)
+        # stop track button       
+        Button(self.root, width = 5, height = 1, text='Stop',
+                              fg='black', command = self.stop_track, 
+                              bg="light grey").grid(row=6, column=2)
+        # previous track button
+        Button(self.root, width = 5, height = 1, text='Previous',
+                              fg='black', command = self.skip_to_previous_track, 
+                              bg="light grey").grid(row=6, column=3)
+        # next track button
+        Button(self.root, width = 5, height = 1, text='Next',
+                              fg='black', command = self.skip_to_next_track, 
+                              bg="light grey").grid(row=6, column=4)
+        # vol plus button
+        Button(self.root, width = 5, height = 1, text = 'Vol +',
+                              fg='black', command = self.volplus, 
+                              bg='light grey').grid(row=6, column=5)
+        # vol minus button
+        Button(self.root, width = 5, height = 1, text = 'Vol -',
+                              fg='black', command = self.volminus, 
+                              bg='light grey').grid(row=6, column=6)
 
 # define display of file that is selected
-        file_name_label = Label(self.root, font=('Comic Sans', 10),
-                                fg = 'black', wraplength = 300, height = 2,
-                                textvariable=self.display_selected_track_title, bg="grey")
-        file_name_label.grid(row=3, column=0, columnspan=6)
+        Label(self.root, font=('Comic Sans', 10),
+                              fg = 'black', wraplength = 300, height = 2,
+                              textvariable=self.display_selected_track_title, 
+                              bg="grey").grid(row=3, column=0, columnspan=6)
 
 # define time/status display for selected track
-        time_label = Label(self.root, font=('Comic Sans', 11),
-                                fg = 'black', wraplength = 300,
-                                textvariable=self.display_time, bg="grey")
-        time_label.grid(row=3, column=6, columnspan=1)
+        Label(self.root, font=('Comic Sans', 11),
+                              fg = 'black', wraplength = 300,
+                              textvariable=self.display_time, 
+                              bg="grey").grid(row=3, column=6, columnspan=1)
 
 
 # define display of playlist
         self.track_titles_display = Listbox(self.root, selectmode=SINGLE, height=15,
-                                    width = 40, bg="white",
-                                    fg="black")
+                               width = 40, bg="white",
+                               fg="black")
         self.track_titles_display.grid(row=4, column=0, columnspan=7)
         self.track_titles_display.bind("<ButtonRelease-1>", self.select_track)
         self.track_titles_display.bind("<Delete>", self.remove_track)
-        self.track_titles_display.bind("<Return>", self.key_return)
 
+        self.track_titles_display.bind("<Return>", self.key_return)
 # scrollbar for displaylist
         scrollbar = Scrollbar(self.root, command=self.track_titles_display.yview, orient=tk.VERTICAL)
         scrollbar.grid(row = 4, column=6,sticky='ns')
@@ -770,7 +800,7 @@ class TBOPlayer:
         
     def key_return(self,event):
     	  self.play_track()
-        
+
     def key_pressed(self,event):
         char = event.char
         if char=='':
@@ -826,19 +856,19 @@ class TBOPlayer:
             filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
         else:
             filez = tkFileDialog.askopenfilenames(initialdir=self.options.initial_track_dir,parent=self.root,title='Choose the file(s)')
-	
+
         filez = self.root.tk.splitlist(filez)
-	
+
         if filez:
-	    self.options.initial_track_dir = filez[0][:filez[0].rindex('/')]
+            self.options.initial_track_dir = filez[0][:filez[0].rindex('/')]
         else: 
             return
-	
+
         for file in filez:
-	    if not file:
+            if not os.path.isfile(file) or (file[-4:] not in self._SUPPORTED_MEDIA_FORMATS):
                 break
             self.file = file
-	    
+
             # split it to use leaf as the initial title
             self.file_pieces = self.file.split("/")
             
@@ -846,7 +876,7 @@ class TBOPlayer:
             self.playlist.append([self.file, self.file_pieces[-1],'',''])
             # add title to playlist display
             self.track_titles_display.insert(END, self.file_pieces[-1])
-	
+
 	# and set the selected track
 	if len(filez)>1:
 	    index = self.playlist.length() - len(filez)
@@ -854,41 +884,49 @@ class TBOPlayer:
 	    index = self.playlist.length() - 1
 	self.playlist.select(index)
 	self.display_selected_track(self.playlist.selected_track_index())
-
-
-    def ajoute(self,dir):
-        for f in os.listdir(dir):
-            n=os.path.join(dir,f)
-            if os.path.isdir(n):
-                self.ajoute(n)
-            if os.path.isfile(n) and n[-4:]==".mp3":
-                self.filename.set(n)
-                self.file = self.filename.get()
-                # split it to use leaf as the initial title
-                self.file_pieces = self.file.split("/")
-
-                # append it to the playlist
-                self.playlist.append([self.file, self.file_pieces[-1],'',''])
-                # add title to playlist display
-                self.track_titles_display.insert(END, self.file_pieces[-1])
-        
 	
-    def add_dir(self):
-        """
-        Opens a dialog box to open a directory,
-        then stores the  tracks in the playlist.
-        """
-        # get the file
+
+    def get_dir(self):
         if self.options.initial_track_dir:
-	    dirname=tkFileDialog.askdirectory(initialdir=self.options.initial_track_dir,title="Choose a directory")
+            d = tkFileDialog.askdirectory(initialdir=self.options.initial_track_dir,title="Choose a directory")
         else:
-	    dirname=tkFileDialog.askdirectory(parent=self.root,title="Choose a directory")
-	
+            d = tkFileDialog.askdirectory(parent=self.root,title="Choose a directory")
+        return d
+
+
+    def ajoute(self,dir,recursive):
+        for f in os.listdir(dir):
+            try:
+                n=os.path.join(dir,f)
+                if recursive and os.path.isdir(n):
+                    self.ajoute(n,True)
+                if os.path.isfile(n) and (n[-4:] in self._SUPPORTED_MEDIA_FORMATS):
+                    self.filename.set(n)
+                    self.file = self.filename.get()
+                    # split it to use leaf as the initial title
+                    self.file_pieces = self.file.split("/")
+
+                    # append it to the playlist
+                    self.playlist.append([self.file, self.file_pieces[-1],'',''])
+                    # add title to playlist display
+                    self.track_titles_display.insert(END, self.file_pieces[-1])
+            except Exception:
+                return
+
+    
+    def add_dir(self):
+        dirname = self.get_dir()
         if dirname:
-	    self.options.initial_track_dir = dirname
-            self.ajoute(dirname)
-            return
-	
+            self.options.initial_track_dir = dirname
+            self.ajoute(dirname,False)
+
+
+    def add_dirs(self):
+        dirname = self.get_dir()
+        if dirname:
+            self.options.initial_track_dir = dirname
+            self.ajoute(dirname,True)
+
 
     def add_url(self):
         d = EditTrackDialog(self.root,"Add URL",
@@ -1015,6 +1053,49 @@ class TBOPlayer:
                     self.blank_selected_track()
                     self.display_time.set("")
 
+
+    def load_yt_playlist(self):
+        YT_launch_plst_cmd = '/usr/local/bin/youtube-dl -f mp4 -J "%s"'
+        d = LoadYtPlaylistDialog(self.root)
+        if not d.result:
+            return
+
+        if "playlist" in d.result:
+            ytcmd = YT_launch_plst_cmd % (d.result)
+            self.display_selected_track_title.set("Loading playlist. Wait...")
+            # title to playlist display
+            try:
+                ytplstprocess = pexpect.spawn(ytcmd,timeout=120,maxread=50000,searchwindowsize=50000)
+                ytplstprocess.expect(pexpect.EOF)
+                ytplst = json.loads(ytplstprocess.before)
+                for entry in ytplst['entries']:
+                    if self.options.youtube_media_format == 'mp4':
+                        media_url = entry['url']
+                    else:
+                        preference = -100
+                        for format in entry['formats']:
+                            if format['ext'] == 'm4a':
+                                if format['preference'] and format['preference'] > preference:
+                                    preference = format['preference']
+                                    media_url = format['url']
+                                elif not format['preference']:
+                                    media_url = format['url']
+                    #print "         Entry url: " + mediaurl
+                    self.playlist.append([media_url,entry['title'],'',''])
+                    # add title to playlist display
+                    self.track_titles_display.insert(END, entry['title']) 
+                    # and set it as the selected track
+                self.playlist.select(self.playlist.length() - len(ytplst['entries']))
+                self.display_selected_track(self.playlist.selected_track_index())
+            except Exception as e:
+                self.display_selected_track_title.set("Problem loading playlist. Maybe the playlist was too long.")
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
+                return
+        else:
+            return
+
      
     def save_list(self):
         """ save a playlist """
@@ -1040,6 +1121,7 @@ class TBOPlayer:
             tkMessageBox.showinfo("Track Information","Not Enabled")
 
 
+
 # ***************************************
 # OPTIONS CLASS
 # ***************************************
@@ -1057,17 +1139,21 @@ class Options:
         self.omx_audio_option = "" # omx audio option
         self.omx_subtitles_option = "" # omx subtitle option
         self.mode = ""
-        self.initial_track_dir =""   #initial directory for add track.
-        self.initial_playlist_dir =""   #initial directory for open playlist      
+        self.initial_track_dir =""   # initial directory for add track.
+        self.initial_playlist_dir =""   # initial directory for open playlist      
         self.omx_user_options = ""  # omx options suppplied by user, audio overidden by audio option (HDMI or local)
+        self.youtube_media_format = "" # what type of file must be downloded from youtube
         self.debug = False  # print debug information to terminal
-        self.generate_track_info = False  #generate track information from omxplayer output
+        self.generate_track_info = False  # generate track information from omxplayer output
 
-    # create an options file if necessary
-        self.options_file = 'tboplayer.cfg'
+        # create an options file if necessary
+        confdir = expanduser("~") + '/.tboplayer'
+        self.options_file = confdir + '/tboplayer.cfg'
         if os.path.exists(self.options_file):
             self.read(self.options_file)
         else:
+            if not os.path.isdir(confdir):
+                os.mkdir(confdir)
             self.create(self.options_file)
             self.read(self.options_file)
 
@@ -1077,30 +1163,31 @@ class Options:
         config=ConfigParser.ConfigParser()
         config.read(filename)
         
-        if  config.get('config','audio',0)=='auto':
-             self.omx_audio_option=""
+        if  config.get('config','audio',0) == 'auto':
+            self.omx_audio_option = ""
         else:
             self.omx_audio_option = "-o "+config.get('config','audio',0)
             
         self.mode = config.get('config','mode',0)
-        self.initial_track_dir =config.get('config','tracks',0)
-        self.initial_playlist_dir =config.get('config','playlists',0)    
-        self.omx_user_options =config.get('config','omx_options',0)
+        self.initial_track_dir = config.get('config','tracks',0)
+        self.initial_playlist_dir = config.get('config','playlists',0)    
+        self.omx_user_options = config.get('config','omx_options',0)
+        self.youtube_media_format = config.get('config','youtube_media_format',0)
 
         if config.get('config','debug',0) == 'on':
-            self.debug  =True
+            self.debug = True
         else:
-            self.debug=False
+            self.debug = False
 
         if config.get('config','subtitles',0) == 'on':
-            self.omx_subtitles_option  = "-t on"
+            self.omx_subtitles_option = "-t on"
         else:
-            self.omx_subtitles_option=""
+            self.omx_subtitles_option = ""
 
         if config.get('config','track_info',0) == 'on':
-            self.generate_track_info  = True
+            self.generate_track_info = True
         else:
-            self.generate_track_info = False          
+            self.generate_track_info = False
          
 
     def create(self,filename):
@@ -1114,6 +1201,7 @@ class Options:
         config.set('config','omx_options','')
         config.set('config','debug','off')
         config.set('config','track_info','off')
+        config.set('config','youtube_media_format','mp4')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
 
@@ -1158,6 +1246,14 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_playlist.grid(row=13,column=0,sticky=W)
         rb_shuffle=Radiobutton(master, text="Shuffle", variable=self.mode_var,value="shuffle")
         rb_shuffle.grid(row=14,column=0,sticky=W)
+
+        Label(master, text="Download from Youtube:").grid(row=16, sticky=W)
+        self.youtube_media_format=StringVar()
+        self.youtube_media_format.set(config.get('config','youtube_media_format',0))
+        rb_video=Radiobutton(master, text="Video and audio", variable=self.youtube_media_format, value="mp4")
+        rb_video.grid(row=17,column=0,sticky=W)
+        rb_audio=Radiobutton(master, text="Audio only", variable=self.youtube_media_format, value="m4a")
+        rb_audio.grid(row=18,column=0,sticky=W)
 
         Label(master, text="").grid(row=20, sticky=W)
         Label(master, text="Initial directory for tracks:").grid(row=21, sticky=W)
@@ -1219,6 +1315,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','omx_options',self.e_omx_options.get())
         config.set('config','debug',self.debug_var.get())
         config.set('config','track_info',self.track_info_var.get())
+        config.set('config','youtube_media_format',self.youtube_media_format.get())
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
     
@@ -1264,6 +1361,36 @@ class EditTrackDialog(tkSimpleDialog.Dialog):
 
 
 
+# *************************************
+# LOAD YOUTUBE PLAYLIST DIALOG
+# ************************************
+
+class LoadYtPlaylistDialog(tkSimpleDialog.Dialog):
+
+    def __init__(self, parent): 
+        #save the extra args to instance variables
+        self.label_url="URL"
+        self.default_url=""
+        #and call the base class _init_which uses the args in body
+        tkSimpleDialog.Dialog.__init__(self, parent, "Load Youtube playlist")
+
+
+    def body(self, master):
+        Label(master, text=self.label_url).grid(row=0)
+
+        self.field1 = Entry(master)
+
+        self.field1.grid(row=0, column=1)
+
+        self.field1.insert(0,self.default_url)
+
+        return self.field1 # initial focus on title
+
+
+    def apply(self):
+        self.result = self.field1.get()
+
+        return self.result
 
 # *************************************
 # PLAYLIST CLASS
@@ -1348,6 +1475,6 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 23 August 2015"
+    datestring=" 29 August 2015"
     bplayer = TBOPlayer()
 
