@@ -10,19 +10,21 @@ INSTALLATION
   *  install pexpect by following the instructions at www.noah.org/wiki/pexpect
   *  pyomxplayer is currently included inline in the code as I have made some modifications to jbaiter's version, his original can be seen at https://github.com/jbaiter/pyomxplayer
   *  download tboplayer.py into a directory
-  *  type python tboplayer.py from a terminal opened in the directory within which tboplayer.py is stored. 
+  *  type python tboplayer.py from a terminal opened in the directory within which tboplayer.py is stored
+  *  If you want to be able to watch videos from online services like Youtube, then you must have up-to-date youtube-dl installed on your system, as well as avconv 10 or latter
   *  developed on raspbian wheezy with python 2.7
-  *  2015 version developed on ubuntu mate 15.04
+  *  2015 version developed on ubuntu mate 15.04 and mint 17.2
   
 OPERATION
 Menus
 ====
- Track - add, edit or remove tracks from the current playlist
- Playlist - save the current playlist or open a saved one
+ Track - Track - add tracks (for selecting multiple tracks, hold ctrl when clicking) or directories, edit or remove tracks (or URLs) from the current playlist
+ Playlist - save the current playlist or open a saved one or load youtube playlist
  OMX - display the track information for the last played track (needs to be enabled in options)
  Options -
     Audio Output - play sound to hdmi or local output, auto does not send an audio option to omxplayer.
-    Mode - play the Single selected track, Repeat the single track or rotate around the Playlist starting from the selected track.
+    Mode - play the Single selected track, Repeat the single track, rotate around the Playlist starting from the selected track, or play at Random.
+    Download from Youtube - defines whether to download video and audio or audio only from Youtube or other services supported by youtube-dl
     Subtitles - adjust with your own options if required
     Initial directory for tracks - where Add Track starts looking.
     Initial directory for playlists - where Open Playlist starts looking
@@ -1487,6 +1489,6 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 29 August 2015"
+    datestring=" 1 Septemper 2015"
     bplayer = TBOPlayer()
 

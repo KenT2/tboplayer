@@ -38,23 +38,24 @@ There should now be a directory 'KenT2-tboplayer-xxxx' in your home directory. R
 
 Open the tboplayer directory and from a terminal opened in THIS directory:
 
-		python tboplayer.py
+	python tboplayer.py
 
 TBOPlayer is developed on Raspbian Wheezy with python 2.7
 
+Note: If you want to be able to watch videos from online services like Youtube, then you must have up-to-date youtube-dl installed on your system, as well as avconv 10 or later.
+See this link for a list of services supported by youtube-dl: https://rg3.github.io/youtube-dl/supportedsites.html (Not all of them were tested with TBOPlayer)
 
-Oh, and if you want to be able to watch videos from youtube, then
 Download and Install youtube-dl
 -----------------------------
 
-This is specified here https://github.com/rg3/youtube-dl/#installation:
+This is specified here https://github.com/rg3/youtube-dl/#installation and copied below:
 
 From a terminal window open in your home directory type:
 
         sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl
         sudo chmod a+rx /usr/local/bin/youtube-dl
 	
-Or update it with
+Or update it with 
 
         sudo youtube-dl -U
 	
