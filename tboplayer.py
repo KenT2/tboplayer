@@ -64,11 +64,9 @@ I think I might have fixed this but two tracks may play at the same time if you 
 import pexpect
 import re
 import string
-import json
 
 from threading import Thread
 from time import sleep
-from os.path import expanduser
 
 
 class OMXPlayer(object):
@@ -251,6 +249,7 @@ class OMXPlayer(object):
 from pprint import pformat
 from pprint import pprint
 from random import randint
+from json import loads
 from Tkinter import *
 import Tkinter as tk
 import tkFileDialog
@@ -260,6 +259,7 @@ import tkFont
 import csv
 import os
 import ConfigParser
+
 
 
 #**************************
@@ -1054,8 +1054,32 @@ class TBOPlayer:
                     self.display_time.set("")
 
 
+    def process_yt_playlist(self,ytplst):
+        for entry in ytplst['entries']:
+            if self.options.youtube_media_format == 'mp4':
+                 media_url = entry['url']
+            else:
+                preference = -100
+                for format in entry['formats']:
+                    if format['ext'] == 'm4a':
+                        if format['preference'] and format['preference'] > preference:
+                            preference = format['preference']
+                            media_url = format['url']
+                        elif not format['preference']:
+                            media_url = format['url']
+            #print "         Entry url: " + mediaurl
+            self.playlist.append([media_url,entry['title'],'',''])
+            # add title to playlist display
+            self.track_titles_display.insert(END, entry['title']) 
+            # and set it as the selected track
+        self.playlist.select(self.playlist.length() - len(ytplst['entries']))
+        self.display_selected_track(self.playlist.selected_track_index())
+
+
     def load_yt_playlist(self):
         YT_launch_plst_cmd = '/usr/local/bin/youtube-dl -f mp4 -J "%s"'
+        wrn = re.compile('WARNING:')
+        err = re.compile('ERROR:')
         d = LoadYtPlaylistDialog(self.root)
         if not d.result:
             return
@@ -1065,30 +1089,18 @@ class TBOPlayer:
             self.display_selected_track_title.set("Loading playlist. Wait...")
             # title to playlist display
             try:
-                ytplstprocess = pexpect.spawn(ytcmd,timeout=120,maxread=50000,searchwindowsize=50000)
+                ytplstprocess = pexpect.spawn(ytcmd,timeout=180,maxread=50000,searchwindowsize=50000)
                 ytplstprocess.expect(pexpect.EOF)
-                ytplst = json.loads(ytplstprocess.before)
-                for entry in ytplst['entries']:
-                    if self.options.youtube_media_format == 'mp4':
-                        media_url = entry['url']
-                    else:
-                        preference = -100
-                        for format in entry['formats']:
-                            if format['ext'] == 'm4a':
-                                if format['preference'] and format['preference'] > preference:
-                                    preference = format['preference']
-                                    media_url = format['url']
-                                elif not format['preference']:
-                                    media_url = format['url']
-                    #print "         Entry url: " + mediaurl
-                    self.playlist.append([media_url,entry['title'],'',''])
-                    # add title to playlist display
-                    self.track_titles_display.insert(END, entry['title']) 
-                    # and set it as the selected track
-                self.playlist.select(self.playlist.length() - len(ytplst['entries']))
-                self.display_selected_track(self.playlist.selected_track_index())
+                if wrn.search(ytplstprocess.before):
+                    self.display_selected_track_title.set("Problem loading playlist. You may have to update youtube-dl.")
+                    return
+                if err.search(ytplstprocess.before):
+                    self.display_selected_track_title.set("Problem loading playlist. The playlist is copyrighted.")
+                    return
+                ytplst = loads(ytplstprocess.before)
+                self.process_yt_playlist(ytplst)
             except Exception as e:
-                self.display_selected_track_title.set("Problem loading playlist. Maybe the playlist was too long.")
+                self.display_selected_track_title.set("Problem loading playlist. Maybe the playlist is too long.")
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 print(exc_type, fname, exc_tb.tb_lineno)
@@ -1147,7 +1159,7 @@ class Options:
         self.generate_track_info = False  # generate track information from omxplayer output
 
         # create an options file if necessary
-        confdir = expanduser("~") + '/.tboplayer'
+        confdir = os.path.expanduser("~") + '/.tboplayer'
         self.options_file = confdir + '/tboplayer.cfg'
         if os.path.exists(self.options_file):
             self.read(self.options_file)
