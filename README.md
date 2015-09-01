@@ -10,11 +10,10 @@ Update omxplayer
 
 Ensure you have the latest version of omxplayer by typing the following in a terminal window open in the home directory:
 
-         sudo apt-get update
-		 
-		 sudo apt-get upgrade
+        sudo apt-get update
+        sudo apt-get upgrade
+	
 
-		 
 Download and Install pexpect
 -----------------------------
 
@@ -22,10 +21,10 @@ This is specified here http://www.noah.org/wiki/pexpect#Download_and_Installatio
 
 From a terminal window open in your home directory type:
 
-         wget http://pexpect.sourceforge.net/pexpect-2.3.tar.gz
-         tar xzf pexpect-2.3.tar.gz
-         cd pexpect-2.3
-         sudo python ./setup.py install
+        wget http://pexpect.sourceforge.net/pexpect-2.3.tar.gz
+        tar xzf pexpect-2.3.tar.gz
+        cd pexpect-2.3
+        sudo python ./setup.py install
 
 
 Download and Install TBOPlayer
@@ -39,12 +38,27 @@ There should now be a directory 'KenT2-tboplayer-xxxx' in your home directory. R
 
 Open the tboplayer directory and from a terminal opened in THIS directory:
 
-		python tboplayer.py
+	python tboplayer.py
 
-		
 TBOPlayer is developed on Raspbian Wheezy with python 2.7
- 
- 
+
+Note: If you want to be able to watch videos from online services like Youtube, then you must have up-to-date youtube-dl installed on your system, as well as avconv 10 or later.
+See this link for a list of services supported by youtube-dl: https://rg3.github.io/youtube-dl/supportedsites.html (Not all of them were tested with TBOPlayer)
+
+Download and Install youtube-dl
+-----------------------------
+
+This is specified here https://github.com/rg3/youtube-dl/#installation and copied below:
+
+From a terminal window open in your home directory type:
+
+        sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl
+        sudo chmod a+rx /usr/local/bin/youtube-dl
+	
+Or update it with 
+
+        sudo youtube-dl -U
+	
 OPERATION
 =========
 
@@ -53,7 +67,7 @@ Buttons
 
 * ADD - duplicates the Track>Add menu item
 
-* ADD URL - duplicates the Track>Add URL menu item
+* ADD DIR - duplicates the Track>Add Dir menu item
 
 * EDIT - duplicates the Track>Edit menu item
 
@@ -71,9 +85,9 @@ Buttons
 
 Menus
 -----
-* Track - add  edit or remove a track from the current playlist
+* Track - add tracks (for selecting multiple tracks, hold ctrl when clicking) or directories, edit or remove tracks (or URLs) from the current playlist
  
-* Playlist - save the current playlist or open a saved one
+* Playlist - save the current playlist or open a saved one or load youtube playlist
  
 * OMX - display the track information for the last played track (needs to be enabled in options)
  
@@ -82,6 +96,8 @@ Menus
     * Audio Output - play sound to hdmi or local output, auto does not send an audio option to omxplayer.
 	
     * Mode - play the Single selected track, Repeat the single track, rotate around the Playlist starting from the selected track, randomly play a track from the Playlist.
+    
+    * Download from Youtube - defines whether to download video and audio or audio only from Youtube videos.
 	
     * Initial directory for tracks - where Add Track starts looking.
 	
@@ -97,8 +113,8 @@ Menus
 
 A track is selected using a single click of the mouse or up-down arrow key, playing is started by pressing the Play/Pause button, the . key or the Return key.
 
-Remove the selected track can be done by pressing the Delete key.
+Removing the selected track can be done by pressing the Delete key.
 
 During playing of a track a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer. A list  of commands is provided in the help menu. Note: some of the commands are not implemented by omxplayer.
 
-If you have problems playing a track try it from the command line with omxplayer -ohdmi file or omxplayer -olocal file
+If you have problems playing a track try it from the command line with omxplayer -ohdmi file or omxplayer -o local file
