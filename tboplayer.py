@@ -11,20 +11,23 @@ INSTALLATION
   *  pyomxplayer is currently included inline in the code as I have made some modifications to jbaiter's version, his original can be seen at https://github.com/jbaiter/pyomxplayer
   *  download tboplayer.py into a directory
   *  type python tboplayer.py from a terminal opened in the directory within which tboplayer.py is stored
-  *  If you want to be able to watch videos from online services like Youtube, then you must have up-to-date youtube-dl installed on your system, as well as avconv 10 or latter
+  *  If you want to be able to watch videos from online services like Youtube, then you must have up-to-date youtube-dl installed on your system, as well as avconv 10 or later
   *  developed on raspbian wheezy with python 2.7
   *  2015 version developed on ubuntu mate 15.04 and mint 17.2
+  *  
+  *  see README.md for better instructions
+  *  
   
 OPERATION
 Menus
 ====
- Track - Track - add tracks (for selecting multiple tracks, hold ctrl when clicking) or directories, edit or remove tracks (or URLs) from the current playlist
+ Track - Track - add tracks (for selecting multiple tracks, hold ctrl when clicking) or directories or URLs, edit or remove tracks from the current playlist
  Playlist - save the current playlist or open a saved one or load youtube playlist
  OMX - display the track information for the last played track (needs to be enabled in options)
  Options -
     Audio Output - play sound to hdmi or local output, auto does not send an audio option to omxplayer.
     Mode - play the Single selected track, Repeat the single track, rotate around the Playlist starting from the selected track, or play at Random.
-    Download from Youtube - defines whether to download video and audio or audio only from Youtube or other services supported by youtube-dl
+    Download from Youtube - defines whether to download video and audio or audio only from Youtube (other online video services will always be asked for mp4)
     Subtitles - adjust with your own options if required
     Initial directory for tracks - where Add Track starts looking.
     Initial directory for playlists - where Open Playlist starts looking
@@ -34,7 +37,7 @@ Menus
 
 A track is selected using a single click of the mouse, playing is started by pressing the Play button or the . key
 
-During playing of a track a slightly modified set of  omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer.
+During playing of a track a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer.
 A list  of comands is provided in the help menu. Note: some of the commands are not implemented by omxplayer.
 
 If you have problems playing a track try it from the command line with omxplayer -o hdmi file or omxplayer -o local file
@@ -92,21 +95,20 @@ class OMXPlayer(object):
     subtitles_visible = False
 
     #****** KenT added argument to control dictionary generation
-    def __init__(self, mediafile, args=None, start_playback=False, do_dict=False, yt_media_type='mp4'):
+    def __init__(self, mediafile, args=None, start_playback=False, do_dict=False, do_youtube_dl=False, yt_media_type='mp4'):
         if not args:
             args = ""
         #******* KenT signals to tell the gui playing has started and ended
         self.start_play_signal = False
         self.end_play_signal = False
 
-        if "youtube.com" not in mediafile:
+        if not do_youtube_dl:
             cmd = self._LAUNCH_CMD % (mediafile, args)
-            #print "              cmd: " + cmd
         else:
             # krugg: retrieve youtube video url for playback with external youtube-dl
             ytcmd = self._YTLAUNCH_CMD % (yt_media_type, mediafile)
             #print "      Youtube URL: " + mediafile
-            #print "      Youtube cmd: " + ytcmd
+            print "      Youtube cmd: " + ytcmd
             self.ytprocess = pexpect.spawn(ytcmd)
             #self.ytprocess.logfile = sys.stdout
             ytmediafound = self.ytprocess.expect([self._YT_REXP,
@@ -121,6 +123,7 @@ class OMXPlayer(object):
                 #print "      Youtube video playback failed"
                 self.end_play_signal=True
                 return
+        print "              cmd: " + cmd
         self._process = pexpect.spawn(cmd)
         # fout= file('logfile.txt','w')
         # self._process.logfile_send = sys.stdout
@@ -291,6 +294,10 @@ class TBOPlayer:
         self._OMX_PLAYING = "omx_playing"
         self._OMX_ENDING = "omx_ending"
         self._SUPPORTED_MEDIA_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".wav",".avi",".mp4",".mkv",".ogv")
+
+	f = open(os.path.dirname(os.path.realpath(sys.argv[0])) + "/yt-dl_supported_sites", "r")
+	self._YT_DL_SUPPORTED_SITES = loads(f.read())
+	f.close()
 
         # what to do next signals
         self.break_required_signal=False         # signal to break out of Repeat or Playlist loop
@@ -502,11 +509,13 @@ class TBOPlayer:
 
     def start_omx(self,track):
         """ Loads and plays the track"""
-        track= "'"+ track.replace("'","'\\''") + "'"
+        ttrack= "'"+ track.replace("'","'\\''") + "'"
         opts= self.options.omx_user_options + " "+ self.options.omx_audio_option + " " + self.options.omx_subtitles_option + " "
-        self.omx = OMXPlayer(track, opts, start_playback=True, do_dict = self.options.generate_track_info, 
-                                                         yt_media_type = self.options.youtube_media_format) 
-        self.monitor("            >Play: " + track + " with " + opts)
+        self.omx = OMXPlayer(ttrack, opts, start_playback=True, do_dict = self.options.generate_track_info, 
+                                                        do_youtube_dl = ("http" in track and any(re.match("http(s)?://(www.)?" + s, track) for s in self._YT_DL_SUPPORTED_SITES)),
+                                                        yt_media_type = ("m4a" if (self.options.youtube_media_format == "m4a" and "youtube." in track) else "mp4"))
+
+        self.monitor("            >Play: " + ttrack + " with " + opts)
 
 
     def stop_omx(self):
@@ -1059,7 +1068,7 @@ class TBOPlayer:
     def process_yt_playlist(self,ytplst):
         for entry in ytplst['entries']:
             if self.options.youtube_media_format == 'mp4':
-                 media_url = entry['url']
+                media_url = entry['url']
             else:
                 preference = -100
                 for format in entry['formats']:
@@ -1086,7 +1095,7 @@ class TBOPlayer:
         if not d.result:
             return
 
-        if "playlist" in d.result:
+        if "list=" in d.result:
             ytcmd = YT_launch_plst_cmd % (d.result)
             self.display_selected_track_title.set("Loading playlist. Wait...")
             # title to playlist display
@@ -1094,10 +1103,10 @@ class TBOPlayer:
                 ytplstprocess = pexpect.spawn(ytcmd,timeout=180,maxread=50000,searchwindowsize=50000)
                 ytplstprocess.expect(pexpect.EOF)
                 if wrn.search(ytplstprocess.before):
-                    self.display_selected_track_title.set("Problem loading playlist. You may have to update youtube-dl.")
+                    self.display_selected_track_title.set("Problem loading playlist. Do you have up-to-date dependencies?")
                     return
                 if err.search(ytplstprocess.before):
-                    self.display_selected_track_title.set("Problem loading playlist. The playlist is copyrighted.")
+                    self.display_selected_track_title.set("Problem loading playlist. The playlist may have copyrighted content.")
                     return
                 ytplst = loads(ytplstprocess.before)
                 self.process_yt_playlist(ytplst)

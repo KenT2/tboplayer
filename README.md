@@ -42,8 +42,8 @@ Open the tboplayer directory and from a terminal opened in THIS directory:
 
 TBOPlayer is developed on Raspbian Wheezy with python 2.7
 
-Note: If you want to be able to watch videos from online services like Youtube, then you must have up-to-date youtube-dl installed on your system, as well as avconv 10 or later.
-See this link for a list of services supported by youtube-dl: https://rg3.github.io/youtube-dl/supportedsites.html (Not all of them were tested with TBOPlayer)
+Note: If you want to be able to watch videos from online services like Youtube, then you must have up-to-date **youtube-dl** installed on your system, as well as **avconv 10** or later.
+See this link for a list of services supported by youtube-dl: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/omxplayer)
 
 Download and Install youtube-dl
 -----------------------------
@@ -97,7 +97,7 @@ Menus
 	
     * Mode - play the Single selected track, Repeat the single track, rotate around the Playlist starting from the selected track, randomly play a track from the Playlist.
     
-    * Download from Youtube - defines whether to download video and audio or audio only from Youtube videos.
+    * Download from Youtube - defines whether to download video and audio or audio only from Youtube (other online video services will always be asked for "video and audio").
 	
     * Initial directory for tracks - where Add Track starts looking.
 	
