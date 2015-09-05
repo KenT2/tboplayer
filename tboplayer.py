@@ -28,10 +28,12 @@ Menus
     Audio Output - play sound to hdmi or local output, auto does not send an audio option to omxplayer.
     Mode - play the Single selected track, Repeat the single track, rotate around the Playlist starting from the selected track, or play at Random.
     Download from Youtube - defines whether to download video and audio or audio only from Youtube (other online video services will always be asked for mp4)
-    Subtitles - adjust with your own options if required
-    Initial directory for tracks - where Add Track starts looking.
-    Initial directory for playlists - where Open Playlist starts looking
-    OMX player options - add your own (no validation so be careful)
+    OMXPlayer location - path to omxplayer binary
+    OMXplayer options - add your own (no validation so be careful)
+    Download from Youtube - defines whether to download video and audio or audio only from Youtube (other online video services will always be asked for "video and audio")
+    Download actual media URL [when] - defines when to extract the actual media from the given URL, either upon adding the URL or when playing it
+    youtube-dl location - path to youtube-dl binary
+    youtube-dl transcoder - prefer to use either avconv or ffmpeg when using youtube-dl for extracting data from online supported services
     Debug - prints some debug text to the command line
     Generate Track Information - parses the output of omxplayer, disabled by default as it may cause problems with some tracks.
 
@@ -81,10 +83,9 @@ class OMXPlayer(object):
     _AUDIOPROP_REXP = re.compile(r"Audio codec (\w+) channels (\d+) samplerate (\d+) bitspersample (\d+).*")
     _STATUS_REXP = re.compile(r"M:\s*([\d.]+).*")
     _DONE_REXP = re.compile(r"have a nice day.*")
-    _YT_REXP = re.compile(r"(.+)")
-
-    _LAUNCH_CMD = '/usr/bin/omxplayer -s %s %s'
-    _YTLAUNCH_CMD = '/usr/local/bin/youtube-dl -g -f %s %s'
+    
+    _LAUNCH_CMD = ''
+    _LAUNCH_ARGS_FORMAT = ' -s %s %s'
     _PAUSE_CMD = 'p'
     _TOGGLE_SUB_CMD = 's'
     _QUIT_CMD = 'q'
@@ -95,36 +96,16 @@ class OMXPlayer(object):
     subtitles_visible = False
 
     #****** KenT added argument to control dictionary generation
-    def __init__(self, mediafile, args=None, start_playback=False, do_dict=False, do_youtube_dl=False, yt_media_type='mp4'):
+    def __init__(self, mediafile, args=None, start_playback=False, do_dict=False):
         if not args:
             args = ""
         #******* KenT signals to tell the gui playing has started and ended
         self.start_play_signal = False
         self.end_play_signal = False
 
-        if not do_youtube_dl:
-            cmd = self._LAUNCH_CMD % (mediafile, args)
-        else:
-            # krugg: retrieve youtube video url for playback with external youtube-dl
-            ytcmd = self._YTLAUNCH_CMD % (yt_media_type, mediafile)
-            #print "      Youtube URL: " + mediafile
-            print "      Youtube cmd: " + ytcmd
-            self.ytprocess = pexpect.spawn(ytcmd)
-            #self.ytprocess.logfile = sys.stdout
-            ytmediafound = self.ytprocess.expect([self._YT_REXP,
-                                                     pexpect.TIMEOUT,
-                                                     pexpect.EOF])
-            if ytmediafound == 0:
-                ytmediafile = self.ytprocess.match.group(1)
-                #print "      Youtube video URL: " + ytmediafile
-                cmd = self._LAUNCH_CMD % ("\""+ytmediafile+"\"", args)
-                #print "      Youtube video playback cmd: " + cmd
-            else:
-                #print "      Youtube video playback failed"
-                self.end_play_signal=True
-                return
-        print "              cmd: " + cmd
+        cmd = self._LAUNCH_CMD % (mediafile, args)
         self._process = pexpect.spawn(cmd)
+        #print "        cmd: " + cmd
         # fout= file('logfile.txt','w')
         # self._process.logfile_send = sys.stdout
         
@@ -138,7 +119,6 @@ class OMXPlayer(object):
             self.toggle_pause()
         # don't use toggle as it seems to have a delay
         # self.toggle_subtitles()
-
 
     def _get_position(self):
     
@@ -249,6 +229,66 @@ class OMXPlayer(object):
     def seek(self, minutes):
         raise NotImplementedError
 
+    @staticmethod
+    def set_omx_location(location):
+        OMXPlayer._LAUNCH_CMD = location + OMXPlayer._LAUNCH_ARGS_FORMAT
+
+
+class YTDL(object):
+
+    _YTLAUNCH_CMD = ''
+    _YTLAUNCH_ARGS_FORMAT = ' --prefer-%s -g -f %s "%s"'
+    _YTLAUNCH_PLST_CMD = ''
+    _YTLAUNCH_PLST_ARGS_FORMAT = ' -f mp4 -J "%s"'
+    _PREFERED_TRANSCODER = ''
+    _YOUTUBE_MEDIA_TYPE = ''
+    _WRN_REXP = re.compile("WARNING:")
+    _ERR_REXP = re.compile("ERROR:")
+    _MSGS = ("Problem retreiving content. Do you have up-to-date dependencies?", 
+                                     "Problem retreiving content. Content may be copyrighted.")
+    _SUPPORTED_SERVICES = []
+
+    @staticmethod
+    def _response(data):
+        if YTDL._WRN_REXP.search(data):
+            return (0, YTDL._MSGS[0])
+        elif YTDL._ERR_REXP.search(data):
+            return (-1, YTDL._MSGS[1])
+        else: 
+            return (1, data)
+
+    @staticmethod
+    def _get_link_media_format(url):
+        return "m4a" if (YTDL._YOUTUBE_MEDIA_TYPE == "m4a" and "youtube." in url) else "mp4"
+
+    @staticmethod
+    def set_options(options, supported_services=False):
+        YTDL._YTLAUNCH_CMD=options.ytdl_location + YTDL._YTLAUNCH_ARGS_FORMAT
+        YTDL._YTLAUNCH_PLST_CMD=options.ytdl_location + YTDL._YTLAUNCH_PLST_ARGS_FORMAT
+        YTDL._PREFERED_TRANSCODER=options.ytdl_prefered_transcoder
+        YTDL._YOUTUBE_MEDIA_TYPE=options.youtube_media_format
+        if supported_services:
+            YTDL._SUPPORTED_SERVICES=supported_services
+
+    @staticmethod
+    def retrieve_media_url(url):
+        ytcmd = YTDL._YTLAUNCH_CMD % (YTDL._PREFERED_TRANSCODER, YTDL._get_link_media_format(url), url)
+        ytprocess = pexpect.spawn(ytcmd)
+        ytprocess.expect(pexpect.EOF)
+        return YTDL._response(ytprocess.before.replace('\n',''))
+
+    @staticmethod
+    def retrieve_youtube_playlist(playlist_url):
+        ytcmd = YTDL._YTLAUNCH_PLST_CMD % (playlist_url)
+        ytplstprocess = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
+        ytplstprocess.expect(pexpect.EOF)
+        return YTDL._response(ytplstprocess.before)
+    
+    @staticmethod
+    def whether_to_use_youtube_dl(url):
+        return any(re.match("http(s)?://(www.)?" + s + ".", url) for s in YTDL._SUPPORTED_SERVICES)
+
+
 
 #from pyomxplayer import OMXPlayer
 from pprint import pformat
@@ -293,11 +333,7 @@ class TBOPlayer:
         self._OMX_STARTING = "omx_starting"
         self._OMX_PLAYING = "omx_playing"
         self._OMX_ENDING = "omx_ending"
-        self._SUPPORTED_MEDIA_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".wav",".avi",".mp4",".mkv",".ogv")
-
-	f = open(os.path.dirname(os.path.realpath(sys.argv[0])) + "/yt-dl_supported_sites", "r")
-	self._YT_DL_SUPPORTED_SITES = loads(f.read())
-	f.close()
+        self._SUPPORTED_MEDIA_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3gp",".wav",".avi",".mp4",".mkv",".ogv")
 
         # what to do next signals
         self.break_required_signal=False         # signal to break out of Repeat or Playlist loop
@@ -507,13 +543,21 @@ class TBOPlayer:
 # WRAPPER FOR JBAITER'S PYOMXPLAYER
 # ***************************************
 
+
     def start_omx(self,track):
         """ Loads and plays the track"""
+
+        if ("http" in track and self.options.download_media_url_upon == "play" and YTDL.whether_to_use_youtube_dl(track)):
+            ytdl_result = YTDL.retrieve_media_url(track)
+            if ytdl_result[0] == 1:
+                track = ytdl_result[1]
+            else:
+                self.display_selected_track_title.set(ytdl_result[1])
+                return
+
         ttrack= "'"+ track.replace("'","'\\''") + "'"
         opts= self.options.omx_user_options + " "+ self.options.omx_audio_option + " " + self.options.omx_subtitles_option + " "
-        self.omx = OMXPlayer(ttrack, opts, start_playback=True, do_dict = self.options.generate_track_info, 
-                                                        do_youtube_dl = ("http" in track and any(re.match("http(s)?://(www.)?" + s, track) for s in self._YT_DL_SUPPORTED_SITES)),
-                                                        yt_media_type = ("m4a" if (self.options.youtube_media_format == "m4a" and "youtube." in track) else "mp4"))
+        self.omx = OMXPlayer(ttrack, args=opts, start_playback=True, do_dict = self.options.generate_track_info)
 
         self.monitor("            >Play: " + ttrack + " with " + opts)
 
@@ -575,6 +619,12 @@ class TBOPlayer:
 
         #defne response to main window closing
         self.root.protocol ("WM_DELETE_WINDOW", self.app_exit)
+
+        OMXPlayer.set_omx_location(self.options.omx_location)
+
+        f = open(os.path.dirname(os.path.realpath(sys.argv[0])) + "/yt-dl_supported_sites", "r")
+        YTDL.set_options(self.options, supported_services=loads(f.read()))
+        f.close()
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -736,6 +786,8 @@ class TBOPlayer:
         """edit the options then read them from file"""
         eo = OptionsDialog(self.root, self.options.options_file,'Edit Options')
         self.options.read(self.options.options_file)
+        YTDL.set_options(self.options)
+        OMXPlayer.set_omx_location(self.options.omx_location)
 
 
     def show_help (self):
@@ -946,10 +998,17 @@ class TBOPlayer:
         if d.result == None:
             return
         if d.result[0] == '':
-            d.result = (d.result[1],d.result[1])
+            d.result = [d.result[1],d.result[1]]
         else:
-            d.result = (d.result[1],d.result[0])
-        if d.result[1] != '':
+            d.result = [d.result[1],d.result[0]]
+        if d.result[0] != '':
+            if self.options.download_media_url_upon == "add" and YTDL.whether_to_use_youtube_dl(d.result[1]):
+                ytld_result = YTDL.retrieve_media_url(d.result[1])
+                if ytld_result[0] == 1:
+                    d.result[0] = ytld_result[1]
+                else:
+                    self.display_selected_track_title.set(ytld_result[1])
+                    return
             # append it to the playlist
             self.playlist.append(d.result)
             # add title to playlist display
@@ -957,6 +1016,7 @@ class TBOPlayer:
             # and set it as the selected track
             self.playlist.select(self.playlist.length()-1)
             self.display_selected_track(self.playlist.selected_track_index())
+
    
     def remove_track(self,*event):
         if  self.playlist.length()>0 and self.playlist.track_is_selected():
@@ -1029,15 +1089,15 @@ class TBOPlayer:
         playlists are stored as textfiles each record being "path","title"
         """
         if self.options.initial_playlist_dir=='':
-        	    self.filename.set(tkFileDialog.askopenfilename(defaultextension = ".csv",
-                        filetypes = [('csv files', '.csv')],
-        	    multiple=False))
-        	
+            self.filename.set(tkFileDialog.askopenfilename(defaultextension = ".csv",
+                                                filetypes = [('csv files', '.csv')],
+                                                multiple=False))
+
         else:
-        	    self.filename.set(tkFileDialog.askopenfilename(initialdir=self.options.initial_playlist_dir,
-                        defaultextension = ".csv",
-                        filetypes = [('csv files', '.csv')],
-        	    multiple=False))
+            self.filename.set(tkFileDialog.askopenfilename(initialdir=self.options.initial_playlist_dir,
+                                                defaultextension = ".csv",
+                                                filetypes = [('csv files', '.csv')],
+                                                multiple=False))
         filename = self.filename.get()
         if filename=="":
             return
@@ -1057,12 +1117,11 @@ class TBOPlayer:
 
 
     def clear_list(self):
-
         if tkMessageBox.askokcancel("Clear Playlist","Clear Playlist"):
-                    self.track_titles_display.delete(0,self.track_titles_display.size())
-                    self.playlist.clear()
-                    self.blank_selected_track()
-                    self.display_time.set("")
+            self.track_titles_display.delete(0,self.track_titles_display.size())
+            self.playlist.clear()
+            self.blank_selected_track()
+            self.display_time.set("")
 
 
     def process_yt_playlist(self,ytplst):
@@ -1088,34 +1147,22 @@ class TBOPlayer:
 
 
     def load_yt_playlist(self):
-        YT_launch_plst_cmd = '/usr/local/bin/youtube-dl -f mp4 -J "%s"'
-        wrn = re.compile('WARNING:')
-        err = re.compile('ERROR:')
         d = LoadYtPlaylistDialog(self.root)
         if not d.result:
             return
 
         if "list=" in d.result:
-            ytcmd = YT_launch_plst_cmd % (d.result)
-            self.display_selected_track_title.set("Loading playlist. Wait...")
-            # title to playlist display
             try:
-                ytplstprocess = pexpect.spawn(ytcmd,timeout=180,maxread=50000,searchwindowsize=50000)
-                ytplstprocess.expect(pexpect.EOF)
-                if wrn.search(ytplstprocess.before):
-                    self.display_selected_track_title.set("Problem loading playlist. Do you have up-to-date dependencies?")
-                    return
-                if err.search(ytplstprocess.before):
-                    self.display_selected_track_title.set("Problem loading playlist. The playlist may have copyrighted content.")
-                    return
-                ytplst = loads(ytplstprocess.before)
-                self.process_yt_playlist(ytplst)
+                ytdl_result = YTDL.retrieve_youtube_playlist(d.result)
+                if ytdl_result[0] == 1:
+                    self.process_yt_playlist( loads(ytdl_result[1]) )
+                else:
+                    self.display_selected_track_title.set(ytdl_result[1])
             except Exception as e:
-                self.display_selected_track_title.set("Problem loading playlist. Maybe the playlist is too long.")
+                self.display_selected_track_title.set("Problem retrieving content. Content may have been truncated.")
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 print(exc_type, fname, exc_tb.tb_lineno)
-                return
         else:
             return
 
@@ -1196,6 +1243,10 @@ class Options:
         self.initial_playlist_dir = config.get('config','playlists',0)    
         self.omx_user_options = config.get('config','omx_options',0)
         self.youtube_media_format = config.get('config','youtube_media_format',0)
+        self.omx_location = config.get('config','omx_location',0)
+        self.ytdl_location = config.get('config','ytdl_location',0)
+        self.ytdl_prefered_transcoder = config.get('config','ytdl_prefered_transcoder',0)
+        self.download_media_url_upon = config.get('config','download_media_url_upon',0)
 
         if config.get('config','debug',0) == 'on':
             self.debug = True
@@ -1225,8 +1276,13 @@ class Options:
         config.set('config','debug','off')
         config.set('config','track_info','off')
         config.set('config','youtube_media_format','mp4')
+        config.set('config','omx_location','/usr/bin/omxplayer')
+        config.set('config','ytdl_location','/usr/local/bin/youtube-dl')
+        config.set('config','ytdl_prefered_transcoder','avconv')
+        config.set('config','download_media_url_upon','add')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
+
 
 
 
@@ -1270,43 +1326,67 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_shuffle=Radiobutton(master, text="Shuffle", variable=self.mode_var,value="shuffle")
         rb_shuffle.grid(row=14,column=0,sticky=W)
 
-        Label(master, text="Download from Youtube:").grid(row=16, sticky=W)
-        self.youtube_media_format=StringVar()
-        self.youtube_media_format.set(config.get('config','youtube_media_format',0))
-        rb_video=Radiobutton(master, text="Video and audio", variable=self.youtube_media_format, value="mp4")
-        rb_video.grid(row=17,column=0,sticky=W)
-        rb_audio=Radiobutton(master, text="Audio only", variable=self.youtube_media_format, value="m4a")
-        rb_audio.grid(row=18,column=0,sticky=W)
+        Label(master, text="").grid(row=16, sticky=W)
+        Label(master, text="Download from Youtube:").grid(row=17, sticky=W)
+        self.youtube_media_format_var=StringVar()
+        self.youtube_media_format_var.set(config.get('config','youtube_media_format',0))
+        rb_video=Radiobutton(master, text="Video and audio", variable=self.youtube_media_format_var, value="mp4")
+        rb_video.grid(row=18,column=0,sticky=W)
+        rb_audio=Radiobutton(master, text="Audio only", variable=self.youtube_media_format_var, value="m4a")
+        rb_audio.grid(row=19,column=0,sticky=W)
+        Label(master, text="Download actual media URL:").grid(row=20, sticky=W)
+        self.download_media_url_upon_var=StringVar()
+        self.download_media_url_upon_var.set(config.get('config','download_media_url_upon',0))
+        rb_adding=Radiobutton(master, text="when adding URL", variable=self.download_media_url_upon_var, value="add")
+        rb_adding.grid(row=21,column=0,sticky=W)
+        rb_playing=Radiobutton(master, text="when playing URL", variable=self.download_media_url_upon_var, value="play")
+        rb_playing.grid(row=22,column=0,sticky=W)
 
-        Label(master, text="").grid(row=20, sticky=W)
-        Label(master, text="Initial directory for tracks:").grid(row=21, sticky=W)
+        Label(master, text="Initial directory for tracks:").grid(row=0, column=2, sticky=W)
         self.e_tracks = Entry(master)
-        self.e_tracks.grid(row=22)
+        self.e_tracks.grid(row=1, column=2)
         self.e_tracks.insert(0,config.get('config','tracks',0))
-
-        Label(master, text="").grid(row=30, sticky=W)
-        Label(master, text="Inital directory for playlists:").grid(row=31, sticky=W)
+        Label(master, text="Inital directory for playlists:").grid(row=2, column=2, sticky=W)
         self.e_playlists = Entry(master)
-        self.e_playlists.grid(row=32)
+        self.e_playlists.grid(row=3, column=2)
         self.e_playlists.insert(0,config.get('config','playlists',0))
-
-        self.subtitles_var = StringVar()
+    
+        Label(master, text="").grid(row=10, column=2, sticky=W)
+        Label(master, text="OMXPlayer location:").grid(row=11, column=2, sticky=W)
+        self.e_omx_location = Entry(master)
+        self.e_omx_location.grid(row=12, column=2)
+        self.e_omx_location.insert(0,config.get('config','omx_location',0))
+        Label(master, text="OMXPlayer options:").grid(row=13, column=2, sticky=W)
+        self.e_omx_options = Entry(master)
+        self.e_omx_options.grid(row=14, column=2)
+        self.e_omx_options.insert(0,config.get('config','omx_options',0))
+	
+	self.subtitles_var = StringVar()
         self.cb_subtitles = Checkbutton(master,text="Subtitles",variable=self.subtitles_var, onvalue="on",offvalue="off")
-        self.cb_subtitles.grid(row=34,columnspan=2, sticky = W)
+        self.cb_subtitles.grid(row=15, column=2, columnspan=2, sticky = W)
         if config.get('config','subtitles',0)=="on":
             self.cb_subtitles.select()
         else:
             self.cb_subtitles.deselect()
-
-        Label(master, text="").grid(row=40, sticky=W)
-        Label(master, text="OMXPlayer options:").grid(row=41, sticky=W)
-        self.e_omx_options = Entry(master)
-        self.e_omx_options.grid(row=42)
-        self.e_omx_options.insert(0,config.get('config','omx_options',0))
-
+	
+	Label(master, text="").grid(row=16, column=2, sticky=W)
+	Label(master, text="youtube-dl location:").grid(row=17, column=2, sticky=W)
+        self.e_ytdl_location = Entry(master)
+        self.e_ytdl_location.grid(row=18, column=2)
+        self.e_ytdl_location.insert(0,config.get('config','ytdl_location',0))
+	Label(master, text="").grid(row=19, column=2, sticky=W)
+	Label(master, text="youtube-dl transcoder:").grid(row=20, column=2, sticky=W)
+	self.ytdl_prefered_transcoder_var=StringVar()
+        self.ytdl_prefered_transcoder_var.set(config.get('config','ytdl_prefered_transcoder',0))
+        rb_avconv=Radiobutton(master, text="avconv", variable=self.ytdl_prefered_transcoder_var, value="avconv")
+        rb_avconv.grid(row=21,column=2,sticky=W)
+        rb_ffmpeg=Radiobutton(master, text="ffmpeg", variable=self.ytdl_prefered_transcoder_var, value="ffmpeg")
+        rb_ffmpeg.grid(row=22,column=2,sticky=W)
+	
+	Label(master, text="").grid(row=51, sticky=W)
         self.debug_var = StringVar()
         self.cb_debug = Checkbutton(master,text="Debug",variable=self.debug_var, onvalue="on",offvalue="off")
-        self.cb_debug.grid(row=50,columnspan=2, sticky = W)
+        self.cb_debug.grid(row=52,columnspan=2, sticky = W)
         if config.get('config','debug',0)=="on":
             self.cb_debug.select()
         else:
@@ -1338,7 +1418,11 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','omx_options',self.e_omx_options.get())
         config.set('config','debug',self.debug_var.get())
         config.set('config','track_info',self.track_info_var.get())
-        config.set('config','youtube_media_format',self.youtube_media_format.get())
+        config.set('config','youtube_media_format',self.youtube_media_format_var.get())
+        config.set('config','omx_location',self.e_omx_location.get())
+        config.set('config','ytdl_location',self.e_ytdl_location.get())
+        config.set('config','ytdl_prefered_transcoder',self.ytdl_prefered_transcoder_var.get())
+        config.set('config','download_media_url_upon',self.download_media_url_upon_var.get())
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
     
@@ -1498,6 +1582,6 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 1 Septemper 2015"
+    datestring=" 4 Septemper 2015"
     bplayer = TBOPlayer()
 

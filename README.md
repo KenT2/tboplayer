@@ -12,7 +12,7 @@ Ensure you have the latest version of omxplayer by typing the following in a ter
 
         sudo apt-get update
         sudo apt-get upgrade
-	
+
 
 Download and Install pexpect
 -----------------------------
@@ -42,7 +42,7 @@ Open the tboplayer directory and from a terminal opened in THIS directory:
 
 TBOPlayer is developed on Raspbian Wheezy with python 2.7
 
-Note: If you want to be able to watch videos from online services like Youtube, then you must have up-to-date **youtube-dl** installed on your system, as well as **avconv 10** or later.
+Note: If you want to be able to watch videos from online services like Youtube, then you must have up-to-date **youtube-dl** installed on your system, as well as either **avconv 9.14**+ or **ffmpeg 0.8.17**+.
 See this link for a list of services supported by youtube-dl: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/omxplayer)
 
 Download and Install youtube-dl
@@ -96,20 +96,29 @@ Menus
     * Audio Output - play sound to hdmi or local output, auto does not send an audio option to omxplayer.
 	
     * Mode - play the Single selected track, Repeat the single track, rotate around the Playlist starting from the selected track, randomly play a track from the Playlist.
-    
-    * Download from Youtube - defines whether to download video and audio or audio only from Youtube (other online video services will always be asked for "video and audio").
 	
     * Initial directory for tracks - where Add Track starts looking.
 	
     * Initial directory for playlists - where Open Playlist starts looking
 	
-	* Enable subtitles
-	
-    * OMX player options - add your own (no validation so be careful)
+    * Enable subtitles
+
+    * OMXPlayer location - path to omxplayer binary
+
+    * OMXplayer options - add your own (no validation so be careful)
+    
+    * Download from Youtube - defines whether to download video and audio or audio only from Youtube (other online video services will always be asked for "video and audio")
+     
+    * Download actual media URL [when] - defines when to extract the actual media from the given URL, either upon adding the URL or when playing it
+    
+    * youtube-dl location - path to youtube-dl binary
+    
+    * youtube-dl transcoder - prefer to use either avconv or ffmpeg when using youtube-dl for extracting data from online supported services
 	
     * Debug - prints some debug text to the command line
 	
     * Generate Track Information - parses the output of omxplayer, disabled by default as it may cause problems with some tracks.
+
 
 A track is selected using a single click of the mouse or up-down arrow key, playing is started by pressing the Play/Pause button, the . key or the Return key.
 
