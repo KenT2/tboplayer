@@ -5,6 +5,17 @@ INSTALLATION
 
 Instructions for installation on the official Raspbian image
 
+You can use the installer that comes with TBOPlayer, or install it manually
+
+To use the installer, open a terminal and type:
+
+	wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
+	cd KenT2-tboplayer-* && chmod +x setup.sh && ./setup.sh
+	
+After that, TBOPlayer will be installed on your system. To run it, just type 'tboplayer', or use the icon created in your Desktop.
+
+If you prefer to install it manually, do as follows:
+	
 Update omxplayer
 ---------------
 
@@ -25,7 +36,6 @@ From a terminal window open in your home directory type:
         tar xzf pexpect-2.3.tar.gz
         cd pexpect-2.3
         sudo python ./setup.py install
-
 
 Download and Install TBOPlayer
 ------------------------------
