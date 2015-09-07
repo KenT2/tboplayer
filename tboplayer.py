@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 """
 A GUI interface using jbaiter's pyomxplayer to control omxplayer
@@ -286,7 +286,6 @@ class Ytdl:
                                                 self._STATUS_REXP])
                 if index == 1: continue
                 elif index in (2, 3):
-                    # ******* KenT added
                     self.end_signal = True
                     break
                 else:
@@ -317,7 +316,7 @@ class Ytdl:
     def is_running(self):
         return self._process.isalive()
 
-    def set_options(self, options, supported_services=False):
+    def set_options(self, options):
         self._YTLAUNCH_CMD=options.ytdl_location + self._YTLAUNCH_ARGS_FORMAT
         self._YTLAUNCH_PLST_CMD=options.ytdl_location + self._YTLAUNCH_PLST_ARGS_FORMAT
         self._PREFERED_TRANSCODER=options.ytdl_prefered_transcoder
@@ -897,7 +896,7 @@ class TBOPlayer:
 
 
 #and display them going with Tkinter event loop
-        self.root.mainloop()        
+        self.root.mainloop()
 
 
 #exit
@@ -1046,6 +1045,9 @@ class TBOPlayer:
 # TRACKS AND PLAYLISTS  CALLBACKS
 # ***************************************
 
+    def is_file_supported(self, file):
+        return file[-4:] in self._SUPPORTED_MEDIA_FORMATS
+
     def add_track(self):                                
         """
         Opens a dialog box to open files,
@@ -1065,7 +1067,7 @@ class TBOPlayer:
             return
 
         for file in filez:
-            if not os.path.isfile(file) or (file[-4:] not in self._SUPPORTED_MEDIA_FORMATS):
+            if not os.path.isfile(file) or not self.is_file_supported(file):
                 break
             self.file = file
 
@@ -1100,7 +1102,7 @@ class TBOPlayer:
                 n=os.path.join(dir,f)
                 if recursive and os.path.isdir(n):
                     self.ajoute(n,True)
-                if os.path.isfile(n) and (n[-4:] in self._SUPPORTED_MEDIA_FORMATS):
+                if os.path.isfile(n) and self.is_file_supported(n):
                     self.filename.set(n)
                     self.file = self.filename.get()
                     # split it to use leaf as the initial title
@@ -1140,6 +1142,8 @@ class TBOPlayer:
             d.result = [d.result[1],d.result[0]]
         if d.result[0] != '':
             if self.options.download_media_url_upon == "add" and self.ytdl.whether_to_use_youtube_dl(d.result[0]):
+                if self.ytdl_state != self._YTDL_CLOSED:
+                    return
                 self.go_ytdl(d.result[0])
                 d.result[1] = self.ytdl.WAIT_TAG + d.result[1]
 
@@ -1689,4 +1693,5 @@ class PlayList():
 if __name__ == "__main__":
     datestring=" 4 Septemper 2015"
     bplayer = TBOPlayer()
+
 
