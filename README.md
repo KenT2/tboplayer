@@ -42,8 +42,7 @@ Open the tboplayer directory and from a terminal opened in THIS directory:
 
 TBOPlayer is developed on Raspbian Wheezy with python 2.7
 
-Note: If you want to be able to watch videos from online services like Youtube, then you must have up-to-date **youtube-dl** installed on your system, as well as either **avconv 9.14**+ or **ffmpeg 0.8.17**+.
-See this link for a list of services supported by youtube-dl: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/omxplayer)
+Note: If you want to be able to watch videos from online services like Youtube, then you must have up-to-date **youtube-dl** installed on your system, as well as either **avconv 9.14**+ or **ffmpeg 0.8.17**+.\nSee this link for a list of services supported by youtube-dl: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/omxplayer)
 
 Download and Install youtube-dl
 -----------------------------
@@ -129,6 +128,9 @@ During playing of a track a slightly modified set of omxplayer commands can be u
 If you have problems playing a track try it from the command line with omxplayer -ohdmi file or omxplayer -o local file
 
 Contributors:
+-------------
 KenT2 - Original idea and implementation
+
 popiazaza - gui enhancements
+
 heniotierra - gui enhancements and youtube-dl integration

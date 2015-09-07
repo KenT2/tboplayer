@@ -105,7 +105,7 @@ class OMXPlayer(object):
 
         cmd = self._LAUNCH_CMD % (mediafile, args)
         self._process = pexpect.spawn(cmd)
-        #print "        cmd: " + cmd
+        print "        cmd: " + cmd
         # fout= file('logfile.txt','w')
         # self._process.logfile_send = sys.stdout
         
@@ -147,7 +147,6 @@ class OMXPlayer(object):
             except Exception:
                 break
             sleep(0.05)
-
 
 
     def make_dict(self):
@@ -234,59 +233,95 @@ class OMXPlayer(object):
         OMXPlayer._LAUNCH_CMD = location + OMXPlayer._LAUNCH_ARGS_FORMAT
 
 
-class YTDL(object):
+
+# ***************************************
+# YTDL CLASS
+# ***************************************
+
+class Ytdl:
 
     _YTLAUNCH_CMD = ''
     _YTLAUNCH_ARGS_FORMAT = ' --prefer-%s -g -f %s "%s"'
     _YTLAUNCH_PLST_CMD = ''
-    _YTLAUNCH_PLST_ARGS_FORMAT = ' -f mp4 -J "%s"'
+    _YTLAUNCH_PLST_ARGS_FORMAT = ' --prefer-%s -J -f mp4 "%s"'
     _PREFERED_TRANSCODER = ''
     _YOUTUBE_MEDIA_TYPE = ''
+    _SUPPORTED_SERVICES = []
+    
+    _STATUS_REXP = re.compile("\n")
     _WRN_REXP = re.compile("WARNING:")
     _ERR_REXP = re.compile("ERROR:")
-    _MSGS = ("Problem retreiving content. Do you have up-to-date dependencies?", 
-                                     "Problem retreiving content. Content may be copyrighted.")
-    _SUPPORTED_SERVICES = []
-
-    @staticmethod
-    def _response(data):
-        if YTDL._WRN_REXP.search(data):
-            return (0, YTDL._MSGS[0])
-        elif YTDL._ERR_REXP.search(data):
-            return (-1, YTDL._MSGS[1])
-        else: 
-            return (1, data)
-
-    @staticmethod
-    def _get_link_media_format(url):
-        return "m4a" if (YTDL._YOUTUBE_MEDIA_TYPE == "m4a" and "youtube." in url) else "mp4"
-
-    @staticmethod
-    def set_options(options, supported_services=False):
-        YTDL._YTLAUNCH_CMD=options.ytdl_location + YTDL._YTLAUNCH_ARGS_FORMAT
-        YTDL._YTLAUNCH_PLST_CMD=options.ytdl_location + YTDL._YTLAUNCH_PLST_ARGS_FORMAT
-        YTDL._PREFERED_TRANSCODER=options.ytdl_prefered_transcoder
-        YTDL._YOUTUBE_MEDIA_TYPE=options.youtube_media_format
-        if supported_services:
-            YTDL._SUPPORTED_SERVICES=supported_services
-
-    @staticmethod
-    def retrieve_media_url(url):
-        ytcmd = YTDL._YTLAUNCH_CMD % (YTDL._PREFERED_TRANSCODER, YTDL._get_link_media_format(url), url)
-        ytprocess = pexpect.spawn(ytcmd)
-        ytprocess.expect(pexpect.EOF)
-        return YTDL._response(ytprocess.before.replace('\n',''))
-
-    @staticmethod
-    def retrieve_youtube_playlist(playlist_url):
-        ytcmd = YTDL._YTLAUNCH_PLST_CMD % (playlist_url)
-        ytplstprocess = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
-        ytplstprocess.expect(pexpect.EOF)
-        return YTDL._response(ytplstprocess.before)
+    _LINK_REXP = re.compile("(http[s]?://[a-zA-Z0-9.,?&/_\-=+]+)")
     
-    @staticmethod
-    def whether_to_use_youtube_dl(url):
-        return any(re.match("http(s)?://(www.)?" + s + ".", url) for s in YTDL._SUPPORTED_SERVICES)
+    MSGS = ("Problem retreiving content. Do you have up-to-date dependencies?", 
+                                     "Problem retreiving content. Content may be copyrighted or the link invalid.",
+                                     "Problem retrieving content. Content may have been truncated.")
+    WAIT_TAG = "[wait]"
+    start_signal = False
+    end_signal = False
+    
+    def __init__(self, options, supported_services):
+        self.set_options(options)
+        self._SUPPORTED_SERVICES=supported_services
+
+    def _response(self):
+        data = self._process.before
+        if self._WRN_REXP.search(data):
+            r = (0, self.MSGS[0])
+        elif self._ERR_REXP.search(data):
+            r = (-1, self.MSGS[1])
+        else: 
+            r = (1, data)
+        self.result = r
+
+    def _get_link_media_format(self, url):
+        return "m4a" if (self._YOUTUBE_MEDIA_TYPE == "m4a" and "youtube." in url) else "mp4"
+
+    def _background_process(self):
+        while True:
+            try:
+                index = self._process.expect([self._STATUS_REXP,
+                                                pexpect.TIMEOUT,
+                                                pexpect.EOF,
+                                                self._STATUS_REXP])
+                if index == 1: continue
+                elif index in (2, 3):
+                    # ******* KenT added
+                    self.end_signal = True
+                    break
+                else:
+                    self._response()
+                    self.end_signal = True
+            except Exception:
+                break
+            sleep(0.05)
+
+    def _spawn_thread(self):
+        self.end_signal = False
+        self._position_thread = Thread(target=self._background_process)
+        self._position_thread.start()
+
+    def retrieve_media_url(self, url):
+        ytcmd = self._YTLAUNCH_CMD % (self._PREFERED_TRANSCODER, self._get_link_media_format(url), url)
+        self._process = pexpect.spawn(ytcmd)
+        self._spawn_thread()
+
+    def retrieve_youtube_playlist(self, playlist_url):
+        ytcmd = self._YTLAUNCH_PLST_CMD % (self._PREFERED_TRANSCODER, playlist_url)
+        self._process = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
+        self._spawn_thread()
+ 
+    def whether_to_use_youtube_dl(self,url):
+        return "http" in url and any(re.match("(http(?:s){0,1}://(?:\w\w\w\.){0,1}" + s + "\.)", url) for s in self._SUPPORTED_SERVICES)
+
+    def is_running(self):
+        return self._process.isalive()
+
+    def set_options(self, options, supported_services=False):
+        self._YTLAUNCH_CMD=options.ytdl_location + self._YTLAUNCH_ARGS_FORMAT
+        self._YTLAUNCH_PLST_CMD=options.ytdl_location + self._YTLAUNCH_PLST_ARGS_FORMAT
+        self._PREFERED_TRANSCODER=options.ytdl_prefered_transcoder
+        self._YOUTUBE_MEDIA_TYPE=options.youtube_media_format
 
 
 
@@ -326,14 +361,18 @@ class TBOPlayer:
          - omx_playing - playing a track, commands can be sent
          - omx_ending - omx is doing its termination, commands cannot be sent
     """
-
+    
     def init_play_state_machine(self):
 
         self._OMX_CLOSED = "omx_closed"
         self._OMX_STARTING = "omx_starting"
         self._OMX_PLAYING = "omx_playing"
         self._OMX_ENDING = "omx_ending"
-        self._SUPPORTED_MEDIA_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3gp",".wav",".avi",".mp4",".mkv",".ogv")
+
+        self._YTDL_CLOSED = "ytdl_closed"
+        self._YTDL_STARTING = "ytdl_starting"
+        self._YTDL_WORKING = "ytdl_working"
+        self._YTDL_ENDING = "ytdl_ending"
 
         # what to do next signals
         self.break_required_signal=False         # signal to break out of Repeat or Playlist loop
@@ -346,8 +385,13 @@ class TBOPlayer:
         self.quit_sent_signal = False          # signal  that q has been sent
         self.paused=False
 
+        # playing a track signals
+        self.ytdl_state=self._YTDL_CLOSED
+        self.stop_ytdl_required_signal=False
+        self.quit_ytdl_sent_signal = False          # signal  that q has been sent
 
-# kick off the state machine by playing a track
+
+    # kick off the state machine by playing a track
     def play(self):
         if  self.play_state==self._OMX_CLOSED:
             if self.playlist.track_is_selected():
@@ -376,13 +420,16 @@ class TBOPlayer:
         elif self.play_state == self._OMX_STARTING:
             self.monitor("      State machine: " + self.play_state)
             # if omxplayer is playing the track change to play state
-            if self.omx.start_play_signal==True:
-                self.monitor("            <start play signal received from omx")
-                self.omx.start_play_signal=False
-                self.play_state=self._OMX_PLAYING
-                self.monitor("      State machine: omx_playing started")
-                #if self.debug:
-                   # pprint(self.omx.__dict__)
+            try:
+                if self.omx.start_play_signal==True:
+                    self.monitor("            <start play signal received from omx")
+                    self.omx.start_play_signal=False
+                    self.play_state=self._OMX_PLAYING
+                    self.monitor("      State machine: omx_playing started")
+                    #if self.debug:
+                       # pprint(self.omx.__dict__)
+            except:
+                self.monitor("      OMXPlayer not started yet")
             self.root.after(500, self.play_state_machine)
 
         elif self.play_state == self._OMX_PLAYING:
@@ -415,7 +462,6 @@ class TBOPlayer:
                 self.play_state = self._OMX_CLOSED
             self.do_ending()
             self.root.after(500, self.play_state_machine)
-
 
     # do things in each state
  
@@ -535,7 +581,96 @@ class TBOPlayer:
             self.monitor("What next, Starting random track")
             self.random_next_track()
             self.play()
-            return     
+            return
+
+
+    def go_ytdl(self,url,playlist=False):
+        if self.ytdl_state==self._YTDL_CLOSED:
+                #initialise all the state machine variables
+                self.ytdl_state=self._YTDL_STARTING
+                self.ytdl.start_signal=True
+                
+                if not playlist:
+                    self.ytdl.retrieve_media_url(url)
+                else:
+                    self.ytdl.retrieve_youtube_playlist(url)
+                self.ytdl_state_machine()
+                self.root.after(500, self.ytdl_state_machine)
+
+
+    def ytdl_state_machine(self):
+        if self.ytdl_state == self._YTDL_CLOSED:
+            self.monitor("      Ytdl state machine: " + self.ytdl_state)
+            return 
+                
+        elif self.ytdl_state == self._YTDL_STARTING:
+            self.monitor("      Ytdl state machine: " + self.ytdl_state)
+            # if omxplayer is playing the track change to play state
+            if self.ytdl.start_signal==True:
+                self.monitor("            <start play signal received from youtube-dl")
+                self.ytdl.start_signal=False
+                self.ytdl_state=self._YTDL_WORKING
+                self.monitor("      Ytdl state machine: "+self.ytdl_state)
+            self.root.after(500, self.ytdl_state_machine)
+
+        elif self.ytdl_state == self._YTDL_WORKING:
+            # youtube-dl reports it is terminating so change to ending state
+            if self.ytdl.end_signal == True:
+                self.ytdl_process_result()
+                self.monitor("            <end play signal received from youtube-dl")
+                self.ytdl_state =self._YTDL_ENDING
+            self.root.after(500, self.ytdl_state_machine)
+
+        elif self.ytdl_state == self._YTDL_ENDING:
+            self.monitor("      Ytdl state machine: " + self.ytdl_state)
+            # if spawned process has closed can change to closed state
+            self.monitor ("      Ytdl state machine : is process running -  "  + str(self.ytdl.is_running()))
+            if self.ytdl.is_running() ==False:
+                self.monitor("            <youtube-dl process is dead")
+                self.ytdl_state = self._YTDL_CLOSED
+            self.root.after(500, self.ytdl_state_machine)
+
+
+    def ytdl_process_result(self):
+        if self.ytdl.result[0] == 1:
+            if self.ytdl._LINK_REXP.match(self.ytdl.result[1]):
+                track = self.playlist.waiting_track()
+                result = (self.ytdl.result[1], track[1][1].replace(self.ytdl.WAIT_TAG,""))
+                self.playlist.replace(track[0], result)
+                self.playlist.select(track[0])               
+                self.display_selected_track(track[0])
+                self.refresh_playlist_display()
+                if self.play_state==self._OMX_STARTING:
+                    self.start_omx(result[0],skip_ytdl_check=True)
+            else:
+                try:
+                    self.process_yt_playlist(loads(self.ytdl.result[1]))
+                except Exception as e:
+                    self.display_selected_track_title.set(self.ytdl.MSGS[2])
+        else:
+            self.display_selected_track_title.set(self.ytdl.result[1])
+            return
+
+
+    def process_yt_playlist(self,ytplst):
+        for entry in ytplst['entries']:
+            if self.options.youtube_media_format == 'mp4':
+                media_url = entry['url']
+            else:
+                preference = -100
+                for format in entry['formats']:
+                    if format['ext'] == 'm4a':
+                        if format['preference'] and format['preference'] > preference:
+                            preference = format['preference']
+                            media_url = format['url']
+                        elif not format['preference']:
+                            media_url = format['url']
+            self.playlist.append([media_url,entry['title'],'',''])
+            # add title to playlist display
+            self.track_titles_display.insert(END, entry['title']) 
+            # and set it as the selected track
+        self.playlist.select(self.playlist.length() - len(ytplst['entries']))
+        self.display_selected_track(self.playlist.selected_track_index())
 
  
 
@@ -543,17 +678,18 @@ class TBOPlayer:
 # WRAPPER FOR JBAITER'S PYOMXPLAYER
 # ***************************************
 
-
-    def start_omx(self,track):
+    def start_omx(self, track, skip_ytdl_check=False):
         """ Loads and plays the track"""
-
-        if ("http" in track and self.options.download_media_url_upon == "play" and YTDL.whether_to_use_youtube_dl(track)):
-            ytdl_result = YTDL.retrieve_media_url(track)
-            if ytdl_result[0] == 1:
-                track = ytdl_result[1]
-            else:
-                self.display_selected_track_title.set(ytdl_result[1])
-                return
+        if not skip_ytdl_check and self.ytdl.whether_to_use_youtube_dl(track):
+            self.go_ytdl(track)
+            index = self.playlist.selected_track_index()
+            track = self.playlist.selected_track()
+            track = (track[0], self.ytdl.WAIT_TAG+track[1])
+            self.playlist.replace(index, track)
+            self.playlist.select(index)               
+            self.display_selected_track(index)
+            self.refresh_playlist_display()
+            return
 
         ttrack= "'"+ track.replace("'","'\\''") + "'"
         opts= self.options.omx_user_options + " "+ self.options.omx_audio_option + " " + self.options.omx_subtitles_option + " "
@@ -597,11 +733,9 @@ class TBOPlayer:
 
     def __init__(self):
 
-
         # initialise options class and do initial reading/creation of options
         self.options=Options()
 
- 
         #initialise the play state machine
         self.init_play_state_machine()
 
@@ -622,9 +756,12 @@ class TBOPlayer:
 
         OMXPlayer.set_omx_location(self.options.omx_location)
 
+        # start and configure ytdl object
         f = open(os.path.dirname(os.path.realpath(sys.argv[0])) + "/yt-dl_supported_sites", "r")
-        YTDL.set_options(self.options, supported_services=loads(f.read()))
+        self.ytdl = Ytdl(self.options, loads(f.read()))
         f.close()
+
+        self._SUPPORTED_MEDIA_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3gp",".wav",".avi",".mp4",".mkv",".ogv")
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -786,7 +923,7 @@ class TBOPlayer:
         """edit the options then read them from file"""
         eo = OptionsDialog(self.root, self.options.options_file,'Edit Options')
         self.options.read(self.options.options_file)
-        YTDL.set_options(self.options)
+        self.ytdl.set_options(self.options)
         OMXPlayer.set_omx_location(self.options.omx_location)
 
 
@@ -1002,13 +1139,10 @@ class TBOPlayer:
         else:
             d.result = [d.result[1],d.result[0]]
         if d.result[0] != '':
-            if self.options.download_media_url_upon == "add" and YTDL.whether_to_use_youtube_dl(d.result[1]):
-                ytld_result = YTDL.retrieve_media_url(d.result[1])
-                if ytld_result[0] == 1:
-                    d.result[0] = ytld_result[1]
-                else:
-                    self.display_selected_track_title.set(ytld_result[1])
-                    return
+            if self.options.download_media_url_upon == "add" and self.ytdl.whether_to_use_youtube_dl(d.result[0]):
+                self.go_ytdl(d.result[0])
+                d.result[1] = self.ytdl.WAIT_TAG + d.result[1]
+
             # append it to the playlist
             self.playlist.append(d.result)
             # add title to playlist display
@@ -1124,47 +1258,13 @@ class TBOPlayer:
             self.display_time.set("")
 
 
-    def process_yt_playlist(self,ytplst):
-        for entry in ytplst['entries']:
-            if self.options.youtube_media_format == 'mp4':
-                media_url = entry['url']
-            else:
-                preference = -100
-                for format in entry['formats']:
-                    if format['ext'] == 'm4a':
-                        if format['preference'] and format['preference'] > preference:
-                            preference = format['preference']
-                            media_url = format['url']
-                        elif not format['preference']:
-                            media_url = format['url']
-            #print "         Entry url: " + mediaurl
-            self.playlist.append([media_url,entry['title'],'',''])
-            # add title to playlist display
-            self.track_titles_display.insert(END, entry['title']) 
-            # and set it as the selected track
-        self.playlist.select(self.playlist.length() - len(ytplst['entries']))
-        self.display_selected_track(self.playlist.selected_track_index())
-
-
     def load_yt_playlist(self):
         d = LoadYtPlaylistDialog(self.root)
-        if not d.result:
+        if not d.result or not "list=" in d.result:
             return
-
-        if "list=" in d.result:
-            try:
-                ytdl_result = YTDL.retrieve_youtube_playlist(d.result)
-                if ytdl_result[0] == 1:
-                    self.process_yt_playlist( loads(ytdl_result[1]) )
-                else:
-                    self.display_selected_track_title.set(ytdl_result[1])
-            except Exception as e:
-                self.display_selected_track_title.set("Problem retrieving content. Content may have been truncated.")
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
         else:
-            return
+            self.go_ytdl(d.result,playlist=True)
+            self.display_selected_track_title.set("Wait. Loading playlist content...")
 
      
     def save_list(self):
@@ -1360,30 +1460,30 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.e_omx_options = Entry(master)
         self.e_omx_options.grid(row=14, column=2)
         self.e_omx_options.insert(0,config.get('config','omx_options',0))
-	
-	self.subtitles_var = StringVar()
+
+        self.subtitles_var = StringVar()
         self.cb_subtitles = Checkbutton(master,text="Subtitles",variable=self.subtitles_var, onvalue="on",offvalue="off")
         self.cb_subtitles.grid(row=15, column=2, columnspan=2, sticky = W)
         if config.get('config','subtitles',0)=="on":
             self.cb_subtitles.select()
         else:
             self.cb_subtitles.deselect()
-	
-	Label(master, text="").grid(row=16, column=2, sticky=W)
-	Label(master, text="youtube-dl location:").grid(row=17, column=2, sticky=W)
+
+        Label(master, text="").grid(row=16, column=2, sticky=W)
+        Label(master, text="youtube-dl location:").grid(row=17, column=2, sticky=W)
         self.e_ytdl_location = Entry(master)
         self.e_ytdl_location.grid(row=18, column=2)
         self.e_ytdl_location.insert(0,config.get('config','ytdl_location',0))
-	Label(master, text="").grid(row=19, column=2, sticky=W)
-	Label(master, text="youtube-dl transcoder:").grid(row=20, column=2, sticky=W)
-	self.ytdl_prefered_transcoder_var=StringVar()
+        Label(master, text="").grid(row=19, column=2, sticky=W)
+        Label(master, text="youtube-dl transcoder:").grid(row=20, column=2, sticky=W)
+        self.ytdl_prefered_transcoder_var=StringVar()
         self.ytdl_prefered_transcoder_var.set(config.get('config','ytdl_prefered_transcoder',0))
         rb_avconv=Radiobutton(master, text="avconv", variable=self.ytdl_prefered_transcoder_var, value="avconv")
         rb_avconv.grid(row=21,column=2,sticky=W)
         rb_ffmpeg=Radiobutton(master, text="ffmpeg", variable=self.ytdl_prefered_transcoder_var, value="ffmpeg")
         rb_ffmpeg.grid(row=22,column=2,sticky=W)
-	
-	Label(master, text="").grid(row=51, sticky=W)
+
+        Label(master, text="").grid(row=51, sticky=W)
         self.debug_var = StringVar()
         self.cb_debug = Checkbutton(master,text="Debug",variable=self.debug_var, onvalue="on",offvalue="off")
         self.cb_debug.grid(row=52,columnspan=2, sticky = W)
@@ -1522,7 +1622,6 @@ class PlayList():
         self._tracks = []      # list of track titles
         self._selected_track = PlayList._new_track
         self._selected_track_index =  -1 # index of currently selected track
-        self._tracks=[]     #playlist, stored as a list of lists
 
     def length(self):
         return self._num_tracks
@@ -1573,6 +1672,12 @@ class PlayList():
             self._selected_track = self._tracks[index]
             self.selected_track_location = self._selected_track[PlayList.LOCATION]
             self.selected_track_title = self._selected_track[PlayList.TITLE]
+
+    def waiting_track(self):
+        for i in range(len(self._tracks)):
+            track = self._tracks[i]
+            if Ytdl.WAIT_TAG in track[1]:
+                return (i, track)
 
 
 
