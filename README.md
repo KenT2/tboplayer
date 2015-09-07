@@ -127,3 +127,8 @@ Removing the selected track can be done by pressing the Delete key.
 During playing of a track a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer. A list  of commands is provided in the help menu. Note: some of the commands are not implemented by omxplayer.
 
 If you have problems playing a track try it from the command line with omxplayer -ohdmi file or omxplayer -o local file
+
+Contributors:
+KenT2 - Original idea and implementation
+popiazaza - gui enhancements
+heniotierra - gui enhancements and youtube-dl integration
