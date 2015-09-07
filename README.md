@@ -36,9 +36,9 @@ From a terminal window open in your home directory type:
 
 There should now be a directory 'KenT2-tboplayer-xxxx' in your home directory. Rename the directory to tboplayer
 
-Open the tboplayer directory and from a terminal opened in THIS directory:
+Open a terminal window and type:
 
-	python tboplayer.py
+        python /path/to/tboplayer.py
 
 TBOPlayer is developed on Raspbian Wheezy with python 2.7
 
