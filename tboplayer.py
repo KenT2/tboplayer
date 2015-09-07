@@ -894,6 +894,12 @@ class TBOPlayer:
         scrollbar.grid(row = 4, column=6,sticky='ns')
         self.track_titles_display.config(yscrollcommand=scrollbar.set)
 
+        for file in sys.argv[1:]:
+            if (os.path.isfile(file) and self.is_file_supported(file)):
+                self.file = file
+                self.file_pieces = self.file.split("/")
+                self.playlist.append([self.file, self.file_pieces[-1],'',''])
+                self.track_titles_display.insert(END, self.file_pieces[-1])
 
 #and display them going with Tkinter event loop
         self.root.mainloop()
