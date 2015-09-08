@@ -10,7 +10,7 @@ You can use the installer that comes with TBOPlayer, or install it manually.
 From a terminal window open in your home directory, type:
 
         # skip this first line if you have already downloaded and extracted the tarball
-	wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
+        wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
         cd ~/KenT2-tboplayer-* && chmod +x setup.sh && ./setup.sh
 	
 After that, TBOPlayer will have be installed on your system. To run it, just type 'tboplayer', or use the icon created in your Desktop.
