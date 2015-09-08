@@ -49,7 +49,6 @@ TODO (maybe)
 Scroll display list with up/down cursor key and select with Return
 sort out black border around some videos
 gapless playback, by running two instances of pyomxplayer
-A proper installer
 read and write m3u and pls playlists
 Fit to every screen size (also resizeable)
 

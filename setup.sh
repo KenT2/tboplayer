@@ -2,14 +2,14 @@
 echo "Installing tboplayer and its dependencies..."
 
 echo "* Updating distro packages database... This may take some seconds."
-#sudo apt-get update >/dev/null 2>&1
+sudo apt-get update >/dev/null 2>&1
 command -v omxplayer >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
     echo "* Installing omxplayer..."
-    sudo apt-get install omxplayer >/dev/null 2>&1
+    sudo apt-get install -y omxplayer >/dev/null 2>&1
 else
     echo "* Updating omxplayer..."
-    sudo apt-get upgrade >/dev/null 2>&1
+    sudo apt-get -y upgrade >/dev/null 2>&1
 fi
 
 # install pexpect it's if not installed
@@ -21,6 +21,16 @@ if [ $? -eq 1 ]; then
     cd ~/pexpect-2.3
     sudo python ./setup.py install >/dev/null 2>&1
     cd ..
+fi
+
+# install avconv and ffmpeg if either of them is not installed
+command -v avconv >/dev/null 2>&1
+AVCONV_INSTALLED=$?
+command -v ffmpeg >/dev/null 2>&1
+FFMPEG_INSTALLED=$?
+if [ ACONV_INSTALLED -eq 1 ] || [ FFMPEG_INSTALLED -eq 1]; then
+    echo "* Installing avconv and ffmpeg..."
+    sudo apt-get install -y libav-tools ffmpeg >/dev/null 2>&1
 fi
 
 # install youtube-dl it's if not installed
@@ -39,20 +49,22 @@ if [ $? -eq 1 ]; then
     mkdir ~/bin
 fi
 
-# install tboplayer 'shortcut' in /home/<user>/bin
-echo "* Installing tboplayer..."
-FAKE_BIN=~/bin/tboplayer
-cd $FAKE_BIN >dev/null 2>&1
+# install fake tboplayer executable in /home/<user>/bin
+command -v tboplayer >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
+    echo "* Installing tboplayer..."
+    FAKE_BIN=~/bin/tboplayer
     mv ~/KenT2-tboplayer-* ~/tboplayer
     echo '#!/bin/bash' >> $FAKE_BIN
     echo 'python ~/tboplayer/tboplayer.py' >> $FAKE_BIN
     chmod +x $FAKE_BIN
 fi
 
+# install tboplayer 'shortcut' in /home/<user>/bin
 DESKTOP_ENTRY=~/Desktop/tboplayer.desktop
 $DESKTOP_ENTRY >/dev/null 2>&1
 if [ $? -eq 127 ]; then 
+    echo "* Creating shortcut in desktop..."
     echo '[Desktop Entry]' >> $DESKTOP_ENTRY
     echo 'Name=TBOPlayer' >> $DESKTOP_ENTRY
     echo 'Comment=UI for omxplayer' >> $DESKTOP_ENTRY
@@ -64,8 +76,8 @@ fi
 
 echo "* Installation finished."
 echo "*"
-echo "* If all went as expected, TBOPlayer is now installed on your system." 
-echo "* To run it, just type 'tboplayer', or use the icon created in your Desktop."
+echo "* If all went as expected, TBOPlayer is now installed in your system." 
+echo "* To run it, just type 'tboplayer', or use the icon created on your Desktop."
 echo " Good bye. ;)"
 
 exit;
