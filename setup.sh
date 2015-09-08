@@ -1,6 +1,6 @@
 #!/bin/bash
-echo "Installing tboplayer and its dependencies..."
-
+echo "Installing TBOPlater and its dependencies..."
+echo "*"
 echo "* Updating distro packages database... This may take some seconds."
 sudo apt-get update >/dev/null 2>&1
 command -v omxplayer >/dev/null 2>&1
@@ -28,7 +28,7 @@ command -v avconv >/dev/null 2>&1
 AVCONV_INSTALLED=$?
 command -v ffmpeg >/dev/null 2>&1
 FFMPEG_INSTALLED=$?
-if [ ACONV_INSTALLED -eq 1 ] || [ FFMPEG_INSTALLED -eq 1]; then
+if [ $AVCONV_INSTALLED -eq 1 ] || [ $FFMPEG_INSTALLED -eq 1 ]; then
     echo "* Installing avconv and ffmpeg..."
     sudo apt-get install -y libav-tools ffmpeg >/dev/null 2>&1
 fi
@@ -77,7 +77,9 @@ fi
 echo "* Installation finished."
 echo "*"
 echo "* If all went as expected, TBOPlayer is now installed in your system." 
-echo "* To run it, just type 'tboplayer', or use the icon created on your Desktop."
-echo " Good bye. ;)"
+echo "* To run it, type 'tboplayer', or use the shortcut created on your Desktop."
+echo "* Oh, just keep the tboplayer folder in your /home/<user>/ directory, alright?"
+echo "*"
+echo "Good bye! ;)"
 
 exit;
