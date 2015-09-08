@@ -3,16 +3,17 @@ A GUI interface using jbaiter's pyomxplayer wrapper to control omxplayer
 INSTALLATION
 ============
 
-Instructions for installation on the official Raspbian image
+Instructions for installation on the official Raspbian image:
 
-You can use the installer that comes with TBOPlayer, or install it manually
+You can use the installer that comes with TBOPlayer, or install it manually.
 
-To use the installer, open a terminal and type:
+From a terminal window open in your home directory, type:
 
+        # skip this first line if you have already downloaded and extracted the tarball
 	wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
-	cd KenT2-tboplayer-* && chmod +x setup.sh && ./setup.sh
+        cd ~/KenT2-tboplayer-* && chmod +x setup.sh && ./setup.sh
 	
-After that, TBOPlayer will be installed on your system. To run it, just type 'tboplayer', or use the icon created in your Desktop.
+After that, TBOPlayer will have be installed on your system. To run it, just type 'tboplayer', or use the icon created in your Desktop.
 
 If you prefer to install it manually, do as follows:
 	
@@ -24,13 +25,12 @@ Ensure you have the latest version of omxplayer by typing the following in a ter
         sudo apt-get update
         sudo apt-get upgrade
 
-
 Download and Install pexpect
 -----------------------------
 
 This is specified here http://www.noah.org/wiki/pexpect#Download_and_Installation and copied below:
 
-From a terminal window open in your home directory type:
+From a terminal window open in your home directory, type:
 
         wget http://pexpect.sourceforge.net/pexpect-2.3.tar.gz
         tar xzf pexpect-2.3.tar.gz
@@ -40,11 +40,11 @@ From a terminal window open in your home directory type:
 Download and Install TBOPlayer
 ------------------------------
 
-From a terminal window open in your home directory type:
+From a terminal window open in your home directory, type:
 
          wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
 
-There should now be a directory 'KenT2-tboplayer-xxxx' in your home directory. Rename the directory to tboplayer
+There should now be a directory 'KenT2-tboplayer-xxxx' in your home directory. Rename the directory to tboplayer.
 
 Open a terminal window and type:
 
@@ -61,12 +61,12 @@ Download and Install youtube-dl
 
 This is specified here https://github.com/rg3/youtube-dl/#installation and copied below:
 
-From a terminal window open in your home directory type:
+From a terminal window open in your home directory, type:
 
         sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl
         sudo chmod a+rx /usr/local/bin/youtube-dl
 	
-Or update it with 
+Or update it with:
 
         sudo youtube-dl -U
 	
