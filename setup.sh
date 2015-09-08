@@ -78,7 +78,7 @@ echo "* Installation finished."
 echo "*"
 echo "* If all went as expected, TBOPlayer is now installed in your system." 
 echo "* To run it, type 'tboplayer', or use the shortcut created on your Desktop."
-echo "* Oh, just keep the tboplayer folder in your /home/<user>/ directory, alright?"
+echo "* Oh, just keep the tboplayer folder in your "$HOME" directory, alright?"
 echo "*"
 echo "Good bye! ;)"
 
