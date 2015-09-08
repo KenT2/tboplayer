@@ -9,7 +9,7 @@ if [ $? -eq 1 ]; then
     sudo apt-get install -y omxplayer >/dev/null 2>&1
 else
     echo "* Updating omxplayer..."
-    sudo apt-get -y upgrade >/dev/null 2>&1
+    sudo apt-get -y --only-upgrade install omxplayer >/dev/null 2>&1
 fi
 
 # install pexpect it's if not installed
