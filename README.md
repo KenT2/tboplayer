@@ -11,9 +11,9 @@ To use the installer, from a terminal window open in your home directory, type:
 
         # skip this first line if you have already downloaded and extracted the tarball
         wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
-        cd ~/KenT2-tboplayer-* && chmod +x setup.sh && ./setup.sh
+        cd KenT2-tboplayer-* && chmod +x setup.sh && ./setup.sh
 	
-After that, TBOPlayer will have be installed on your system. To run it, just type 'tboplayer', or use the shortcut created in your Desktop.
+After that, TBOPlayer will have been installed on your system. To run it, just type 'tboplayer', or use the shortcut created in your Desktop.
 
 If you prefer to install it manually, do as follows:
 	
@@ -32,9 +32,8 @@ This is specified here http://www.noah.org/wiki/pexpect#Download_and_Installatio
 
 From a terminal window open in your home directory, type:
 
-        wget http://pexpect.sourceforge.net/pexpect-2.3.tar.gz
-        tar xzf pexpect-2.3.tar.gz
-        cd pexpect-2.3
+        wget https://github.com/pexpect/pexpect/tarball/master -O - | tar xz
+        cd ~/pexpect-pexpect*
         sudo python ./setup.py install
 
 Download and Install TBOPlayer
@@ -42,7 +41,7 @@ Download and Install TBOPlayer
 
 From a terminal window open in your home directory, type:
 
-         wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
+        wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
 
 There should now be a directory 'KenT2-tboplayer-xxxx' in your home directory. Rename the directory to tboplayer.
 

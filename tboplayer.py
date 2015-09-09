@@ -266,8 +266,10 @@ class Ytdl:
     def _response(self):
         data = self._process.before
         if self._WRN_REXP.search(data):
+            # warning message
             r = (0, self.MSGS[0])
         elif self._ERR_REXP.search(data):
+            # error message
             r = (-1, self.MSGS[1])
         else: 
             r = (1, data)
@@ -310,7 +312,7 @@ class Ytdl:
         self._spawn_thread()
  
     def whether_to_use_youtube_dl(self,url):
-        return "http" in url and any(re.match("(http(?:s){0,1}://(?:\w\w\w\.){0,1}" + s + "\.)", url) for s in self._SUPPORTED_SERVICES)
+        return url[:4] == "http" and any(re.match("(http(?:s){0,1}://(?:\w\w\w\.){0,1}" + s + "\.)", url) for s in self._SUPPORTED_SERVICES)
 
     def is_running(self):
         return self._process.isalive()
@@ -385,7 +387,6 @@ class TBOPlayer:
 
         # playing a track signals
         self.ytdl_state=self._YTDL_CLOSED
-        self.stop_ytdl_required_signal=False
         self.quit_ytdl_sent_signal = False          # signal  that q has been sent
 
 
@@ -427,7 +428,7 @@ class TBOPlayer:
                     #if self.debug:
                        # pprint(self.omx.__dict__)
             except:
-                self.monitor("      OMXPlayer not started yet")
+                self.monitor("      OMXPlayer not started yet.")
             self.root.after(500, self.play_state_machine)
 
         elif self.play_state == self._OMX_PLAYING:
@@ -464,12 +465,12 @@ class TBOPlayer:
     # do things in each state
  
     def do_playing(self):
-            # we are playing so just update time display
-            # self.monitor("Position: " + str(self.omx.position))
-            if self.paused == False:
-                self.display_time.set(self.time_string(self.omx.position))
-            else:
-                self.display_time.set("Paused")           
+        # we are playing so just update time display
+        # self.monitor("Position: " + str(self.omx.position))
+        if self.paused == False:
+            self.display_time.set(self.time_string(self.omx.position))
+        else:
+            self.display_time.set("Paused")           
 
     def do_starting(self):
         self.display_time.set("Starting")
@@ -481,7 +482,6 @@ class TBOPlayer:
 
 
     # respond to asynchrous user input and send signals if necessary
-    
     def play_track(self):
         """ respond to user input to play a track, ignore it if already playing
               needs to start playing and not send a signal as it is this that triggers the state machine.
@@ -584,16 +584,17 @@ class TBOPlayer:
 
     def go_ytdl(self,url,playlist=False):
         if self.ytdl_state==self._YTDL_CLOSED:
-                #initialise all the state machine variables
-                self.ytdl_state=self._YTDL_STARTING
-                self.ytdl.start_signal=True
-                
-                if not playlist:
-                    self.ytdl.retrieve_media_url(url)
-                else:
-                    self.ytdl.retrieve_youtube_playlist(url)
-                self.ytdl_state_machine()
-                self.root.after(500, self.ytdl_state_machine)
+            #initialise all the state machine variables
+            self.quit_ytdl_sent_signal = False
+            self.ytdl_state=self._YTDL_STARTING
+            self.ytdl.start_signal=True
+          
+            if not playlist:
+                self.ytdl.retrieve_media_url(url)
+            else:
+                self.ytdl.retrieve_youtube_playlist(url)
+            self.ytdl_state_machine()
+            self.root.after(500, self.ytdl_state_machine)
 
 
     def ytdl_state_machine(self):
@@ -612,9 +613,10 @@ class TBOPlayer:
             self.root.after(500, self.ytdl_state_machine)
 
         elif self.ytdl_state == self._YTDL_WORKING:
-            # youtube-dl reports it is terminating so change to ending state
-            if self.ytdl.end_signal == True:
-                self.ytdl_process_result()
+            # youtube-dl reports it is terminating or user has removed a waiting track so change to ending state
+            if self.ytdl.end_signal == True or self.quit_ytdl_sent_signal == True:
+                if self.ytdl.end_signal == True:
+                    self.treat_ytdl_result()
                 self.monitor("            <end play signal received from youtube-dl")
                 self.ytdl_state =self._YTDL_ENDING
             self.root.after(500, self.ytdl_state_machine)
@@ -622,35 +624,44 @@ class TBOPlayer:
         elif self.ytdl_state == self._YTDL_ENDING:
             self.monitor("      Ytdl state machine: " + self.ytdl_state)
             # if spawned process has closed can change to closed state
-            self.monitor ("      Ytdl state machine : is process running -  "  + str(self.ytdl.is_running()))
-            if self.ytdl.is_running() ==False:
+            self.monitor("      Ytdl state machine: is process running - "  + str(self.ytdl.is_running()))
+            if self.ytdl.is_running() or self.quit_ytdl_sent_signal == True:
                 self.monitor("            <youtube-dl process is dead")
                 self.ytdl_state = self._YTDL_CLOSED
             self.root.after(500, self.ytdl_state_machine)
 
 
-    def ytdl_process_result(self):
+    def treat_ytdl_result(self):
         if self.ytdl.result[0] == 1:
             if self.ytdl._LINK_REXP.match(self.ytdl.result[1]):
-                track = self.playlist.waiting_track()
-                result = (self.ytdl.result[1], track[1][1].replace(self.ytdl.WAIT_TAG,""))
-                self.playlist.replace(track[0], result)
-                self.playlist.select(track[0])               
-                self.display_selected_track(track[0])
-                self.refresh_playlist_display()
-                if self.play_state==self._OMX_STARTING:
-                    self.start_omx(result[0],skip_ytdl_check=True)
+                try:
+                    track = self.playlist.waiting_track()
+                    result = (self.ytdl.result[1], track[1][1].replace(self.ytdl.WAIT_TAG,""))
+                    self.playlist.replace(track[0], result)
+                    self.playlist.select(track[0])               
+                    self.display_selected_track(track[0])
+                    self.refresh_playlist_display()
+                    if self.play_state==self._OMX_STARTING:
+                        self.start_omx(result[0],skip_ytdl_check=True)
+                except:
+                    # no need to treat this
+                    return
             else:
                 try:
-                    self.process_yt_playlist(loads(self.ytdl.result[1]))
-                except Exception as e:
+                    self.treat_youtube_playlist(loads(self.ytdl.result[1]))
+                except:
                     self.display_selected_track_title.set(self.ytdl.MSGS[2])
         else:
+            if self.ytdl.result[0] == -1:
+                index = self.playlist.waiting_track()[0]
+                self.track_titles_display.delete(index,index)
+                self.playlist.remove(index)
+                self.blank_selected_track()
             self.display_selected_track_title.set(self.ytdl.result[1])
             return
 
 
-    def process_yt_playlist(self,ytplst):
+    def treat_youtube_playlist(self,ytplst):
         for entry in ytplst['entries']:
             if self.options.youtube_media_format == 'mp4':
                 media_url = entry['url']
@@ -1164,11 +1175,16 @@ class TBOPlayer:
     def remove_track(self,*event):
         if  self.playlist.length()>0 and self.playlist.track_is_selected():
             index= self.playlist.selected_track_index()
+            waiting_track = self.playlist.waiting_track()
+            if waiting_track and waiting_track[0] == index and self.ytdl_state==self._YTDL_WORKING:
+                # tell ytdl_state_machine to stop
+                self.quit_ytdl_sent_signal = True  
             self.track_titles_display.delete(index,index)
             self.playlist.remove(index)
             self.blank_selected_track()
             self.display_time.set("")
-            
+                
+
 
     def edit_track(self):
         if self.playlist.track_is_selected():
@@ -1176,12 +1192,17 @@ class TBOPlayer:
             d = EditTrackDialog(self.root,"Edit Track",
                                 "Title", self.playlist.selected_track_title,
                                 "Location", self.playlist.selected_track_location)
-            if d.result != None:
+            if d.result[1] != '':
+                if self.selected_track()[1][:6] != self.ytdl.WAIT_TAG and self.ytdl.whether_to_use_youtube_dl(d.result[1]):
+                    self.go_ytdl(d.result[1])
+                    d.result[0] = self.ytdl.WAIT_TAG + d.result[0]
                 d.result = (d.result[1],d.result[0])
                 self.playlist.replace(index, d.result)
                 self.playlist.select(index)               
                 self.display_selected_track(index)
                 self.refresh_playlist_display()
+             
+        
 
 
     def select_track(self, event):
@@ -1572,7 +1593,7 @@ class EditTrackDialog(tkSimpleDialog.Dialog):
     def apply(self):
         first = self.field1.get()
         second = self.field2.get()
-        self.result = first, second,'',''
+        self.result = [first, second,'','']
         return self.result
 
 
@@ -1661,12 +1682,12 @@ class PlayList():
 
 
     def clear(self):
-            self._tracks = []
-            self._num_tracks=0
-            self._track_locations = []
-            self._selected_track_index=-1
-            self.selected_track_title=""
-            self.selected_track_location=""
+        self._tracks = []
+        self._num_tracks=0
+        self._track_locations = []
+        self._selected_track_index=-1
+        self.selected_track_title=""
+        self.selected_track_location=""
 
 
     def replace(self,index,replacement):
@@ -1684,9 +1705,9 @@ class PlayList():
 
     def waiting_track(self):
         for i in range(len(self._tracks)):
-            track = self._tracks[i]
-            if Ytdl.WAIT_TAG in track[1]:
-                return (i, track)
+            if self._tracks[i][1][:6] == Ytdl.WAIT_TAG:
+                return (i, self._tracks[i])
+        return False
 
 
 
