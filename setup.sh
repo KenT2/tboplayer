@@ -3,6 +3,7 @@ echo "Installing TBOPlater and its dependencies..."
 echo "*"
 echo "* Updating distro packages database... This may take some seconds."
 sudo apt-get update >/dev/null 2>&1
+
 command -v omxplayer >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
     echo "* Installing omxplayer..."
@@ -16,9 +17,8 @@ fi
 python -c 'import pexpect' >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
     echo "* Installing pexpect..."
-    wget -P ~ http://pexpect.sourceforge.net/pexpect-2.3.tar.gz >/dev/null 2>&1
-    tar xzf ~/pexpect-2.3.tar.gz #>/dev/null
-    cd ~/pexpect-2.3
+    wget https://github.com/pexpect/pexpect/tarball/master -O - | tar xz >/dev/null 2>&1
+    cd ~/pexpect-pexpect*
     sudo python ./setup.py install >/dev/null 2>&1
     cd ..
 fi
@@ -30,8 +30,10 @@ command -v ffmpeg >/dev/null 2>&1
 FFMPEG_INSTALLED=$?
 if [ $AVCONV_INSTALLED -eq 1 ] || [ $FFMPEG_INSTALLED -eq 1 ]; then
     echo "* Installing avconv and ffmpeg..."
-    sudo apt-get install -y libav-tools ffmpeg >/dev/null 2>&1
+else
+    echo "* Updating avconv and ffmpeg..."
 fi
+sudo apt-get -y --only-upgrade install libav-tools ffmpeg >/dev/null 2>&1
 
 # install youtube-dl it's if not installed
 command -v youtube-dl >/dev/null 2>&1
@@ -44,8 +46,8 @@ else
     sudo youtube-dl -U >/dev/null 2>&1
 fi
 
-cd ~/bin >/dev/null 2>&1
-if [ $? -eq 1 ]; then
+~/bin >/dev/null 2>&1
+if [ $? -eq 127 ]; then
     mkdir ~/bin
 fi
 
