@@ -129,7 +129,7 @@ class OMXPlayer(object):
         self.position=-60.0
         #         commented out in case gui reads position before it is first written.
         
-        while True:
+        while self.is_running():
             try:
                 index = self._process.expect([self._STATUS_REXP,
                                                 pexpect.TIMEOUT,
@@ -264,22 +264,25 @@ class Ytdl:
         self._SUPPORTED_SERVICES=supported_services
 
     def _response(self):
-        data = self._process.before
-        if self._WRN_REXP.search(data):
-            # warning message
-            r = (0, self.MSGS[0])
-        elif self._ERR_REXP.search(data):
-            # error message
-            r = (-1, self.MSGS[1])
-        else: 
-            r = (1, data)
+        if self._terminate_sent_signal:
+            r = (-2, '')
+        else:
+            data = self._process.before
+            if self._WRN_REXP.search(data):
+                # warning message
+                r = (0, self.MSGS[0])
+            elif self._ERR_REXP.search(data):
+                # error message
+                r = (-1, self.MSGS[1])
+            else: 
+                r = (1, data)
         self.result = r
 
     def _get_link_media_format(self, url):
         return "m4a" if (self._YOUTUBE_MEDIA_TYPE == "m4a" and "youtube." in url) else "mp4"
 
     def _background_process(self):
-        while True:
+        while self.is_running():
             try:
                 index = self._process.expect([self._STATUS_REXP,
                                                 pexpect.TIMEOUT,
@@ -292,12 +295,13 @@ class Ytdl:
                 else:
                     self._response()
                     self.end_signal = True
-            except Exception:
+            except:
                 break
             sleep(0.05)
 
     def _spawn_thread(self):
         self.end_signal = False
+        self._terminate_sent_signal = False
         self._position_thread = Thread(target=self._background_process)
         self._position_thread.start()
 
@@ -322,6 +326,10 @@ class Ytdl:
         self._YTLAUNCH_PLST_CMD=options.ytdl_location + self._YTLAUNCH_PLST_ARGS_FORMAT
         self._PREFERED_TRANSCODER=options.ytdl_prefered_transcoder
         self._YOUTUBE_MEDIA_TYPE=options.youtube_media_format
+
+    def quit(self):
+        self._terminate_sent_signal = True
+        self._process.terminate()
 
 
 
@@ -615,17 +623,21 @@ class TBOPlayer:
         elif self.ytdl_state == self._YTDL_WORKING:
             # youtube-dl reports it is terminating or user has removed a waiting track so change to ending state
             if self.ytdl.end_signal == True or self.quit_ytdl_sent_signal == True:
+                if self.quit_ytdl_sent_signal == True:
+                    self.monitor("            quit ytdl sent signal received")
+                    self.ytdl.quit()
+                    self.quit_ytdl_sent_signal = False
                 if self.ytdl.end_signal == True:
                     self.treat_ytdl_result()
-                self.monitor("            <end play signal received from youtube-dl")
-                self.ytdl_state =self._YTDL_ENDING
+                    self.monitor("            <end ytdl signal received from youtube-dl")
+                self.ytdl_state = self._YTDL_ENDING
             self.root.after(500, self.ytdl_state_machine)
 
         elif self.ytdl_state == self._YTDL_ENDING:
             self.monitor("      Ytdl state machine: " + self.ytdl_state)
             # if spawned process has closed can change to closed state
             self.monitor("      Ytdl state machine: is process running - "  + str(self.ytdl.is_running()))
-            if self.ytdl.is_running() or self.quit_ytdl_sent_signal == True:
+            if self.ytdl.is_running() == False:
                 self.monitor("            <youtube-dl process is dead")
                 self.ytdl_state = self._YTDL_CLOSED
             self.root.after(500, self.ytdl_state_machine)
@@ -638,10 +650,10 @@ class TBOPlayer:
                     track = self.playlist.waiting_track()
                     result = (self.ytdl.result[1], track[1][1].replace(self.ytdl.WAIT_TAG,""))
                     self.playlist.replace(track[0], result)
-                    self.playlist.select(track[0])               
-                    self.display_selected_track(track[0])
                     self.refresh_playlist_display()
-                    if self.play_state==self._OMX_STARTING:
+                    self.playlist.select(track[0])  
+                    self.display_selected_track(track[0])
+                    if self.play_state == self._OMX_STARTING:
                         self.start_omx(result[0],skip_ytdl_check=True)
                 except:
                     # no need to treat this
@@ -657,6 +669,8 @@ class TBOPlayer:
                 self.track_titles_display.delete(index,index)
                 self.playlist.remove(index)
                 self.blank_selected_track()
+            if self.play_state==self._OMX_STARTING:
+                self.quit_sent_signal = True
             self.display_selected_track_title.set(self.ytdl.result[1])
             return
 
@@ -1174,16 +1188,14 @@ class TBOPlayer:
    
     def remove_track(self,*event):
         if  self.playlist.length()>0 and self.playlist.track_is_selected():
-            index= self.playlist.selected_track_index()
-            waiting_track = self.playlist.waiting_track()
-            if waiting_track and waiting_track[0] == index and self.ytdl_state==self._YTDL_WORKING:
+            if self.playlist.selected_track()[1][:6] == self.ytdl.WAIT_TAG and self.ytdl_state==self._YTDL_WORKING:
                 # tell ytdl_state_machine to stop
                 self.quit_ytdl_sent_signal = True  
+            index= self.playlist.selected_track_index()
             self.track_titles_display.delete(index,index)
             self.playlist.remove(index)
             self.blank_selected_track()
             self.display_time.set("")
-                
 
 
     def edit_track(self):
@@ -1192,17 +1204,19 @@ class TBOPlayer:
             d = EditTrackDialog(self.root,"Edit Track",
                                 "Title", self.playlist.selected_track_title,
                                 "Location", self.playlist.selected_track_location)
+            do_ytdl = False
             if d.result[1] != '':
-                if self.selected_track()[1][:6] != self.ytdl.WAIT_TAG and self.ytdl.whether_to_use_youtube_dl(d.result[1]):
-                    self.go_ytdl(d.result[1])
+                if (self.options.download_media_url_upon == "add" and self.playlist.selected_track()[1][:6] != self.ytdl.WAIT_TAG and 
+                                                                self.ytdl.whether_to_use_youtube_dl(d.result[1])):
+                    do_ytdl = True
                     d.result[0] = self.ytdl.WAIT_TAG + d.result[0]
                 d.result = (d.result[1],d.result[0])
                 self.playlist.replace(index, d.result)
                 self.playlist.select(index)               
                 self.display_selected_track(index)
                 self.refresh_playlist_display()
-             
-        
+                if do_ytdl:
+                    self.go_ytdl(d.result[0])
 
 
     def select_track(self, event):
@@ -1717,7 +1731,7 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 4 Septemper 2015"
+    datestring=" 9 Septemper 2015"
     bplayer = TBOPlayer()
 
 
