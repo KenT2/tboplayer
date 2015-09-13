@@ -771,7 +771,7 @@ class TBOPlayer:
         self.root.configure(background='grey')
         # width, height, xoffset, yoffset
         self.root.geometry('408x340+350+250')
-        self.root.resizable(False,False)
+        self.root.resizable(True,True)
 
         #defne response to main window closing
         self.root.protocol ("WM_DELETE_WINDOW", self.app_exit)
@@ -914,7 +914,18 @@ class TBOPlayer:
         scrollbar.grid(row = 3, column=6, rowspan=3, sticky=N+S+E)
         self.track_titles_display.config(yscrollcommand=scrollbar.set)
 
-
+        self.root.grid_columnconfigure(1, weight=1)
+        self.root.grid_columnconfigure(2, weight=1)
+        self.root.grid_columnconfigure(3, weight=1)
+        self.root.grid_columnconfigure(4, weight=1)
+        self.root.grid_columnconfigure(5, weight=1)
+        self.root.grid_columnconfigure(6, weight=1)
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_rowconfigure(2, weight=1, minsize=40)
+        self.root.grid_rowconfigure(3, weight=1)
+        self.root.grid_rowconfigure(4, weight=1)
+        self.root.grid_rowconfigure(5, weight=1)
+        self.root.grid_rowconfigure(6, weight=1)
 
         for file in sys.argv[1:]:
             if (os.path.isfile(file) and self.is_file_supported(file)):
