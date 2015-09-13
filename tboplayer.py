@@ -46,11 +46,9 @@ If you have problems playing a track try it from the command line with omxplayer
 
 TODO (maybe)
 --------
-Scroll display list with up/down cursor key and select with Return
 sort out black border around some videos
 gapless playback, by running two instances of pyomxplayer
 read and write m3u and pls playlists
-Fit to every screen size (also resizeable)
 
 
 
@@ -250,7 +248,7 @@ class Ytdl:
     _STATUS_REXP = re.compile("\n")
     _WRN_REXP = re.compile("WARNING:")
     _ERR_REXP = re.compile("ERROR:")
-    _LINK_REXP = re.compile("(http[s]?://[a-zA-Z0-9.,?&/_\-=+]+)")
+    _LINK_REXP = re.compile("(http[s]{0,1}://[\w.,?&/\-=+]+)")
     
     MSGS = ("Problem retreiving content. Do you have up-to-date dependencies?", 
                                      "Problem retreiving content. Content may be copyrighted or the link invalid.",
@@ -316,7 +314,7 @@ class Ytdl:
         self._spawn_thread()
  
     def whether_to_use_youtube_dl(self,url):
-        return url[:4] == "http" and any(re.match("(http(?:s){0,1}://(?:\w\w\w\.){0,1}" + s + "\.)", url) for s in self._SUPPORTED_SERVICES)
+        return url[:4] == "http" and any(re.match("(http[s]{0,1}://(?:\w|\.{0,1})+" + s + "\.)", url) for s in self._SUPPORTED_SERVICES)
 
     def is_running(self):
         return self._process.isalive()
@@ -665,10 +663,11 @@ class TBOPlayer:
                     self.display_selected_track_title.set(self.ytdl.MSGS[2])
         else:
             if self.ytdl.result[0] == -1:
-                index = self.playlist.waiting_track()[0]
-                self.track_titles_display.delete(index,index)
-                self.playlist.remove(index)
-                self.blank_selected_track()
+                waiting_track = self.playlist.waiting_track()
+                if waiting_track:
+                    self.track_titles_display.delete(waiting_track[0],waiting_track[0])
+                    self.playlist.remove(index)
+                    self.blank_selected_track()
             if self.play_state==self._OMX_STARTING:
                 self.quit_sent_signal = True
             self.display_selected_track_title.set(self.ytdl.result[1])
@@ -821,7 +820,7 @@ class TBOPlayer:
         menubar.add_cascade(label='Playlists', menu = listmenu)
         listmenu.add_command(label='Open playlist', command = self.open_list)
         listmenu.add_command(label='Save playlist', command = self.save_list)
-        listmenu.add_command(label='Load Youtube playlist', command = self.load_yt_playlist)
+        listmenu.add_command(label='Load Youtube playlist', command = self.load_youtube_playlist)
         listmenu.add_command(label='Clear', command = self.clear_list)
 
         omxmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
@@ -844,28 +843,27 @@ class TBOPlayer:
         # add track button
         Button(self.root, width = 5, height = 1, text='Add',
                               fg='black', command = self.add_track, 
-                              bg="light grey").grid(row=0, column=1)
+                              bg="light grey").grid(row=0, column=1, rowspan=2)
         # add url button
         Button(self.root, width = 5, height = 1, text='Add URL',
                               fg='black', command = self.add_url, 
-                              bg="light grey").grid(row=0, column=2)
+                              bg="light grey").grid(row=0, column=2, rowspan=2)
         # add dir button        
         Button(self.root, width = 5, height = 1, text='Add Dir',
                               fg='black', command = self.add_dir, 
-                              bg="light grey").grid(row=0, column=3)
+                              bg="light grey").grid(row=0, column=3, rowspan=2)
         # open list button        
         Button(self.root, width = 5, height = 1, text='Open List',
                               fg='black', command = self.open_list, 
-                              bg="light grey").grid(row=0, column=4)
+                              bg="light grey").grid(row=0, column=4, rowspan=2)
         # save list button
         Button(self.root, width = 5, height = 1, text = 'Save List',
                               fg='black', command = self.save_list, 
-                              bg='light grey').grid(row=0, column=5)
+                              bg='light grey').grid(row=0, column=5, rowspan=2)
         # clear list button
         Button(self.root, width = 5, height = 1, text = 'Clear List',
                               fg='black', command = self.clear_list, 
-                              bg='light grey').grid(row=0, column=6)
-
+                              bg='light grey').grid(row=0, column=6, rowspan=2)
         # play/pause button
         Button(self.root, width = 5, height = 1, text='Play/Pause',
                               fg='black', command = self.play_track, 
@@ -893,30 +891,30 @@ class TBOPlayer:
 
 # define display of file that is selected
         Label(self.root, font=('Comic Sans', 10),
-                              fg = 'black', wraplength = 300, height = 2,
+                              fg = 'black', wraplength = 400, height = 2,
                               textvariable=self.display_selected_track_title, 
-                              bg="grey").grid(row=3, column=0, columnspan=6)
+                              bg="grey").grid(row=2, column=1, columnspan=6, sticky=N+W+E)
 
 # define time/status display for selected track
         Label(self.root, font=('Comic Sans', 11),
-                              fg = 'black', wraplength = 300,
+                              fg = 'black', wraplength = 100,
                               textvariable=self.display_time, 
-                              bg="grey").grid(row=3, column=6, columnspan=1)
-
+                              bg="grey").grid(row=2, column=6, columnspan=1)
 
 # define display of playlist
-        self.track_titles_display = Listbox(self.root, selectmode=SINGLE, height=15,
-                               width = 40, bg="white",
+        self.track_titles_display = Listbox(self.root, bg="white", height = 15,
                                fg="black")
-        self.track_titles_display.grid(row=4, column=0, columnspan=7)
+        self.track_titles_display.grid(row=3, column=1, columnspan=7,rowspan=3, sticky=N+S+E+W)
         self.track_titles_display.bind("<ButtonRelease-1>", self.select_track)
         self.track_titles_display.bind("<Delete>", self.remove_track)
-
         self.track_titles_display.bind("<Return>", self.key_return)
+
 # scrollbar for displaylist
         scrollbar = Scrollbar(self.root, command=self.track_titles_display.yview, orient=tk.VERTICAL)
-        scrollbar.grid(row = 4, column=6,sticky='ns')
+        scrollbar.grid(row = 3, column=6, rowspan=3, sticky=N+S+E)
         self.track_titles_display.config(yscrollcommand=scrollbar.set)
+
+
 
         for file in sys.argv[1:]:
             if (os.path.isfile(file) and self.is_file_supported(file)):
@@ -1142,7 +1140,7 @@ class TBOPlayer:
                     self.playlist.append([self.file, self.file_pieces[-1],'',''])
                     # add title to playlist display
                     self.track_titles_display.insert(END, self.file_pieces[-1])
-            except Exception:
+            except:
                 return
 
     
@@ -1302,7 +1300,7 @@ class TBOPlayer:
             self.display_time.set("")
 
 
-    def load_yt_playlist(self):
+    def load_youtube_playlist(self):
         d = LoadYtPlaylistDialog(self.root)
         if not d.result or not "list=" in d.result:
             return
@@ -1731,7 +1729,7 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 9 Septemper 2015"
+    datestring=" 13 Septemper 2015"
     bplayer = TBOPlayer()
 
 
