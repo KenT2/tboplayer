@@ -610,7 +610,7 @@ class TBOPlayer:
                 
         elif self.ytdl_state == self._YTDL_STARTING:
             self.monitor("      Ytdl state machine: " + self.ytdl_state)
-            # if omxplayer is playing the track change to play state
+            # if youtube-dl is working change to working state
             if self.ytdl.start_signal==True:
                 self.monitor("            <start play signal received from youtube-dl")
                 self.ytdl.start_signal=False
@@ -666,7 +666,7 @@ class TBOPlayer:
                 waiting_track = self.playlist.waiting_track()
                 if waiting_track:
                     self.track_titles_display.delete(waiting_track[0],waiting_track[0])
-                    self.playlist.remove(index)
+                    self.playlist.remove(waiting_track[0])
                     self.blank_selected_track()
             if self.play_state==self._OMX_STARTING:
                 self.quit_sent_signal = True
@@ -770,7 +770,7 @@ class TBOPlayer:
 
         self.root.configure(background='grey')
         # width, height, xoffset, yoffset
-        self.root.geometry('408x340+350+250')
+        self.root.geometry(self.options.geometry)
         self.root.resizable(True,True)
 
         #defne response to main window closing
@@ -927,9 +927,10 @@ class TBOPlayer:
         self.root.grid_rowconfigure(5, weight=1)
         self.root.grid_rowconfigure(6, weight=1)
 
-        for file in sys.argv[1:]:
-            if (os.path.isfile(file) and self.is_file_supported(file)):
-                self.file = file
+# if files were passed in the command line, add them to the playlist
+        for f in sys.argv[1:]:
+            if (os.path.isfile(f) and self.is_file_supported(f)):
+                self.file = f
                 self.file_pieces = self.file.split("/")
                 self.playlist.append([self.file, self.file_pieces[-1],'',''])
                 self.track_titles_display.insert(END, self.file_pieces[-1])
@@ -940,6 +941,7 @@ class TBOPlayer:
 
 #exit
     def app_exit(self):
+        self.options.set_geometry(self.root.geometry())
         try:
             self.omx
         except AttributeError:
@@ -1372,6 +1374,7 @@ class Options:
         # create an options file if necessary
         confdir = os.path.expanduser("~") + '/.tboplayer'
         self.options_file = confdir + '/tboplayer.cfg'
+
         if os.path.exists(self.options_file):
             self.read(self.options_file)
         else:
@@ -1385,36 +1388,40 @@ class Options:
         """reads options from options file to interface"""
         config=ConfigParser.ConfigParser()
         config.read(filename)
-        
-        if  config.get('config','audio',0) == 'auto':
-            self.omx_audio_option = ""
-        else:
-            self.omx_audio_option = "-o "+config.get('config','audio',0)
+        try:
+            if  config.get('config','audio',0) == 'auto':
+                self.omx_audio_option = ""
+            else:
+                self.omx_audio_option = "-o "+config.get('config','audio',0)
             
-        self.mode = config.get('config','mode',0)
-        self.initial_track_dir = config.get('config','tracks',0)
-        self.initial_playlist_dir = config.get('config','playlists',0)    
-        self.omx_user_options = config.get('config','omx_options',0)
-        self.youtube_media_format = config.get('config','youtube_media_format',0)
-        self.omx_location = config.get('config','omx_location',0)
-        self.ytdl_location = config.get('config','ytdl_location',0)
-        self.ytdl_prefered_transcoder = config.get('config','ytdl_prefered_transcoder',0)
-        self.download_media_url_upon = config.get('config','download_media_url_upon',0)
+            self.mode = config.get('config','mode',0)
+            self.initial_track_dir = config.get('config','tracks',0)
+            self.initial_playlist_dir = config.get('config','playlists',0)    
+            self.omx_user_options = config.get('config','omx_options',0)
+            self.youtube_media_format = config.get('config','youtube_media_format',0)
+            self.omx_location = config.get('config','omx_location',0)
+            self.ytdl_location = config.get('config','ytdl_location',0)
+            self.ytdl_prefered_transcoder = config.get('config','ytdl_prefered_transcoder',0)
+            self.download_media_url_upon = config.get('config','download_media_url_upon',0)
+            self.geometry = config.get('config','geometry',0)
 
-        if config.get('config','debug',0) == 'on':
-            self.debug = True
-        else:
-            self.debug = False
+            if config.get('config','debug',0) == 'on':
+                self.debug = True
+            else:
+                self.debug = False
 
-        if config.get('config','subtitles',0) == 'on':
-            self.omx_subtitles_option = "-t on"
-        else:
-            self.omx_subtitles_option = ""
+            if config.get('config','subtitles',0) == 'on':
+                self.omx_subtitles_option = "-t on"
+            else:
+                self.omx_subtitles_option = ""
 
-        if config.get('config','track_info',0) == 'on':
-            self.generate_track_info = True
-        else:
-            self.generate_track_info = False
+            if config.get('config','track_info',0) == 'on':
+                self.generate_track_info = True
+            else:
+                self.generate_track_info = False
+        except:
+            self.create(self.options_file)
+            self.read(self.options_file)
          
 
     def create(self,filename):
@@ -1433,10 +1440,31 @@ class Options:
         config.set('config','ytdl_location','/usr/local/bin/youtube-dl')
         config.set('config','ytdl_prefered_transcoder','avconv')
         config.set('config','download_media_url_upon','add')
+        config.set('config','geometry','408x340+350+250')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
+            configfile.close()
 
-
+    def set_geometry(self, geometry):
+        config=ConfigParser.ConfigParser()
+        config.add_section('config')
+        config.set('config','audio',self.omx_audio_option.replace("-o ",''))
+        config.set('config','subtitles',"on" if "on" in self.omx_subtitles_option else "off")       
+        config.set('config','mode',self.mode)
+        config.set('config','playlists',self.initial_playlist_dir)
+        config.set('config','tracks',self.initial_track_dir)
+        config.set('config','omx_options',self.omx_user_options)
+        config.set('config','debug',"on" if self.debug else "off")
+        config.set('config','track_info',"on" if self.generate_track_info else "off")
+        config.set('config','youtube_media_format',self.youtube_media_format)
+        config.set('config','omx_location',self.omx_location)
+        config.set('config','ytdl_location',self.ytdl_location)
+        config.set('config','ytdl_prefered_transcoder',self.ytdl_prefered_transcoder)
+        config.set('config','download_media_url_upon',self.download_media_url_upon)
+        config.set('config','geometry',geometry)
+        with open(self.options_file, 'w+') as configfile:
+            config.write(configfile)
+            configfile.close()
 
 
 # *************************************
@@ -1740,7 +1768,7 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 13 Septemper 2015"
+    datestring=" 14 Septemper 2015"
     bplayer = TBOPlayer()
 
 
