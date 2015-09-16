@@ -99,10 +99,10 @@ class OMXPlayer(object):
         #******* KenT signals to tell the gui playing has started and ended
         self.start_play_signal = False
         self.end_play_signal = False
-
+        
         cmd = self._LAUNCH_CMD % (mediafile, args)
+        #print "        cmd: " + cmd
         self._process = pexpect.spawn(cmd)
-        print "        cmd: " + cmd
         # fout= file('logfile.txt','w')
         # self._process.logfile_send = sys.stdout
         
@@ -237,30 +237,42 @@ class OMXPlayer(object):
 
 class Ytdl:
 
+    """
+        interface for youtube-dl cli
+    """
+
     _YTLAUNCH_CMD = ''
     _YTLAUNCH_ARGS_FORMAT = ' --prefer-%s -g -f %s "%s"'
     _YTLAUNCH_PLST_CMD = ''
     _YTLAUNCH_PLST_ARGS_FORMAT = ' --prefer-%s -J -f mp4 "%s"'
     _PREFERED_TRANSCODER = ''
     _YOUTUBE_MEDIA_TYPE = ''
-    _SUPPORTED_SERVICES = []
     
     _STATUS_REXP = re.compile("\n")
     _WRN_REXP = re.compile("WARNING:")
     _ERR_REXP = re.compile("ERROR:")
     _LINK_REXP = re.compile("(http[s]{0,1}://[\w.,?&/\-=+]+)")
+    _SERVICES_REGEXPS = []
+    
+    _ACCEPTED_LINK_REXP_FORMAT = "(http[s]{0,1}://(?:\w|\.{0,1})+%s\.(?:[a-z]{2,3})(?:\.[a-z]{2,3}){0,1}/)"
     
     MSGS = ("Problem retreiving content. Do you have up-to-date dependencies?", 
                                      "Problem retreiving content. Content may be copyrighted or the link invalid.",
                                      "Problem retrieving content. Content may have been truncated.")
     WAIT_TAG = "[wait]"
+    
     start_signal = False
     end_signal = False
     
     def __init__(self, options, supported_services):
         self.set_options(options)
-        self._SUPPORTED_SERVICES=supported_services
+        self._background_thread = Thread(target=self._compile_regexps,args=supported_services)
+        self._background_thread.start()
 
+    def _compile_regexps(self,*supported_services):
+        for s in supported_services:
+            self._SERVICES_REGEXPS.append(re.compile(self._ACCEPTED_LINK_REXP_FORMAT % (s)))
+    
     def _response(self):
         if self._terminate_sent_signal:
             r = (-2, '')
@@ -300,8 +312,8 @@ class Ytdl:
     def _spawn_thread(self):
         self.end_signal = False
         self._terminate_sent_signal = False
-        self._position_thread = Thread(target=self._background_process)
-        self._position_thread.start()
+        self._background_thread = Thread(target=self._background_process)
+        self._background_thread.start()
 
     def retrieve_media_url(self, url):
         ytcmd = self._YTLAUNCH_CMD % (self._PREFERED_TRANSCODER, self._get_link_media_format(url), url)
@@ -313,8 +325,8 @@ class Ytdl:
         self._process = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
         self._spawn_thread()
  
-    def whether_to_use_youtube_dl(self,url):
-        return url[:4] == "http" and any(re.match("(http[s]{0,1}://(?:\w|\.{0,1})+" + s + "\.)", url) for s in self._SUPPORTED_SERVICES)
+    def whether_to_use_youtube_dl(self,url): 
+        return url[:4] == "http" and any(regxp.match(url) for regxp in self._SERVICES_REGEXPS)
 
     def is_running(self):
         return self._process.isalive()
@@ -398,20 +410,20 @@ class TBOPlayer:
 
     # kick off the state machine by playing a track
     def play(self):
-        if  self.play_state==self._OMX_CLOSED:
-            if self.playlist.track_is_selected():
-                #initialise all the state machine variables
-                self.iteration = 0                           # for debugging
-                self.paused = False
-                self.stop_required_signal=False     # signal that user has pressed stop
-                self.quit_sent_signal = False          # signal  that q has been sent
-                self.root.title(self.playlist.selected_track_title[:30] + (self.playlist.selected_track_title[30:] and '..') + " - OMXPlayer")
-                self.playing_location = self.playlist.selected_track_location
-                self.play_state=self._OMX_STARTING
+            #initialise all the state machine variables
+        if  self.play_state==self._OMX_CLOSED and self.playlist.track_is_selected():
+            self.iteration = 0                           # for debugging
+            self.paused = False
+            self.stop_required_signal=False     # signal that user has pressed stop
+            self.quit_sent_signal = False          # signal  that q has been sent
+            self.playlist.select(self.start_track_index)
+            self.root.title(self.playlist.selected_track_title[:30] + (self.playlist.selected_track_title[30:] and '..') + " - OMXPlayer")
+            self.playing_location = self.playlist.selected_track_location
+            self.play_state=self._OMX_STARTING
                 
-                #play the selelected track
-                self.start_omx(self.playlist.selected_track_location)
-                self.root.after(500, self.play_state_machine)
+            #play the selelected track
+            self.start_omx(self.playlist.selected_track_location)
+            self.root.after(500, self.play_state_machine)
  
 
     def play_state_machine(self):
@@ -494,6 +506,7 @@ class TBOPlayer:
         """
         self.monitor(">play track received") 
         if self.play_state == self._OMX_CLOSED:
+            self.start_track_index = self.playlist.selected_track_index()
             self.play()
         elif self.playing_location==self.playlist.selected_track_location:
             self.toggle_pause()
@@ -521,6 +534,7 @@ class TBOPlayer:
     def stop_track(self):
         # send signals to stop and then to break out of any repeat loop
         self.monitor(">stop received")
+        self.start_track_index=None
         self.stop_required_signal=True
         self.break_required_signal=True
 
@@ -646,7 +660,7 @@ class TBOPlayer:
             if self.ytdl._LINK_REXP.match(self.ytdl.result[1]):
                 try:
                     track = self.playlist.waiting_track()
-                    result = (self.ytdl.result[1], track[1][1].replace(self.ytdl.WAIT_TAG,""))
+                    result = (self.ytdl.result[1].rstrip("\n\r"), track[1][1].replace(self.ytdl.WAIT_TAG,""))
                     self.playlist.replace(track[0], result)
                     self.refresh_playlist_display()
                     self.playlist.select(track[0])  
@@ -712,12 +726,11 @@ class TBOPlayer:
             self.display_selected_track(index)
             self.refresh_playlist_display()
             return
-
-        ttrack= "'"+ track.replace("'","'\\''") + "'"
+        track= "'"+ track.replace("'","'\\''") + "'"
         opts= self.options.omx_user_options + " "+ self.options.omx_audio_option + " " + self.options.omx_subtitles_option + " "
-        self.omx = OMXPlayer(ttrack, args=opts, start_playback=True, do_dict = self.options.generate_track_info)
+        self.omx = OMXPlayer(track, args=opts, start_playback=True, do_dict = self.options.generate_track_info)
 
-        self.monitor("            >Play: " + ttrack + " with " + opts)
+        self.monitor("            >Play: " + track + " with " + opts)
 
 
     def stop_omx(self):
@@ -921,8 +934,8 @@ class TBOPlayer:
         self.root.grid_columnconfigure(5, weight=1)
         self.root.grid_columnconfigure(6, weight=1)
         self.root.grid_rowconfigure(1, weight=1)
-        self.root.grid_rowconfigure(2, weight=1, minsize=40)
-        self.root.grid_rowconfigure(3, weight=1)
+        self.root.grid_rowconfigure(2, weight=1)
+        self.root.grid_rowconfigure(3, weight=1, minsize=40)
         self.root.grid_rowconfigure(4, weight=1)
         self.root.grid_rowconfigure(5, weight=1)
         self.root.grid_rowconfigure(6, weight=1)
@@ -1086,8 +1099,8 @@ class TBOPlayer:
 # TRACKS AND PLAYLISTS  CALLBACKS
 # ***************************************
 
-    def is_file_supported(self, file):
-        return file[-4:] in self._SUPPORTED_MEDIA_FORMATS
+    def is_file_supported(self, f):
+        return f[-4:] in self._SUPPORTED_MEDIA_FORMATS
 
     def add_track(self):                                
         """
@@ -1107,10 +1120,10 @@ class TBOPlayer:
         else: 
             return
 
-        for file in filez:
-            if not os.path.isfile(file) or not self.is_file_supported(file):
+        for f in filez:
+            if not os.path.isfile(f) or not self.is_file_supported(f):
                 break
-            self.file = file
+            self.file = f
 
             # split it to use leaf as the initial title
             self.file_pieces = self.file.split("/")
@@ -1135,7 +1148,7 @@ class TBOPlayer:
         else:
             d = tkFileDialog.askdirectory(parent=self.root,title="Choose a directory")
         return d
-
+ 
 
     def ajoute(self,dir,recursive):
         for f in os.listdir(dir):
@@ -1243,10 +1256,10 @@ class TBOPlayer:
     	
     def select_next_track(self):
         if self.playlist.length()>0:
-            if self.playlist.selected_track_index()== self.playlist.length()-1:
-                index=0
+            if self.start_track_index == self.playlist.length() - 1:
+                index = self.start_track_index = 0
             else:
-                index= self.playlist.selected_track_index()+1
+                index = self.start_track_index = self.start_track_index + 1
             self.playlist.select(index)
             self.display_selected_track(index)
 
@@ -1260,10 +1273,10 @@ class TBOPlayer:
     	
     def select_previous_track(self):
         if self.playlist.length()>0:
-            if self.playlist.selected_track_index()== 0:
-                index=self.playlist.length()-1
+            if self.start_track_index == 0:
+                index = self.start_track_index = self.playlist.length() - 1
             else:
-               index = self.playlist.selected_track_index()- 1
+                index = self.start_track_index = self.start_track_index - 1
             self.playlist.select(index)               
             self.display_selected_track(index)
 
@@ -1484,6 +1497,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
 
         config=ConfigParser.ConfigParser()
         config.read(self.options_file)
+        self.geometry_var = config.get('config','geometry',0)
 
         Label(master, text="Audio Output:").grid(row=0, sticky=W)
         self.audio_var=StringVar()
@@ -1580,7 +1594,6 @@ class OptionsDialog(tkSimpleDialog.Dialog):
             self.cb_track_info.select()
         else:
             self.cb_track_info.deselect()
-
         return None    # no initial focus
 
     def apply(self):
@@ -1604,8 +1617,10 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','ytdl_location',self.e_ytdl_location.get())
         config.set('config','ytdl_prefered_transcoder',self.ytdl_prefered_transcoder_var.get())
         config.set('config','download_media_url_upon',self.download_media_url_upon_var.get())
+        config.set('config','geometry',self.geometry_var)
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
+            optionsfile.close()
     
 
 
@@ -1768,7 +1783,7 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 14 Septemper 2015"
+    datestring=" 15 Septemper 2015"
     bplayer = TBOPlayer()
 
 
