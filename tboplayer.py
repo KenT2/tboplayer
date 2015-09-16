@@ -774,6 +774,11 @@ class TBOPlayer:
         #initialise the play state machine
         self.init_play_state_machine()
 
+        # start and configure ytdl object
+        f = open(os.path.dirname(os.path.realpath(sys.argv[0])) + "/yt-dl_supported_sites", "r")
+        self.ytdl = Ytdl(self.options, loads(f.read()))
+        f.close()
+
         #create the internal playlist
         self.playlist = PlayList()
 
@@ -790,11 +795,6 @@ class TBOPlayer:
         self.root.protocol ("WM_DELETE_WINDOW", self.app_exit)
 
         OMXPlayer.set_omx_location(self.options.omx_location)
-
-        # start and configure ytdl object
-        f = open(os.path.dirname(os.path.realpath(sys.argv[0])) + "/yt-dl_supported_sites", "r")
-        self.ytdl = Ytdl(self.options, loads(f.read()))
-        f.close()
 
         self._SUPPORTED_MEDIA_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3gp",".wav",".avi",".mp4",".mkv",".ogv")
 
@@ -1783,7 +1783,7 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 15 Septemper 2015"
+    datestring=" 16 Septemper 2015"
     bplayer = TBOPlayer()
 
 
