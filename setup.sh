@@ -1,4 +1,5 @@
 #!/bin/bash
+
 echo "Installing TBOPlater and its dependencies..."
 echo "*"
 echo "* Updating distro packages database... This may take some seconds."
@@ -17,10 +18,10 @@ fi
 python -c 'import pexpect' >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
     echo "* Installing pexpect..."
-    wget https://github.com/pexpect/pexpect/tarball/master -O - | tar xz >/dev/null 2>&1
-    cd ~/pexpect-pexpect*
+    cd ~
+    wget https://github.com/pexpect/pexpect/tarball/master -q -O - | tar xz
+    cd pexpect-pexpect-*
     sudo python ./setup.py install >/dev/null 2>&1
-    cd ..
 fi
 
 # install avconv and ffmpeg if either of them is not installed
@@ -30,17 +31,18 @@ command -v ffmpeg >/dev/null 2>&1
 FFMPEG_INSTALLED=$?
 if [ $AVCONV_INSTALLED -eq 1 ] || [ $FFMPEG_INSTALLED -eq 1 ]; then
     echo "* Installing avconv and ffmpeg..."
+    sudo apt-get -y install libav-tools ffmpeg >/dev/null 2>&1
 else
     echo "* Updating avconv and ffmpeg..."
+    sudo apt-get -y --only-upgrade install libav-tools ffmpeg >/dev/null 2>&1
 fi
-sudo apt-get -y --only-upgrade install libav-tools ffmpeg >/dev/null 2>&1
 
 # install youtube-dl it's if not installed
 command -v youtube-dl >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
     echo "* Installing youtube-dl..."
     sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl >/dev/null 2>&1
-    sudo chmod a+rx /usr/local/bin/youtube-dl 
+    sudo chmod a+rx /usr/local/bin/youtube-dl
 else 
     echo "* Updating youtube-dl..."
     sudo youtube-dl -U >/dev/null 2>&1
