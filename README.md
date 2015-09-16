@@ -23,7 +23,7 @@ Update omxplayer
 Ensure you have the latest version of omxplayer by typing the following in a terminal window open in the home directory:
 
         sudo apt-get update
-        sudo apt-get upgrade
+        sudo apt-get --upgrade-only omxplayer
 
 Download and Install pexpect
 -----------------------------
