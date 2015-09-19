@@ -530,7 +530,8 @@ class TBOPlayer:
         # self.monitor("Position: " + str(self.omx.position))
         if self.paused == False:
             self.display_time.set(self.time_string(self.omx.position))
-            if self.omx.position > self.progress_bar_step_rate * (self.progress_bar_var.get() + 1):
+            if (self.omx.position > self.progress_bar_step_rate * (self.progress_bar_var.get() + 1) or 
+                                        abs(self.omx.position - self.progress_bar_var.get()) > self.progress_bar_step_rate):
                 self.set_progress_bar_step()
         else:
             self.display_time.set("Paused")           
