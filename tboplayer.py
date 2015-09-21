@@ -199,12 +199,24 @@ class OMXPlayer(object):
             self.current_audio_stream = 1
             self.current_volume = 0.0
 
+    def init_dbus_link(self):
+        try:
+            gobject.threads_init()
+            glib.init_threads()
+            dbus_path = "/tmp/omxplayerdbus." + getuser()
+            bus = dbus.bus.BusConnection(open(dbus_path).readlines()[0].rstrip())
+            remote_object = bus.get_object("org.mpris.MediaPlayer2.omxplayer", "/org/mpris/MediaPlayer2", introspect=False)
+            self.dbusif_player = dbus.Interface(remote_object, 'org.mpris.MediaPlayer2.Player')
+            self.dbusif_props = dbus.Interface(remote_object, 'org.freedesktop.DBus.Properties')
+        except Exception, e:
+            print  e
+            return False
+        return True
 
 # ******* KenT added basic command sending function
     def send_command(self,command):
         self._process.send(command)
         return True
-
 
 # ******* KenT added test of whether _process is running (not certain this is necessary)
     def is_running(self):
@@ -234,11 +246,14 @@ class OMXPlayer(object):
     def set_chapter(self, chapter_idx):
         raise NotImplementedError
 
-    def set_volume(self, volume):
-        raise NotImplementedError
+    def volume(self, volume=False):
+        if not volume:
+            return self.dbusif_props.Volume()
+        else:
+            return self.dbusif_props.Volume(float(volume))
 
-    def seek(self, minutes):
-        raise NotImplementedError
+    def set_position(self, secs):
+        return self.dbusif_player.SetPosition(dbus.ObjectPath('/not/used'),long(secs*1000000))
 
     @staticmethod
     def set_omx_location(location):
@@ -322,7 +337,7 @@ class Ytdl:
                     self.end_signal = True
             except:
                 break
-            sleep(0.05)
+            sleep(0.15)
 
     def _spawn_thread(self):
         self.end_signal = False
@@ -363,10 +378,11 @@ from pprint import pformat
 from pprint import pprint
 from random import randint
 from json import loads
+from math import log10
 from getpass import getuser
 from dbus import glib
 from Tkinter import *
-from ttk import Progressbar
+from ttk import (   Progressbar,    Style   )
 import Tkinter as tk
 import tkFileDialog
 import tkMessageBox
@@ -446,7 +462,10 @@ class TBOPlayer:
 
             #play the selelected track
             self.start_omx(self.playlist.selected_track_location)
-            self.root.after(500, self.play_state_machine)
+            self.dbus_connected = self.omx.init_dbus_link()
+            self.set_volume()
+            self.show_progress_bar()
+            self.root.after(350, self.play_state_machine)
 
 
     def play_state_machine(self):
@@ -468,11 +487,11 @@ class TBOPlayer:
                     self.monitor("      State machine: omx_playing started")
                     if not self.progress_bar_var.get():
                         self.set_progress_bar()
-                    self.init_dbus_link()
             except:
                 self.monitor("      OMXPlayer not started yet.")
+            else: self.dbus_connected = self.omx.init_dbus_link()
             
-            self.root.after(500, self.play_state_machine)
+            self.root.after(350, self.play_state_machine)
 
         elif self.play_state == self._OMX_PLAYING:
             # self.monitor("      State machine: " + self.play_state)
@@ -483,7 +502,7 @@ class TBOPlayer:
                 self.stop_required_signal=False
             else:
                 # quit command has been sent or omxplayer reports it is terminating so change to ending state
-                if self.quit_sent_signal == True or self.omx.end_play_signal== True:
+                if self.quit_sent_signal == True or self.omx.end_play_signal== True or not self.omx.is_running():
                     if self.quit_sent_signal:
                         self.monitor("            quit sent signal received")
                         self.quit_sent_signal = False
@@ -493,7 +512,7 @@ class TBOPlayer:
                     self.play_state =self. _OMX_ENDING
                     self.reset_progress_bar()
                 self.do_playing()
-            self.root.after(500, self.play_state_machine)
+            self.root.after(350, self.play_state_machine)
 
         elif self.play_state == self._OMX_ENDING:
             self.monitor("      State machine: " + self.play_state)
@@ -505,23 +524,7 @@ class TBOPlayer:
                 self.play_state = self._OMX_CLOSED
             self.dbus_connected = False
             self.do_ending()
-            self.root.after(500, self.play_state_machine)
-
-
-    def init_dbus_link(self):
-        try:
-            gobject.threads_init()
-            glib.init_threads()
-            dbus_path = "/tmp/omxplayerdbus." + getuser()
-            bus = dbus.bus.BusConnection(open(dbus_path).readlines()[0].rstrip())
-            remote_object = bus.get_object("org.mpris.MediaPlayer2.omxplayer", "/org/mpris/MediaPlayer2", introspect=False)
-            self.dbusif = dbus.Interface(remote_object, 'org.mpris.MediaPlayer2.Player')
-        except Exception, e:
-            self.monitor("      Failed connecting to DBus. An exception was caught: " + e)
-            return
-        self.dbus_connected = True
-        self.monitor("      Connected to DBus")
-        
+            self.root.after(350, self.play_state_machine)
 
     # do things in each state
  
@@ -594,11 +597,19 @@ class TBOPlayer:
         else:
             self.paused=False
 
+    def volminusplus(self, event): 
+        if event.x < event.widget.winfo_width()/2:
+            self.volminus()
+        else:
+            self.volplus()
+
     def volplus(self):
-        self.send_command('+')
-        
+        sent = self.send_command('+')
+        if not sent: self.set_volume_bar_step(self.volume_var.get()+3)
+
     def volminus(self):
-        self.send_command('-')
+        sent = self.send_command('-')
+        if not sent: self.set_volume_bar_step(self.volume_var.get()-3)
 
     def time_string(self,secs):
         minu = int(secs/60)
@@ -791,9 +802,12 @@ class TBOPlayer:
 
 
     def send_command(self,command):
-        if (command in '+-pz12jkionms') and self.play_state ==  self._OMX_PLAYING:
-            self.monitor("            >Send Command: "+command) 
+        if (command in '+=-pz12jkionms') and self.play_state ==  self._OMX_PLAYING:
+            self.monitor("            >Send Command: "+command)
             self.omx.send_command(command)
+            if self.dbus_connected and command in ('+' , '=', '-'):
+                sleep(0.1)
+                self.set_volume_bar_step(int(self.vol2dB(self.omx.volume())+self.volume_normal_step))
             return True
         else:
             self.monitor ("            !>Send command: illegal control or track not playing")
@@ -851,6 +865,13 @@ class TBOPlayer:
         self.filename = tk.StringVar()
         self.display_selected_track_title = tk.StringVar()
         self.display_time = tk.StringVar()
+        self.volume_var = tk.IntVar()
+        self.progress_bar_var = tk.IntVar()
+
+        self.progress_bar_total_steps = 200
+        self.progress_bar_step_rate = 0
+        self.volume_max = 60
+        self.volume_normal_step = 40
 
         #Keys
         self.root.bind("<Left>", self.key_left)
@@ -866,6 +887,8 @@ class TBOPlayer:
 
         self.root.bind("<Key>", self.key_pressed)
 
+        self.style = Style()
+        self.style.theme_use("alt")
 
 # define menu
         menubar = Menu(self.root)
@@ -943,25 +966,23 @@ class TBOPlayer:
         Button(self.root, width = 5, height = 1, text='Next',
                               fg='black', command = self.skip_to_next_track, 
                               bg="light grey").grid(row=7, column=4)
-        # vol plus button
-        Button(self.root, width = 5, height = 1, text = 'Vol +',
-                              fg='black', command = self.volplus, 
-                              bg='light grey').grid(row=7, column=5)
-        # vol minus button
-        Button(self.root, width = 5, height = 1, text = 'Vol -',
-                              fg='black', command = self.volminus, 
-                              bg='light grey').grid(row=7, column=6)
 
-# define display of file that is selected
+        # vol button
+        minusplus_button = Button(self.root, width = 5, height = 1, text = '-   |   +',
+                              fg='black', bg='light grey')
+        minusplus_button.grid(row=7, column=5)#, sticky=E)
+        minusplus_button.bind("<ButtonRelease-1>", self.volminusplus)
+
+        # define display of file that is selected
         Label(self.root, font=('Comic Sans', 10),
                               fg = 'black', wraplength = 400, height = 2,
-                              textvariable=self.display_selected_track_title, 
+                              textvariable=self.display_selected_track_title,
                               bg="grey").grid(row=2, column=1, columnspan=6, sticky=N+W+E)
 
-# define time/status display for selected track
+        # define time/status display for selected track
         Label(self.root, font=('Comic Sans', 11),
                               fg = 'black', wraplength = 100,
-                              textvariable=self.display_time, 
+                              textvariable=self.display_time,
                               bg="grey").grid(row=2, column=6, columnspan=1)
 
 # define display of playlist
@@ -978,16 +999,25 @@ class TBOPlayer:
         self.track_titles_display.config(yscrollcommand=scrollbar.set)
 
 # progress bar
-        self.progress_bar_total_steps = 200
-        self.progress_bar_step_rate = 0
-        self.progress_bar_var = tk.IntVar(0)
+        self.style.configure("progressbar.Horizontal.TProgressbar", foreground='medium blue', background='medium blue')
         self.progress_bar = Progressbar(orient=HORIZONTAL, length=self.progress_bar_total_steps, mode='determinate', 
-                                                                        maximum=self.progress_bar_total_steps, variable=self.progress_bar_var)
+                                                                        maximum=self.progress_bar_total_steps, variable=self.progress_bar_var, 
+                                                                        style="progressbar.Horizontal.TProgressbar")
         self.progress_bar.grid(row=6, column=1, columnspan=6, sticky=W+E)
         self.progress_bar.grid_remove()
         self.progress_bar.bind("<ButtonRelease-1>", self.set_track_position)
+        self.progress_bar_var.set(0)
 
+# volume bar, volume meter is 0.0 - 16.0, being normal volume 1.0
+        self.style.configure("volumebar.Horizontal.TProgressbar", foreground='cornflower blue', background='cornflower blue')
+        self.volume_bar = Progressbar(orient=HORIZONTAL, length=self.volume_max, mode='determinate',
+                                                                        maximum=self.volume_max, variable=self.volume_var, 
+                                                                        style="volumebar.Horizontal.TProgressbar")
+        self.volume_bar.grid(row=7, column=6, stick=W+E)
+        self.volume_bar.bind("<ButtonRelease-1>", self.set_volume_bar)
+        self.volume_var.set(self.volume_normal_step)
 
+# configure grid
         self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_columnconfigure(2, weight=1)
         self.root.grid_columnconfigure(3, weight=1)
@@ -1002,7 +1032,8 @@ class TBOPlayer:
         self.root.grid_rowconfigure(6, weight=1)
         self.root.grid_rowconfigure(7, weight=1)
 
-# if files were passed in the command line, add them to the playlist
+
+        # if files were passed in the command line, add them to the playlist
         for f in sys.argv[1:]:
             if (os.path.isfile(f) and self.is_file_supported(f)):
                 self.file = f
@@ -1010,11 +1041,11 @@ class TBOPlayer:
                 self.playlist.append([self.file, self.file_pieces[-1],'',''])
                 self.track_titles_display.insert(END, self.file_pieces[-1])
 
-#and display them going with Tkinter event loop
+        # and display them going with Tkinter event loop
         self.root.mainloop()
 
 
-#exit
+    #exit
     def app_exit(self):
         self.options.set_geometry(self.root.geometry())
         try:
@@ -1132,10 +1163,17 @@ class TBOPlayer:
         else:
             self.send_command(char)
             return
-    
+
+
+# ******************************************
+# PROGRESS BAR CALLBACKS
+# ******************************************
+
     def set_progress_bar(self):
-        self.progress_bar.grid()
         self.progress_bar_step_rate = self.omx.minfo['duration']/self.progress_bar_total_steps
+
+    def show_progress_bar(self):
+        self.progress_bar.grid()
 
     def hide_progress_bar(self):
         self.progress_bar.grid_remove()
@@ -1148,10 +1186,44 @@ class TBOPlayer:
         if not self.dbus_connected: return
         
         new_track_position = self.progress_bar_step_rate * ((event.x * self.progress_bar_total_steps)/self.progress_bar.winfo_width())
-        self.dbusif.SetPosition(dbus.ObjectPath('/not/used'),long(new_track_position*1000000))
+        self.omx.set_position(new_track_position)
 
     def set_progress_bar_step(self):
         self.progress_bar_var.set(int((self.omx.position * self.progress_bar_total_steps)/self.omx.minfo['duration']))
+
+
+# ***************************************
+# VOLUME BAR CALLBACKS
+# ***************************************
+
+    def set_volume_bar(self, event):
+        # new volume ranges from 0 - 60
+        new_volume = (event.x * self.volume_max)/self.volume_bar.winfo_width()
+        self.set_volume_bar_step(new_volume)
+        self.set_volume()
+
+    def set_volume_bar_step(self, step):
+        if step > self.volume_max: 
+            step = self.volume_max
+        elif step <= 0: 
+            step = 0
+        if step > 49:
+            self.style.configure("volumebar.Horizontal.TProgressbar", foreground='red', background='red')
+        elif step < 49:
+            self.style.configure("volumebar.Horizontal.TProgressbar", foreground='cornflower blue', background='cornflower blue')
+            # TODO: mute
+            
+        self.volume_var.set(step)
+
+    def set_volume(self):
+        if not self.dbus_connected: return
+        print self.omx.volume(self.mB2vol((self.volume_var.get() -self.volume_normal_step)*100))
+
+    def vol2dB(self, volume):
+        return (2000.0 * log10(volume)) / 100
+        
+    def mB2vol(self, mB):
+        return pow(10, mB / 2000.0)
 
 
 # ***************************************
@@ -1863,5 +1935,5 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 18 Septemper 2015"
+    datestring=" 20 Septemper 2015"
     bplayer = TBOPlayer()
