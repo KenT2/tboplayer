@@ -22,19 +22,26 @@ Update omxplayer
 
 Ensure you have the latest version of omxplayer by typing the following in a terminal window open in the home directory:
 
-        sudo apt-get update
+        sudo apt-get -y update
         sudo apt-get --upgrade-only omxplayer
 
-Download and Install pexpect
+Install pexpect
 -----------------------------
 
-This is specified here http://www.noah.org/wiki/pexpect#Download_and_Installation and copied below:
+From a terminal window, type to install pip if you don't have it yet
 
-From a terminal window open in your home directory, type:
+        sudo apt-get install -y python-pip
+	
+Then to install pexpect, in the terminal window, type 
 
-        wget https://github.com/pexpect/pexpect/tarball/master -O - | tar xz
-        cd ~/pexpect-pexpect*
-        sudo python ./setup.py install
+        sudo pip install pexpect ptyprocess
+
+Install gobject
+-----------------------------
+
+From a terminal window, type 
+
+        sudo apt-get install -y python-gobject-2
 
 Download and Install TBOPlayer
 ------------------------------
