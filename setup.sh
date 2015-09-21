@@ -14,14 +14,24 @@ else
     sudo apt-get -y --only-upgrade install omxplayer >/dev/null 2>&1
 fi
 
-# install pexpect it's if not installed
 python -c 'import pexpect' >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
+PEXPECT_INSTALLED=$?
+python -c 'import ptyprocess' >/dev/null 2>&1
+PTYPROCESS_INSTALLED=$?
+if [ $PEXPECT_INSTALLED -eq 1 ]; then 
     echo "* Installing pexpect..."
-    cd ~
-    wget https://github.com/pexpect/pexpect/tarball/master -q -O - | tar xz
-    cd pexpect-pexpect-*
-    sudo python ./setup.py install >/dev/null 2>&1
+    command -v pip >/dev/null 2>&1
+    if [ $? -eq 1 ]; then 
+        sudo apt-get install -y python-pip >/dev/null 2>&1
+    fi
+    [[ $PTYPROCESS_INSTALLED -eq 1 ]] && ptyprocess='ptyprocess' || ptyprocess=''
+    yes | sudo pip install pexpect $ptyprocess >/dev/null 2>&1
+fi
+
+python -c 'import gobject' >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    echo "* Installing gobject..."
+    sudo apt-get install -y python-gobject-2 >/dev/null 2>&1
 fi
 
 # install avconv and ffmpeg if either of them is not installed
