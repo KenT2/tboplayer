@@ -30,7 +30,7 @@ Install pexpect
 
 From a terminal window, type to install pip if you don't have it yet
 
-        sudo apt-get install -y python-pip
+	sudo apt-get install -y python-pip
 	
 Then to install pexpect, in the terminal window, type 
 
@@ -143,7 +143,14 @@ Removing the selected track can be done by pressing the Delete key.
 
 During playing of a track a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer. A list  of commands is provided in the help menu. Note: some of the commands are not implemented by omxplayer.
 
-If you have problems playing a track try it from the command line with omxplayer -o hdmi file or omxplayer -o local file
+TROUBLESHOOTING
+=========
+
+If you have problems playing a track try it from the command line with omxplayer -o hdmi file or omxplayer -o local file to make sure it's not a problem with omxplayer.
+
+If the progress bar or volume bar don't work for you, it may be that you have another instance of omxplayer running in the background. In that case, you can try to close that instance, and then play the track again. You can force omxplayer to terminate by typing in a terminal:
+
+sudo pkill -9 omxplayer
 
 Contributors:
 -------------
