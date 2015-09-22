@@ -597,19 +597,17 @@ class TBOPlayer:
         else:
             self.paused=False
 
-    def volminusplus(self, event): 
+    def volminusplus(self, event):
         if event.x < event.widget.winfo_width()/2:
             self.volminus()
         else:
             self.volplus()
 
     def volplus(self):
-        sent = self.send_command('+')
-        if not sent: self.set_volume_bar_step(self.volume_var.get()+3)
+        self.send_command('+')
 
     def volminus(self):
-        sent = self.send_command('-')
-        if not sent: self.set_volume_bar_step(self.volume_var.get()-3)
+        self.send_command('-')
 
     def time_string(self,secs):
         minu = int(secs/60)
@@ -810,6 +808,10 @@ class TBOPlayer:
                 self.set_volume_bar_step(int(self.vol2dB(self.omx.volume())+self.volume_normal_step))
             return True
         else:
+            if command in ('+' , '='): 
+                self.set_volume_bar_step(self.volume_var.get() + 3)
+            elif command == '-':
+                self.set_volume_bar_step(self.volume_var.get() - 3)
             self.monitor ("            !>Send command: illegal control or track not playing")
             return False
 
@@ -859,7 +861,7 @@ class TBOPlayer:
 
         OMXPlayer.set_omx_location(self.options.omx_location)
 
-        self._SUPPORTED_MEDIA_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3g2",".3gp",".wav",".avi",".mp4",".mkv",".mov",".mj2",".ogv")
+        self._SUPPORTED_MEDIA_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3g2",".3gp",".wav",".avi",".mp4",".mkv",".mov",".mj2",".mpg",".ogv")
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -1211,13 +1213,13 @@ class TBOPlayer:
             self.style.configure("volumebar.Horizontal.TProgressbar", foreground='red', background='red')
         elif step < 49:
             self.style.configure("volumebar.Horizontal.TProgressbar", foreground='cornflower blue', background='cornflower blue')
-            # TODO: mute
+            # !TODO: mute
             
         self.volume_var.set(step)
 
     def set_volume(self):
         if not self.dbus_connected: return
-        print self.omx.volume(self.mB2vol((self.volume_var.get() -self.volume_normal_step)*100))
+        print self.omx.volume(self.mB2vol((self.volume_var.get() - self.volume_normal_step) * 100))
 
     def vol2dB(self, volume):
         return (2000.0 * log10(volume)) / 100
@@ -1935,5 +1937,5 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 20 Septemper 2015"
+    datestring=" 22 Septemper 2015"
     bplayer = TBOPlayer()
