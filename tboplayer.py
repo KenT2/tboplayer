@@ -369,7 +369,7 @@ class Ytdl:
 
     def quit(self):
         self._terminate_sent_signal = True
-        self._process.terminate()
+        self._process.terminate(force=True)
 
 
 
@@ -1181,14 +1181,15 @@ class TBOPlayer:
         self.progress_bar.grid_remove()
 
     def reset_progress_bar(self):
-        self.progress_bar.stop()
         self.progress_bar_var.set(0)
 
     def set_track_position(self,event):
         if not self.dbus_connected: return
-        
         new_track_position = self.progress_bar_step_rate * ((event.x * self.progress_bar_total_steps)/self.progress_bar.winfo_width())
-        self.omx.set_position(new_track_position)
+        try:
+            self.omx.set_position(new_track_position)
+        except:
+            return False
 
     def set_progress_bar_step(self):
         self.progress_bar_var.set(int((self.omx.position * self.progress_bar_total_steps)/self.omx.minfo['duration']))
@@ -1213,13 +1214,15 @@ class TBOPlayer:
             self.style.configure("volumebar.Horizontal.TProgressbar", foreground='red', background='red')
         elif step < 49:
             self.style.configure("volumebar.Horizontal.TProgressbar", foreground='cornflower blue', background='cornflower blue')
-            # !TODO: mute
             
         self.volume_var.set(step)
 
     def set_volume(self):
         if not self.dbus_connected: return
-        print self.omx.volume(self.mB2vol((self.volume_var.get() - self.volume_normal_step) * 100))
+        try:
+            self.omx.volume(self.mB2vol((self.volume_var.get() - self.volume_normal_step) * 100))
+        except:
+            return False
 
     def vol2dB(self, volume):
         return (2000.0 * log10(volume)) / 100
@@ -1383,7 +1386,8 @@ class TBOPlayer:
                                 "Title", self.playlist.selected_track_title,
                                 "Location", self.playlist.selected_track_location)
             do_ytdl = False
-            if d.result[1] != '':
+
+            if d.result and d.result[1] != '':            
                 if (self.options.download_media_url_upon == "add" and self.playlist.selected_track()[1][:6] != self.ytdl.WAIT_TAG and 
                                                                 self.ytdl.whether_to_use_youtube_dl(d.result[1])):
                     do_ytdl = True
