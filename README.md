@@ -30,7 +30,7 @@ Install pexpect
 
 From a terminal window, type to install pip if you don't have it yet
 
-	sudo apt-get install -y python-pip
+        sudo apt-get install -y python-pip
 	
 Then to install pexpect, in the terminal window, type 
 

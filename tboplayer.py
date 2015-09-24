@@ -100,6 +100,7 @@ class OMXPlayer(object):
         #******* KenT signals to tell the gui playing has started and ended
         self.start_play_signal = False
         self.end_play_signal = False
+        self.failed_play_signal = False
         
         cmd = self._LAUNCH_CMD % (mediafile, args)
         #print "        cmd: " + cmd
@@ -109,8 +110,9 @@ class OMXPlayer(object):
         
         # ******* KenT dictionary generation moved to a function so it can be omitted.
         sleep(0.2)
-        self.read_media_info()
-        if do_dict:
+        
+        if not self.read_media_info(): return
+        elif do_dict:
             sleep(1)
             self.make_dict()
             
@@ -152,15 +154,19 @@ class OMXPlayer(object):
 
     def read_media_info(self):
         self.minfo = dict()
-        index = self._process.expect([self._INFOPROP_REXP,pexpect.TIMEOUT])
-        if index == 1: return False
+        try:
+            index = self._process.expect([self._INFOPROP_REXP,pexpect.TIMEOUT])
+        except:
+            if self.is_running(): self.stop()
+            self.failed_play_signal = True
+        if self.failed_play_signal: return False
         else:
             info_props = self._process.match.groups()
             duration = info_props[0].split(':')
             self.minfo['duration'] = int(duration[0]) * 3600 + int(duration[1]) * 60 + float(duration[2])
             self.minfo['start'] = info_props[1]
             self.minfo['bitrate'] = info_props[2]
-
+        return True
 
     def make_dict(self):
         self.video = dict()
@@ -456,8 +462,6 @@ class TBOPlayer:
             self.paused = False
             self.stop_required_signal=False     # signal that user has pressed stop
             self.quit_sent_signal = False          # signal  that q has been sent
-            self.playlist.select(self.start_track_index)
-            self.root.title(self.playlist.selected_track_title[:30] + (self.playlist.selected_track_title[30:] and '..') + " - OMXPlayer")
             self.playing_location = self.playlist.selected_track_location
             self.play_state=self._OMX_STARTING
 
@@ -465,7 +469,6 @@ class TBOPlayer:
             self.start_omx(self.playlist.selected_track_location)
             self.dbus_connected = self.omx.init_dbus_link()
             self.set_volume()
-            self.show_progress_bar()
             self.root.after(350, self.play_state_machine)
 
 
@@ -479,19 +482,21 @@ class TBOPlayer:
                 
         elif self.play_state == self._OMX_STARTING:
             self.monitor("      State machine: " + self.play_state)
-            # if omxplayer is playing the track change to play state
-            try:
-                if self.omx.start_play_signal==True:
-                    self.monitor("            <start play signal received from omx")
-                    self.omx.start_play_signal=False
-                    self.play_state=self._OMX_PLAYING
-                    self.monitor("      State machine: omx_playing started")
-                    if not self.progress_bar_var.get():
-                        self.set_progress_bar()
-            except:
-                self.monitor("      OMXPlayer not started yet.")
-            else: self.dbus_connected = self.omx.init_dbus_link()
-            
+            if self.omx.failed_play_signal == True:
+                self.play_state=self._OMX_ENDING
+            else:
+                # if omxplayer is playing the track change to play state
+                try:
+                    if self.omx.start_play_signal==True:
+                        self.monitor("            <start play signal received from omx")
+                        self.omx.start_play_signal=False
+                        self.play_state=self._OMX_PLAYING
+                        self.monitor("      State machine: omx_playing started")
+                        if not self.progress_bar_var.get():
+                            self.show_progress_bar()
+                            self.set_progress_bar()
+                except:
+                    self.monitor("      OMXPlayer not started yet.")
             self.root.after(350, self.play_state_machine)
 
         elif self.play_state == self._OMX_PLAYING:
@@ -875,6 +880,7 @@ class TBOPlayer:
         self.progress_bar_step_rate = 0
         self.volume_max = 60
         self.volume_normal_step = 40
+        self.critical_volume_step = 49
 
         #Keys
         self.root.bind("<Left>", self.key_left)
@@ -892,6 +898,8 @@ class TBOPlayer:
 
         self.style = Style()
         self.style.theme_use("alt")
+
+	
 
 # define menu
         menubar = Menu(self.root)
@@ -1211,9 +1219,9 @@ class TBOPlayer:
             step = self.volume_max
         elif step <= 0: 
             step = 0
-        if step > 49:
+        if step > self.critical_volume_step:
             self.style.configure("volumebar.Horizontal.TProgressbar", foreground='red', background='red')
-        elif step < 49:
+        elif step <= self.critical_volume_step and self.volume_var.get() > self.critical_volume_step:
             self.style.configure("volumebar.Horizontal.TProgressbar", foreground='cornflower blue', background='cornflower blue')
             
         self.volume_var.set(step)
@@ -1425,7 +1433,7 @@ class TBOPlayer:
     	
     def random_next_track(self):
         if self.playlist.length()>0:
-            index= randint(0,self.playlist.length()-1)
+            index = self.start_track_index = randint(0,self.playlist.length()-1)
             self.playlist.select(index)
             self.display_selected_track(index)
 
