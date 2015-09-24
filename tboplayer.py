@@ -108,6 +108,7 @@ class OMXPlayer(object):
         # self._process.logfile_send = sys.stdout
         
         # ******* KenT dictionary generation moved to a function so it can be omitted.
+        sleep(0.2)
         self.read_media_info()
         if do_dict:
             sleep(1)
