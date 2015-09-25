@@ -1423,7 +1423,9 @@ class TBOPlayer:
     	
     def select_next_track(self):
         if self.playlist.length()>0:
-            if self.start_track_index == self.playlist.length() - 1:
+            if self.start_track_index == None: 
+                index = self.start_track_index = self.playlist.selected_track_index()
+            elif self.start_track_index == self.playlist.length() - 1:
                 index = self.start_track_index = 0
             else:
                 index = self.start_track_index = self.start_track_index + 1
@@ -1440,7 +1442,9 @@ class TBOPlayer:
     	
     def select_previous_track(self):
         if self.playlist.length()>0:
-            if self.start_track_index == 0:
+            if self.start_track_index == None: 
+                index = self.start_track_index = self.playlist.selected_track_index()
+            elif self.start_track_index == 0:
                 index = self.start_track_index = self.playlist.length() - 1
             else:
                 index = self.start_track_index = self.start_track_index - 1
