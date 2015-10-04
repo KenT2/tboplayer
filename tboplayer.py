@@ -1001,7 +1001,7 @@ class TBOPlayer:
                               bg="light grey").grid(row=7, column=4)
 
         # vol button
-        minusplus_button = Button(self.root, width = 5, height = 1, text = '-   |   +',
+        minusplus_button = Button(self.root, width = 5, height = 1, text = '-  Vol +',
                               fg='black', bg='light grey')
         minusplus_button.grid(row=7, column=5)#, sticky=E)
         minusplus_button.bind("<ButtonRelease-1>", self.volminusplus)
