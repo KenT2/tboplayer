@@ -544,8 +544,7 @@ class TBOPlayer:
         # self.monitor("Position: " + str(self.omx.position))
         if self.paused == False:
             self.display_time.set(self.time_string(self.omx.position))
-            if (self.omx.position > self.progress_bar_step_rate * (self.progress_bar_var.get() + 1) or 
-                                        abs(self.omx.position - self.progress_bar_var.get()) > self.progress_bar_step_rate):
+            if (abs(self.omx.position - self.progress_bar_var.get()) > self.progress_bar_step_rate):
                 self.set_progress_bar_step()
         else:
             self.display_time.set("Paused")           
@@ -568,11 +567,8 @@ class TBOPlayer:
         if self.play_state == self._OMX_CLOSED:
             self.start_track_index = self.playlist.selected_track_index()
             self.play()
-        elif self.playing_location==self.playlist.selected_track_location:
+        elif self.play_state == self._OMX_PLAYING and not (self.stop_required_signal or self.break_required_signal):
             self.toggle_pause()
-        else:
-            self.stop_track()
-            self.root.after(1000, self.play_track)
 
 
     def skip_to_next_track(self):
@@ -601,17 +597,19 @@ class TBOPlayer:
             self.stop_required_signal=True
             self.break_required_signal=True
             self.hide_progress_bar()
+            self.set_play_button_state(0)
 
 
     def toggle_pause(self):
         """pause clicked Pauses or unpauses the track"""
-        self.send_command('p')
-        if self.paused == False:
-            self.paused=True
-            self.set_play_button_state(0)
-        else:
-            self.paused=False
-            self.set_play_button_state(1)
+        if self.play_state == self._OMX_PLAYING:
+            self.send_command('p')
+            if self.paused == False:
+                self.paused=True
+                self.set_play_button_state(0)
+            else:
+                self.paused=False
+                self.set_play_button_state(1)
 
 
     def set_play_button_state(self, state):
@@ -1176,19 +1174,18 @@ class TBOPlayer:
         self.stop_track()
         
     def key_return(self,event):
-    	  self.play_track()
+        self.stop_track()
+        def play_aux():
+            self.start_track_index = self.playlist.selected_track_index()
+            self.play()
+        self.root.after(1500, play_aux)
 
     def key_pressed(self,event):
         char = event.char
         if char=='':
             return
-        elif char=='.':
+        elif char in ('p', ' ', '.'):
             self.play_track()
-        elif char=='p':
-            self.toggle_pause()
-            return
-        elif char==' ':
-            self.toggle_pause()
             return
         elif char=='q':
             self.stop_track()
@@ -1444,11 +1441,6 @@ class TBOPlayer:
             index=int(event.widget.curselection()[0])
             self.playlist.select(index)
             self.display_selected_track(index)
-            if self.start_track_index:
-                if index != self.start_track_index:
-                    self.set_play_button_state(0)
-                else: 
-                    self.set_play_button_state(1)
 
     	
     def select_next_track(self):
@@ -1984,5 +1976,5 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 03 October 2015"
+    datestring=" 04 October 2015"
     bplayer = TBOPlayer()
