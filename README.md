@@ -23,7 +23,7 @@ Update omxplayer
 Ensure you have the latest version of omxplayer by typing the following in a terminal window open in the home directory:
 
         sudo apt-get -y update
-        sudo apt-get --upgrade-only omxplayer
+        sudo apt-get --upgrade-only -y omxplayer
 
 Install pexpect
 -----------------------------
@@ -98,7 +98,7 @@ Buttons
 
 * NEXT - Play next track, up to mode that you set
 
-* VOL +- - Volume control, operational only during playing
+* -  |  + - Minus/plus volume control
 
 Menus
 -----
