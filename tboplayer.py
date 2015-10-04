@@ -6,8 +6,9 @@ A GUI interface using jbaiter's pyomxplayer to control omxplayer
 INSTALLATION
 *** Instructions for installation on the official Debian Wheezy Raspbian image
   *  requires the latest bug fixed version of omxplayer which you can get by doing apt-get update then apt-get upgrade or compile from https://github.com/popcornmix/omxplayer/
-  *  install pexpect by following the instructions at www.noah.org/wiki/pexpect
+  *  install pexpect by following the instructions at https://github.com/pexpect/pexpect
   *  pyomxplayer is currently included inline in the code as I have made some modifications to jbaiter's version, his original can be seen at https://github.com/jbaiter/pyomxplayer
+  *  tboplayer is integraded with youtube-dl, so if you want to use that utility, instructions for installation are at https://rg3.github.io/youtube-dl/
   *  download tboplayer.py into a directory
   *  type python tboplayer.py from a terminal opened in the directory within which tboplayer.py is stored
   *  If you want to be able to watch videos from online services like Youtube, then you must have up-to-date youtube-dl installed on your system, as well as avconv 10 or later
@@ -67,9 +68,12 @@ I think I might have fixed this but two tracks may play at the same time if you 
 import pexpect
 import re
 import string
+import dbus
+import gobject
 
 from threading import Thread
 from time import sleep
+from dbus import glib
 
 
 class OMXPlayer(object):
@@ -387,7 +391,6 @@ from random import randint
 from json import loads
 from math import log10
 from getpass import getuser
-from dbus import glib
 from Tkinter import *
 from ttk import (   Progressbar,    Style   )
 import Tkinter as tk
@@ -398,8 +401,6 @@ import tkFont
 import csv
 import os
 import ConfigParser
-import dbus
-import gobject
 
 
 
@@ -453,6 +454,8 @@ class TBOPlayer:
         # whether omxplayer dbus is connected
         self.dbus_connected = False
 
+        self.start_track_index = None
+
 
     # kick off the state machine by playing a track
     def play(self):
@@ -464,12 +467,13 @@ class TBOPlayer:
             self.quit_sent_signal = False          # signal  that q has been sent
             self.playing_location = self.playlist.selected_track_location
             self.play_state=self._OMX_STARTING
+            self.dbus_connected = False
 
             #play the selelected track
             self.start_omx(self.playlist.selected_track_location)
-            self.dbus_connected = self.omx.init_dbus_link()
-            self.set_volume()
-            self.root.after(350, self.play_state_machine)
+            self.play_state_machine()
+            
+            self.set_play_button_state(1)
 
 
     def play_state_machine(self):
@@ -495,6 +499,7 @@ class TBOPlayer:
                         if not self.progress_bar_var.get():
                             self.show_progress_bar()
                             self.set_progress_bar()
+                        self.dbus_connected = self.omx.init_dbus_link()
                 except:
                     self.monitor("      OMXPlayer not started yet.")
             self.root.after(350, self.play_state_machine)
@@ -512,7 +517,7 @@ class TBOPlayer:
                     if self.quit_sent_signal:
                         self.monitor("            quit sent signal received")
                         self.quit_sent_signal = False
-                    if self.omx.end_play_signal:                    
+                    if self.omx.end_play_signal:
                         self.monitor("            <end play signal received")
                         self.monitor("            <end detected at: " + str(self.omx.position))
                     self.play_state =self. _OMX_ENDING
@@ -572,27 +577,30 @@ class TBOPlayer:
 
     def skip_to_next_track(self):
         # send signals to stop and then to play the next track
-        self.monitor(">skip  to next received") 
-        self.monitor(">stop received for next track") 
-        self.stop_required_signal=True
-        self.play_next_track_signal=True
+        if self.play_state == self._OMX_PLAYING:
+            self.monitor(">skip  to next received") 
+            self.monitor(">stop received for next track") 
+            self.stop_required_signal=True
+            self.play_next_track_signal=True
         
 
     def skip_to_previous_track(self):
         # send signals to stop and then to play the previous track
-        self.monitor(">skip  to previous received")
-        self.monitor(">stop received for previous track") 
-        self.stop_required_signal=True
-        self.play_previous_track_signal=True
+        if self.play_state == self._OMX_PLAYING:
+            self.monitor(">skip  to previous received")
+            self.monitor(">stop received for previous track") 
+            self.stop_required_signal=True
+            self.play_previous_track_signal=True
 
 
     def stop_track(self):
         # send signals to stop and then to break out of any repeat loop
-        self.monitor(">stop received")
-        self.start_track_index=None
-        self.stop_required_signal=True
-        self.break_required_signal=True
-        self.hide_progress_bar()
+        if self.play_state == self._OMX_PLAYING:
+            self.monitor(">stop received")
+            self.start_track_index=None
+            self.stop_required_signal=True
+            self.break_required_signal=True
+            self.hide_progress_bar()
 
 
     def toggle_pause(self):
@@ -600,8 +608,18 @@ class TBOPlayer:
         self.send_command('p')
         if self.paused == False:
             self.paused=True
+            self.set_play_button_state(0)
         else:
             self.paused=False
+            self.set_play_button_state(1)
+
+
+    def set_play_button_state(self, state):
+        if state == 0:
+            self.play_button['text'] = 'Play'
+        elif state == 1:
+            self.play_button['text'] = 'Pause'
+
 
     def volminusplus(self, event):
         if event.x < event.widget.winfo_width()/2:
@@ -643,11 +661,13 @@ class TBOPlayer:
             self.hide_progress_bar()
             self.monitor("What next, break_required so exit")
             self.break_required_signal=False
+            self.set_play_button_state(0)
             # fall out of the state machine
             return
         elif self.options.mode=='single':
             self.hide_progress_bar()
             self.monitor("What next, single track so exit")
+            self.set_play_button_state(0)
             # fall out of the state machine
             return
         elif self.options.mode=='repeat':
@@ -791,7 +811,8 @@ class TBOPlayer:
             self.refresh_playlist_display()
             return
         track= "'"+ track.replace("'","'\\''") + "'"
-        opts= self.options.omx_user_options + " "+ self.options.omx_audio_option + " " + self.options.omx_subtitles_option + " "
+        opts= (self.options.omx_user_options + " "+ self.options.omx_audio_option + 
+                                        " " + self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
         self.omx = OMXPlayer(track, args=opts, start_playback=True, do_dict = self.options.generate_track_info)
 
         self.monitor("            >Play: " + track + " with " + opts)
@@ -880,7 +901,7 @@ class TBOPlayer:
         self.progress_bar_step_rate = 0
         self.volume_max = 60
         self.volume_normal_step = 40
-        self.critical_volume_step = 49
+        self.volume_critical_step = 49
 
         #Keys
         self.root.bind("<Left>", self.key_left)
@@ -962,9 +983,10 @@ class TBOPlayer:
                               fg='black', command = self.clear_list, 
                               bg='light grey').grid(row=0, column=6, rowspan=2)
         # play/pause button
-        Button(self.root, width = 5, height = 1, text='Play/Pause',
+        self.play_button = Button(self.root, width = 5, height = 1, text='Play',
                               fg='black', command = self.play_track, 
-                              bg="light grey").grid(row=7, column=1)
+                              bg="light grey")
+        self.play_button.grid(row=7, column=1)
         # stop track button       
         Button(self.root, width = 5, height = 1, text='Stop',
                               fg='black', command = self.stop_track, 
@@ -1219,9 +1241,9 @@ class TBOPlayer:
             step = self.volume_max
         elif step <= 0: 
             step = 0
-        if step > self.critical_volume_step:
+        if step > self.volume_critical_step:
             self.style.configure("volumebar.Horizontal.TProgressbar", foreground='red', background='red')
-        elif step <= self.critical_volume_step and self.volume_var.get() > self.critical_volume_step:
+        elif step <= self.volume_critical_step and self.volume_var.get() > self.volume_critical_step:
             self.style.configure("volumebar.Horizontal.TProgressbar", foreground='cornflower blue', background='cornflower blue')
             
         self.volume_var.set(step)
@@ -1229,9 +1251,12 @@ class TBOPlayer:
     def set_volume(self):
         if not self.dbus_connected: return
         try:
-            self.omx.volume(self.mB2vol((self.volume_var.get() - self.volume_normal_step) * 100))
+            self.omx.volume(self.mB2vol(self.get_mB()))
         except:
             return False
+
+    def get_mB(self): 
+        return (self.volume_var.get() - self.volume_normal_step) * 100
 
     def vol2dB(self, volume):
         return (2000.0 * log10(volume)) / 100
@@ -1419,6 +1444,11 @@ class TBOPlayer:
             index=int(event.widget.curselection()[0])
             self.playlist.select(index)
             self.display_selected_track(index)
+            if self.start_track_index:
+                if index != self.start_track_index:
+                    self.set_play_button_state(0)
+                else: 
+                    self.set_play_button_state(1)
 
     	
     def select_next_track(self):
@@ -1954,5 +1984,5 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 22 Septemper 2015"
+    datestring=" 03 October 2015"
     bplayer = TBOPlayer()
