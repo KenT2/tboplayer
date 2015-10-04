@@ -98,7 +98,7 @@ Buttons
 
 * NEXT - Play next track, up to mode that you set
 
-* -  |  + - Minus/plus volume control
+* `-`VOL + - Minus/plus volume control
 
 Menus
 -----
