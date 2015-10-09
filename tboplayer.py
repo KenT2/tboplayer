@@ -79,7 +79,7 @@ from dbus import glib
 class OMXPlayer(object):
 
     _PROPS_REXP = re.compile(r"([\w|\W]+)Subtitle count:.*", re.M)
-    _INFOPROP_REXP = re.compile(r".*Duration: (\d{2}:\d{2}:\d{2}.\d{2}), start: (\d.\d+), bitrate: (\d+).*")
+    _TIMEPROP_REXP = re.compile(r".*Duration: (\d{2}:\d{2}:\d{2}.\d{2}), start: (\d.\d+), bitrate: (\d+).*")
     _FILEPROP_REXP = re.compile(r".*audio streams (\d+) video streams (\d+) chapters (\d+) subtitles (\d+).*")
     _VIDEOPROP_REXP = re.compile(r".*Video codec ([\w-]+) width (\d+) height (\d+) profile (\d+) fps ([\d.]+).*")
     _AUDIOPROP_REXP = re.compile(r".*Audio codec (\w+) channels (\d+) samplerate (\d+) bitspersample (\d+).*")
@@ -114,11 +114,7 @@ class OMXPlayer(object):
         
         # ******* KenT dictionary generation moved to a function so it can be omitted.
         sleep(0.2)
-        
-        if not self.read_media_info(): return
-        elif do_dict:
-            sleep(1)
-            self.make_dict()
+        self.make_dict()
             
         self._position_thread = Thread(target=self._get_position)
         self._position_thread.start()
@@ -155,60 +151,57 @@ class OMXPlayer(object):
                 break
             sleep(0.05)
 
+    def make_dict(self):
+        self.timenf = dict()
+        self.video = dict()
+        self.audio = dict()
 
-    def read_media_info(self):
-        self.minfo = dict()
         try:
-            index = self._process.expect([self._INFOPROP_REXP,pexpect.TIMEOUT])
+            index = self._process.expect([self._PROPS_REXP, pexpect.TIMEOUT])
         except:
             if self.is_running(): self.stop()
             self.failed_play_signal = True
         if self.failed_play_signal: return False
         else:
-            info_props = self._process.match.groups()
-            duration = info_props[0].split(':')
-            self.minfo['duration'] = int(duration[0]) * 3600 + int(duration[1]) * 60 + float(duration[2])
-            self.minfo['start'] = info_props[1]
-            self.minfo['bitrate'] = info_props[2]
-        return True
+            # Get file properties
+            output = self._process.match.group()
 
-    def make_dict(self):
-        self.video = dict()
-        self.audio = dict()
+            # Get time properties
+            time_props = self._TIMEPROP_REXP.search(output)
+            if time_props:
+                time_props = time_props.groups()
+                duration = time_props[0].split(':')
+                self.timenf['duration'] = int(duration[0]) * 3600 + int(duration[1]) * 60 + float(duration[2])
+                self.timenf['start'] = time_props[1]
+                self.timenf['bitrate'] = time_props[2]
 
-        index = self._process.expect([self._PROPS_REXP, pexpect.TIMEOUT])
-        if index == 1: return False
-        
-        output = self._process.match.group()
+            # Get file properties
+            file_props = self._FILEPROP_REXP.search(output)
+            if file_props:
+                file_props = file_props.groups()
+                (self.audio['streams'], self.video['streams'],
+                self.chapters, self.subtitles) = [int(x) for x in file_props]
 
-        # Get file properties
-        file_props = self._FILEPROP_REXP.search(output)
-        if file_props:
-            file_props = file_props.groups()
-            (self.audio['streams'], self.video['streams'],
-            self.chapters, self.subtitles) = [int(x) for x in file_props]
-
-        # Get video properties        
-        
-        video_props = self._VIDEOPROP_REXP.search(output)
-        if video_props: 
-            video_props = video_props.groups()
-            self.video['decoder'] = video_props[0]
-            self.video['dimensions'] = tuple(int(x) for x in video_props[1:3])
-            self.video['profile'] = int(video_props[3])
-            self.video['fps'] = float(video_props[4])
+            # Get video properties        
+            video_props = self._VIDEOPROP_REXP.search(output)
+            if video_props: 
+                video_props = video_props.groups()
+                self.video['decoder'] = video_props[0]
+                self.video['dimensions'] = tuple(int(x) for x in video_props[1:3])
+                self.video['profile'] = int(video_props[3])
+                self.video['fps'] = float(video_props[4])
                         
-        # Get audio properties
-        audio_props = self._AUDIOPROP_REXP.search(output)
-        if audio_props:
-            audio_props = audio_props.groups()
-            self.audio['decoder'] = audio_props[0]
-            (self.audio['channels'], self.audio['rate'],
-            self.audio['bps']) = [int(x) for x in audio_props[1:]]
+            # Get audio properties
+            audio_props = self._AUDIOPROP_REXP.search(output)
+            if audio_props:
+                audio_props = audio_props.groups()
+                self.audio['decoder'] = audio_props[0]
+                (self.audio['channels'], self.audio['rate'],
+                self.audio['bps']) = [int(x) for x in audio_props[1:]]
 
-        if 'streams' in self.audio and self.audio['streams'] > 0:
-            self.current_audio_stream = 1
-            self.current_volume = 0.0
+            if 'streams' in self.audio and self.audio['streams'] > 0:
+                self.current_audio_stream = 1
+                self.current_volume = 0.0
 
     def init_dbus_link(self):
         try:
@@ -264,7 +257,10 @@ class OMXPlayer(object):
             return self.dbusif_props.Volume(float(volume))
 
     def set_position(self, secs):
-        return self.dbusif_player.SetPosition(dbus.ObjectPath('/not/used'),long(secs*1000000))
+        return self.dbusif_player.SetPosition(dbus.ObjectPath('/not/used'), long(secs*1000000))
+
+    def set_video_geometry(self, x1, y1, x2, y2):
+        self.dbusif_player.VideoPos(dbus.ObjectPath('/not/used'), str(x1) + ' ' + str(y1) + ' ' + str(x2)+ ' ' + str(y2))
 
     @staticmethod
     def set_omx_location(location):
@@ -393,6 +389,7 @@ from math import log10
 from getpass import getuser
 from Tkinter import *
 from ttk import (   Progressbar,    Style   )
+import gtk
 import Tkinter as tk
 import tkFileDialog
 import tkMessageBox
@@ -499,6 +496,8 @@ class TBOPlayer:
                         if not self.progress_bar_var.get():
                             self.show_progress_bar()
                             self.set_progress_bar()
+                            if self.media_is_video():
+                                self.create_vprogress_bar()
                         self.dbus_connected = self.omx.init_dbus_link()
                 except:
                     self.monitor("      OMXPlayer not started yet.")
@@ -535,6 +534,8 @@ class TBOPlayer:
                 self.play_state = self._OMX_CLOSED
             self.dbus_connected = False
             self.do_ending()
+            if self.media_is_video():
+                self.destroy_vprogress_bar()
             self.root.after(350, self.play_state_machine)
 
     # do things in each state
@@ -809,8 +810,8 @@ class TBOPlayer:
             self.refresh_playlist_display()
             return
         track= "'"+ track.replace("'","'\\''") + "'"
-        opts= (self.options.omx_user_options + " "+ self.options.omx_audio_option + 
-                                        " " + self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
+        opts= (self.options.omx_user_options + " "+ self.options.omx_audio_option + " " +
+                                                                        self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
         self.omx = OMXPlayer(track, args=opts, start_playback=True, do_dict = self.options.generate_track_info)
 
         self.monitor("            >Play: " + track + " with " + opts)
@@ -886,7 +887,8 @@ class TBOPlayer:
 
         OMXPlayer.set_omx_location(self.options.omx_location)
 
-        self._SUPPORTED_MEDIA_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3g2",".3gp",".wav",".avi",".mp4",".mkv",".mov",".mj2",".mpg",".ogv")
+        self._SUPPORTED_AUDIO_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3g2",".3gp",".wav")
+        self._SUPPORTED_VIDEO_FORMATS = (".avi",".mp4",".mkv",".mov",".mj2",".mpg",".ogv")
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -1093,14 +1095,12 @@ class TBOPlayer:
 # MISCELLANEOUS
 # ***************************************
 
-
     def edit_options(self):
         """edit the options then read them from file"""
         eo = OptionsDialog(self.root, self.options.options_file,'Edit Options')
         self.options.read(self.options.options_file)
         self.ytdl.set_options(self.options)
         OMXPlayer.set_omx_location(self.options.omx_location)
-
 
     def show_help (self):
         tkMessageBox.showinfo("Help",
@@ -1200,7 +1200,7 @@ class TBOPlayer:
 # ******************************************
 
     def set_progress_bar(self):
-        self.progress_bar_step_rate = self.omx.minfo['duration']/self.progress_bar_total_steps
+        self.progress_bar_step_rate = self.omx.timenf['duration']/self.progress_bar_total_steps
 
     def show_progress_bar(self):
         self.progress_bar.grid()
@@ -1213,14 +1213,69 @@ class TBOPlayer:
 
     def set_track_position(self,event):
         if not self.dbus_connected: return
-        new_track_position = self.progress_bar_step_rate * ((event.x * self.progress_bar_total_steps)/self.progress_bar.winfo_width())
+        new_track_position = self.progress_bar_step_rate * ((event.x * self.progress_bar_total_steps)/event.widget.winfo_width())
         try:
             self.omx.set_position(new_track_position)
         except:
             return False
 
     def set_progress_bar_step(self):
-        self.progress_bar_var.set(int((self.omx.position * self.progress_bar_total_steps)/self.omx.minfo['duration']))
+        self.progress_bar_var.set(int((self.omx.position * self.progress_bar_total_steps)/self.omx.timenf['duration']))
+
+
+# ******************************************
+# VIDEO PROGRESS BAR CALLBACKS
+# ******************************************
+
+    def media_is_video(self):
+        return bool(len(self.omx.video))
+
+    def create_vprogress_bar(self):
+        screenres = self.get_screen_res()
+        vsize = self.omx.video['dimensions']
+
+        self.vprogress_bar_window = Toplevel()
+        geometry = str(int(vsize[0] * (screenres[1] / float(vsize[1]))))+'x15'+'-'+ str( (screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2 ) +'-0'
+        self.vprogress_bar_window.geometry(geometry)
+        self.vprogress_bar_window.resizable(False,False)
+        self.vprogress_bar = Progressbar(self.vprogress_bar_window, orient=HORIZONTAL, length=self.progress_bar_total_steps, mode='determinate', 
+                                                                        maximum=self.progress_bar_total_steps, variable=self.progress_bar_var)
+        self.vprogress_bar.pack(fill=BOTH)
+        self.vprogress_bar.bind("<ButtonRelease-1>", self.set_track_position)
+        self.vprogress_bar.bind("<Enter>", self.enter_vprogress_bar)
+        self.vprogress_bar.bind("<Leave>", self.leave_vprogress_bar)
+        self.vprogress_bar_window.overrideredirect(1)
+
+    def enter_vprogress_bar(self,*event):
+        screenres = self.get_screen_res()
+        vsize = self.omx.video['dimensions']
+        try:
+            self.omx.set_video_geometry((screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2,
+                                0,
+                                (screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2 + int(vsize[0] * (screenres[1] / float(vsize[1]))),
+                                screenres[1] - 15)
+        except Exception, e:
+            print '[!] enter vprogressbar failed'
+            print e
+
+    def leave_vprogress_bar(self,*event):
+        screenres = self.get_screen_res()
+        vsize = self.omx.video['dimensions']
+        try:
+            self.omx.set_video_geometry((screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2,
+                                0, 
+                                (screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2 + int(vsize[0] * (screenres[1] / float(vsize[1]))),
+                                screenres[1])
+        except Exception, e:
+            print '[!] leave vprogressbar failed'
+            print e
+
+    def destroy_vprogress_bar(self):
+        self.vprogress_bar_window.destroy()
+        self.vprogress_bar_window = None
+    
+    def get_screen_res(self):
+        return (gtk.gdk.screen_width(), gtk.gdk.screen_height())
 
 
 # ***************************************
@@ -1288,7 +1343,8 @@ class TBOPlayer:
 # ***************************************
 
     def is_file_supported(self, f):
-        return f[-4:] in self._SUPPORTED_MEDIA_FORMATS
+        ext = f[-4:]
+        return (ext in self._SUPPORTED_AUDIO_FORMATS or ext in self._SUPPORTED_VIDEO_FORMATS)
 
     def add_track(self):                                
         """
@@ -1976,5 +2032,5 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 04 October 2015"
+    datestring=" 09 October 2015"
     bplayer = TBOPlayer()
