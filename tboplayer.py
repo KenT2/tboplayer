@@ -157,10 +157,12 @@ class OMXPlayer(object):
         self.audio = dict()
 
         try:
-            index = self._process.expect([self._PROPS_REXP, pexpect.TIMEOUT])
+            index = self._process.expect([self._PROPS_REXP, self._DONE_REXP, pexpect.TIMEOUT])
         except:
             if self.is_running(): self.stop()
             self.failed_play_signal = True
+        finally:
+            if index != 0: self.failed_play_signal = True
         if self.failed_play_signal: return False
         else:
             # Get file properties
@@ -827,7 +829,10 @@ class TBOPlayer:
             self.omx.send_command(command)
             if self.dbus_connected and command in ('+' , '=', '-'):
                 sleep(0.1)
-                self.set_volume_bar_step(int(self.vol2dB(self.omx.volume())+self.volume_normal_step))
+                try:
+                    self.set_volume_bar_step(int(self.vol2dB(self.omx.volume())+self.volume_normal_step))
+                except:
+                    self.monitor("Failed to set volume bar step")
             return True
         else:
             if command in ('+' , '='): 
@@ -1213,7 +1218,7 @@ class TBOPlayer:
         try:
             self.omx.set_position(new_track_position)
         except:
-            return False
+            self.monitor("Failed to set track position")
         self.root.focus_set()
 
     def set_progress_bar_step(self):
