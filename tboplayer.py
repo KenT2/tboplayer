@@ -381,15 +381,14 @@ class Ytdl:
 
 
 #from pyomxplayer import OMXPlayer
-from pprint import pformat
-from pprint import pprint
+from pprint import ( pformat, pprint )
 from random import randint
 from json import loads
 from math import log10
 from getpass import getuser
 from Tkinter import *
-from ttk import (   Progressbar,    Style   )
-import gtk
+from ttk import ( Progressbar, Style )
+from gtk.gdk import ( screen_width, screen_height )
 import Tkinter as tk
 import tkFileDialog
 import tkMessageBox
@@ -483,24 +482,21 @@ class TBOPlayer:
                 
         elif self.play_state == self._OMX_STARTING:
             self.monitor("      State machine: " + self.play_state)
-            if self.omx.failed_play_signal == True:
-                self.play_state=self._OMX_ENDING
-            else:
-                # if omxplayer is playing the track change to play state
-                try:
-                    if self.omx.start_play_signal==True:
-                        self.monitor("            <start play signal received from omx")
-                        self.omx.start_play_signal=False
-                        self.play_state=self._OMX_PLAYING
-                        self.monitor("      State machine: omx_playing started")
-                        if not self.progress_bar_var.get():
-                            self.show_progress_bar()
-                            self.set_progress_bar()
-                            if self.media_is_video():
-                                self.create_vprogress_bar()
-                        self.dbus_connected = self.omx.init_dbus_link()
-                except:
-                    self.monitor("      OMXPlayer not started yet.")
+        # if omxplayer is playing the track change to play state
+            try:
+                if self.omx.start_play_signal==True:
+                    self.monitor("            <start play signal received from omx")
+                    self.omx.start_play_signal=False
+                    self.play_state=self._OMX_PLAYING
+                    self.monitor("      State machine: omx_playing started")
+                    if not self.progress_bar_var.get():
+                        self.show_progress_bar()
+                        self.set_progress_bar()
+                        if self.media_is_video():
+                            self.create_vprogress_bar()
+                    self.dbus_connected = self.omx.init_dbus_link()
+            except:
+                self.monitor("      OMXPlayer not started yet.")
             self.root.after(350, self.play_state_machine)
 
         elif self.play_state == self._OMX_PLAYING:
@@ -521,6 +517,8 @@ class TBOPlayer:
                         self.monitor("            <end detected at: " + str(self.omx.position))
                     self.play_state =self. _OMX_ENDING
                     self.reset_progress_bar()
+                    if self.media_is_video():
+                        self.destroy_vprogress_bar()
                 self.do_playing()
             self.root.after(350, self.play_state_machine)
 
@@ -534,8 +532,6 @@ class TBOPlayer:
                 self.play_state = self._OMX_CLOSED
             self.dbus_connected = False
             self.do_ending()
-            if self.media_is_video():
-                self.destroy_vprogress_bar()
             self.root.after(350, self.play_state_machine)
 
     # do things in each state
@@ -545,7 +541,7 @@ class TBOPlayer:
         # self.monitor("Position: " + str(self.omx.position))
         if self.paused == False:
             self.display_time.set(self.time_string(self.omx.position))
-            if (abs(self.omx.position - self.progress_bar_var.get()) > self.progress_bar_step_rate):
+            if abs(self.omx.position - self.progress_bar_var.get()) > self.progress_bar_step_rate:
                 self.set_progress_bar_step()
         else:
             self.display_time.set("Paused")           
@@ -888,7 +884,7 @@ class TBOPlayer:
         OMXPlayer.set_omx_location(self.options.omx_location)
 
         self._SUPPORTED_AUDIO_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3g2",".3gp",".wav")
-        self._SUPPORTED_VIDEO_FORMATS = (".avi",".mp4",".mkv",".mov",".mj2",".mpg",".ogv")
+        self._SUPPORTED_VIDEO_FORMATS = (".avi",".flv",".mp4",".mkv",".mov",".mj2",".mpg",".ogv")
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -1218,13 +1214,17 @@ class TBOPlayer:
             self.omx.set_position(new_track_position)
         except:
             return False
+        self.root.focus_set()
 
     def set_progress_bar_step(self):
-        self.progress_bar_var.set(int((self.omx.position * self.progress_bar_total_steps)/self.omx.timenf['duration']))
+        try:
+            self.progress_bar_var.set(int((self.omx.position * self.progress_bar_total_steps)/self.omx.timenf['duration']))
+        except:
+            self.monitor('Error trying to set progress bar step')
 
 
 # ******************************************
-# VIDEO PROGRESS BAR CALLBACKS
+# VIDEO PROGRESS BAR FUNCTIONS
 # ******************************************
 
     def media_is_video(self):
@@ -1235,7 +1235,7 @@ class TBOPlayer:
         vsize = self.omx.video['dimensions']
 
         self.vprogress_bar_window = Toplevel()
-        geometry = str(int(vsize[0] * (screenres[1] / float(vsize[1]))))+'x15'+'-'+ str( (screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2 ) +'-0'
+        geometry = str(int(vsize[0] * (screenres[1] / float(vsize[1]))) - 1 )+'x15-'+ str( ((screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2)) +'-0'
         self.vprogress_bar_window.geometry(geometry)
         self.vprogress_bar_window.resizable(False,False)
         self.vprogress_bar = Progressbar(self.vprogress_bar_window, orient=HORIZONTAL, length=self.progress_bar_total_steps, mode='determinate', 
@@ -1247,6 +1247,7 @@ class TBOPlayer:
         self.vprogress_bar_window.overrideredirect(1)
 
     def enter_vprogress_bar(self,*event):
+        if not self.dbus_connected: return
         screenres = self.get_screen_res()
         vsize = self.omx.video['dimensions']
         try:
@@ -1255,10 +1256,11 @@ class TBOPlayer:
                                 (screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2 + int(vsize[0] * (screenres[1] / float(vsize[1]))),
                                 screenres[1] - 15)
         except Exception, e:
-            print '[!] enter vprogressbar failed'
-            print e
+            self.monitor('[!] enter_vprogress_bar failed')
+            self.monitor(e)
 
     def leave_vprogress_bar(self,*event):
+        if not self.dbus_connected: return
         screenres = self.get_screen_res()
         vsize = self.omx.video['dimensions']
         try:
@@ -1267,15 +1269,16 @@ class TBOPlayer:
                                 (screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2 + int(vsize[0] * (screenres[1] / float(vsize[1]))),
                                 screenres[1])
         except Exception, e:
-            print '[!] leave vprogressbar failed'
-            print e
+            self.monitor('[!] leave_vprogress_bar failed')
+            self.monitor(e)
 
     def destroy_vprogress_bar(self):
-        self.vprogress_bar_window.destroy()
-        self.vprogress_bar_window = None
+        if self.vprogress_bar_window:
+            self.vprogress_bar_window.destroy()
+            self.vprogress_bar_window = None
     
     def get_screen_res(self):
-        return (gtk.gdk.screen_width(), gtk.gdk.screen_height())
+        return (screen_width(), screen_height())
 
 
 # ***************************************
@@ -2032,5 +2035,5 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 09 October 2015"
+    datestring=" 10 October 2015"
     bplayer = TBOPlayer()
