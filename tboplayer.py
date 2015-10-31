@@ -1240,7 +1240,17 @@ class TBOPlayer:
         vsize = self.omx.video['dimensions']
 
         self.vprogress_bar_window = Toplevel()
-        geometry = str(int(vsize[0] * (screenres[1] / float(vsize[1]))) - 1 )+'x15-'+ str( ((screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2)) +'-0'
+
+        self.vprogress_bar_window.video_height = screenres[1]
+        self.vprogress_bar_window.video_width = int(vsize[0] * (screenres[1] / float(vsize[1])))
+        self.vprogress_bar_window.bar_height = 15
+
+        if self.vprogress_bar_window.video_width > screenres[0]:
+            self.vprogress_bar_window.video_width = screenres[0]
+            self.vprogress_bar_window.video_height = int(vsize[1] * (screenres[0] / float(vsize[0])))
+
+        geometry = (str(self.vprogress_bar_window.video_width - 1) + 'x' + str(self.vprogress_bar_window.bar_height) + '-' 
+                                                                                                       + str((screenres[0] - self.vprogress_bar_window.video_width)/2) + '-0')
         self.vprogress_bar_window.geometry(geometry)
         self.vprogress_bar_window.resizable(False,False)
         self.vprogress_bar = Progressbar(self.vprogress_bar_window, orient=HORIZONTAL, length=self.progress_bar_total_steps, mode='determinate', 
@@ -1254,25 +1264,24 @@ class TBOPlayer:
     def enter_vprogress_bar(self,*event):
         if not self.dbus_connected: return
         screenres = self.get_screen_res()
-        vsize = self.omx.video['dimensions']
-        try:
-            self.omx.set_video_geometry((screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2,
-                                0,
-                                (screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2 + int(vsize[0] * (screenres[1] / float(vsize[1]))),
-                                screenres[1] - 15)
-        except Exception, e:
-            self.monitor('[!] enter_vprogress_bar failed')
-            self.monitor(e)
+        if self.vprogress_bar_window.video_height > screenres[1] - self.vprogress_bar_window.bar_height:
+            try:
+                self.omx.set_video_geometry((screenres[0] - self.vprogress_bar_window.video_width)/2,
+                                (screenres[1] - self.vprogress_bar_window.video_height)/2,
+                                (screenres[0] - self.vprogress_bar_window.video_width)/2 + self.vprogress_bar_window.video_width,
+                                (screenres[1] - self.vprogress_bar_window.video_height)/2 + self.vprogress_bar_window.video_height - self.vprogress_bar_window.bar_height)
+            except Exception, e:
+                self.monitor('[!] enter_vprogress_bar failed')
+                self.monitor(e)
 
     def leave_vprogress_bar(self,*event):
         if not self.dbus_connected: return
         screenres = self.get_screen_res()
-        vsize = self.omx.video['dimensions']
         try:
-            self.omx.set_video_geometry((screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2,
-                                0, 
-                                (screenres[0] - int(vsize[0] * (screenres[1] / float(vsize[1]))))/2 + int(vsize[0] * (screenres[1] / float(vsize[1]))),
-                                screenres[1])
+            self.omx.set_video_geometry((screenres[0] - self.vprogress_bar_window.video_width)/2,
+                                (screenres[1] - self.vprogress_bar_window.video_height)/2,
+                                (screenres[0] - self.vprogress_bar_window.video_width)/2 + self.vprogress_bar_window.video_width,
+                                (screenres[1] - self.vprogress_bar_window.video_height)/2 + self.vprogress_bar_window.video_height)
         except Exception, e:
             self.monitor('[!] leave_vprogress_bar failed')
             self.monitor(e)
