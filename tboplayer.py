@@ -763,9 +763,6 @@ class TBOPlayer:
         if not media_url: media_url = data['url']
         track = self.playlist.waiting_track()
         self.playlist.replace(track[0],[media_url, data['title']])
-        self.refresh_playlist_display()
-        self.playlist.select(track[0])  
-        self.display_selected_track(track[0])
         if self.play_state == self._OMX_STARTING:
             self.start_omx(media_url,skip_ytdl_check=True)
         self.refresh_playlist_display()
@@ -2072,5 +2069,5 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 31 October 2015"
+    datestring=" 1 November 2015"
     bplayer = TBOPlayer()
