@@ -141,7 +141,7 @@ A track is selected using a single click of the mouse or up-down arrow key, play
 
 Removing the selected track can be done by pressing the Delete key.
 
-During playing of a track, a clickable progress bar will appear below the playlist, and if playing a video it's possible to see the progress bar if you move your mouse to the lowest side of the video.
+During playing of a track, a clickable progress bar will appear below the playlist, which lets you seek a given position, and if playing a video it's possible to see the progress bar if you move your mouse to the lowest side of the video.
 
 Again during playing of a track, a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer. A list  of commands is provided in the help menu. Note: some of the commands are not implemented by omxplayer. 
 

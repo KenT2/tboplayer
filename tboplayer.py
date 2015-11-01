@@ -81,7 +81,7 @@ class OMXPlayer(object):
     _PROPS_REXP = re.compile(r"([\w|\W]+)Subtitle count:.*", re.M)
     _TIMEPROP_REXP = re.compile(r".*Duration: (\d{2}:\d{2}:\d{2}.\d{2}), start: (\d.\d+), bitrate: (\d+).*")
     _FILEPROP_REXP = re.compile(r".*audio streams (\d+) video streams (\d+) chapters (\d+) subtitles (\d+).*")
-    _VIDEOPROP_REXP = re.compile(r".*Video codec ([\w-]+) width (\d+) height (\d+) profile (\d+) fps ([\d.]+).*")
+    _VIDEOPROP_REXP = re.compile(r".*Video codec ([\w-]+) width (\d+) height (\d+) profile ([-]{0,1}\d+) fps ([\d.]+).*")
     _AUDIOPROP_REXP = re.compile(r".*Audio codec (\w+) channels (\d+) samplerate (\d+) bitspersample (\d+).*")
     _STATUS_REXP = re.compile(r"M:\s*([\d.]+).*")
     _DONE_REXP = re.compile(r"have a nice day.*")
@@ -113,7 +113,7 @@ class OMXPlayer(object):
         # self._process.logfile_send = sys.stdout
         
         # ******* KenT dictionary generation moved to a function so it can be omitted.
-        sleep(0.2)
+        sleep(0.5)
         self.make_dict()
             
         self._position_thread = Thread(target=self._get_position)
@@ -277,11 +277,11 @@ class OMXPlayer(object):
 class Ytdl:
 
     """
-        interface for youtube-dl cli
+        interface for youtube-dl
     """
 
     _YTLAUNCH_CMD = ''
-    _YTLAUNCH_ARGS_FORMAT = ' --prefer-%s -g -f %s "%s"'
+    _YTLAUNCH_ARGS_FORMAT = ' --prefer-%s -j -f %s "%s"'
     _YTLAUNCH_PLST_CMD = ''
     _YTLAUNCH_PLST_ARGS_FORMAT = ' --prefer-%s -J -f mp4 "%s"'
     _PREFERED_TRANSCODER = ''
@@ -735,27 +735,17 @@ class TBOPlayer:
                 self.ytdl_state = self._YTDL_CLOSED
             self.root.after(500, self.ytdl_state_machine)
 
-
     def treat_ytdl_result(self):
         if self.ytdl.result[0] == 1:
-            if self.ytdl._LINK_REXP.match(self.ytdl.result[1]):
-                try:
-                    track = self.playlist.waiting_track()
-                    result = (self.ytdl.result[1].rstrip("\n\r"), track[1][1].replace(self.ytdl.WAIT_TAG,""))
-                    self.playlist.replace(track[0], result)
-                    self.refresh_playlist_display()
-                    self.playlist.select(track[0])  
-                    self.display_selected_track(track[0])
-                    if self.play_state == self._OMX_STARTING:
-                        self.start_omx(result[0],skip_ytdl_check=True)
-                except:
-                    # no need to treat this
-                    return
+            try:
+                result = loads(self.ytdl.result[1])
+            except:
+                self.display_selected_track_title.set(self.ytdl.MSGS[2])
+                return
+            if 'entries' in result:
+                self.treat_youtube_playlist_data(result)
             else:
-                try:
-                    self.treat_youtube_playlist(loads(self.ytdl.result[1]))
-                except:
-                    self.display_selected_track_title.set(self.ytdl.MSGS[2])
+                self.treat_video_data(result)
         else:
             if self.ytdl.result[0] == -1:
                 waiting_track = self.playlist.waiting_track()
@@ -766,29 +756,48 @@ class TBOPlayer:
             if self.play_state==self._OMX_STARTING:
                 self.quit_sent_signal = True
             self.display_selected_track_title.set(self.ytdl.result[1])
-            return
+        return
 
-
-    def treat_youtube_playlist(self,ytplst):
-        for entry in ytplst['entries']:
-            if self.options.youtube_media_format == 'mp4':
-                media_url = entry['url']
-            else:
-                preference = -100
-                for format in entry['formats']:
-                    if format['ext'] == 'm4a':
-                        if format['preference'] and format['preference'] > preference:
-                            preference = format['preference']
-                            media_url = format['url']
-                        elif not format['preference']:
-                            media_url = format['url']
-            self.playlist.append([media_url,entry['title'],'',''])
-            # add title to playlist display
-            self.track_titles_display.insert(END, entry['title']) 
-            # and set it as the selected track
-        self.playlist.select(self.playlist.length() - len(ytplst['entries']))
+    def treat_video_data(self, data):
+        media_url = self._treat_video_data(data, data['extractor'])
+        if not media_url: media_url = data['url']
+        track = self.playlist.waiting_track()
+        self.playlist.replace(track[0],[media_url, data['title']])
+        self.refresh_playlist_display()
+        self.playlist.select(track[0])  
+        self.display_selected_track(track[0])
+        if self.play_state == self._OMX_STARTING:
+            self.start_omx(media_url,skip_ytdl_check=True)
+        self.refresh_playlist_display()
+        self.playlist.select(self.playlist.length() - 1)
         self.display_selected_track(self.playlist.selected_track_index())
 
+    def treat_youtube_playlist_data(self, data):
+        for entry in data['entries']:
+            media_url = self._treat_video_data(entry, data['extractor'])
+            if not media_url: media_url = entry['url']
+            self.playlist.append([media_url,entry['title'],'',''])
+        self.refresh_playlist_display()
+        self.playlist.select(self.playlist.length() - len(data['entries']))
+        self.display_selected_track(self.playlist.selected_track_index())
+
+    def _treat_video_data(self, data, extractor):
+        media_url = None
+        if extractor != "youtube" or (self.options.youtube_media_format == "mp4" and 
+                                                        self.options.youtube_video_quality == "high"):
+            media_url = data['url']
+        else:
+            preference = -100
+            for format in data['formats']:
+                if ((self.options.youtube_media_format == format['ext'] == "m4a") or 
+                                                (self.options.youtube_media_format == format['ext'] == "mp4" and
+                                                self.options.youtube_video_quality == format['format_note'])):
+                    if 'preference' in format and format['preference'] > preference:
+                        preference = format['preference']
+                        media_url = format['url']
+                    else:
+                        media_url = format['url']
+        return media_url
  
 
 # ***************************************
@@ -1264,26 +1273,31 @@ class TBOPlayer:
     def enter_vprogress_bar(self,*event):
         if not self.dbus_connected: return
         screenres = self.get_screen_res()
-        if self.vprogress_bar_window.video_height > screenres[1] - self.vprogress_bar_window.bar_height:
+        video_width = self.vprogress_bar_window.video_width
+        video_height = self.vprogress_bar_window.video_height
+        bar_height = self.vprogress_bar_window.bar_height
+        if video_height > screenres[1] - bar_height:
             try:
-                self.omx.set_video_geometry((screenres[0] - self.vprogress_bar_window.video_width)/2,
-                                (screenres[1] - self.vprogress_bar_window.video_height)/2,
-                                (screenres[0] - self.vprogress_bar_window.video_width)/2 + self.vprogress_bar_window.video_width,
-                                (screenres[1] - self.vprogress_bar_window.video_height)/2 + self.vprogress_bar_window.video_height - self.vprogress_bar_window.bar_height)
+                self.omx.set_video_geometry((screenres[0] - video_width)/2,
+                                (screenres[1] - video_height)/2,
+                                (screenres[0] - video_width)/2 + video_width,
+                                (screenres[1] - video_height)/2 + video_height - bar_height)
             except Exception, e:
-                self.monitor('[!] enter_vprogress_bar failed')
+                self.monitor('      [!] enter_vprogress_bar failed')
                 self.monitor(e)
 
     def leave_vprogress_bar(self,*event):
         if not self.dbus_connected: return
         screenres = self.get_screen_res()
+        video_width = self.vprogress_bar_window.video_width
+        video_height = self.vprogress_bar_window.video_height
         try:
-            self.omx.set_video_geometry((screenres[0] - self.vprogress_bar_window.video_width)/2,
-                                (screenres[1] - self.vprogress_bar_window.video_height)/2,
-                                (screenres[0] - self.vprogress_bar_window.video_width)/2 + self.vprogress_bar_window.video_width,
-                                (screenres[1] - self.vprogress_bar_window.video_height)/2 + self.vprogress_bar_window.video_height)
+            self.omx.set_video_geometry((screenres[0] - video_width)/2,
+                                (screenres[1] - video_height)/2,
+                                (screenres[0] - video_width)/2 + video_width,
+                                (screenres[1] - video_height)/2 + video_height)
         except Exception, e:
-            self.monitor('[!] leave_vprogress_bar failed')
+            self.monitor('      [!] leave_vprogress_bar failed')
             self.monitor(e)
 
     def destroy_vprogress_bar(self):
@@ -1682,6 +1696,7 @@ class Options:
             self.ytdl_location = config.get('config','ytdl_location',0)
             self.ytdl_prefered_transcoder = config.get('config','ytdl_prefered_transcoder',0)
             self.download_media_url_upon = config.get('config','download_media_url_upon',0)
+            self.youtube_video_quality = config.get('config','youtube_video_quality',0)
             self.geometry = config.get('config','geometry',0)
 
             if config.get('config','debug',0) == 'on':
@@ -1719,6 +1734,7 @@ class Options:
         config.set('config','ytdl_location','/usr/local/bin/youtube-dl')
         config.set('config','ytdl_prefered_transcoder','avconv')
         config.set('config','download_media_url_upon','add')
+        config.set('config','youtube_video_quality','medium')
         config.set('config','geometry','408x340+350+250')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
@@ -1740,6 +1756,7 @@ class Options:
         config.set('config','ytdl_location',self.ytdl_location)
         config.set('config','ytdl_prefered_transcoder',self.ytdl_prefered_transcoder)
         config.set('config','download_media_url_upon',self.download_media_url_upon)
+        config.set('config','youtube_video_quality',self.youtube_video_quality)
         config.set('config','geometry',geometry)
         with open(self.options_file, 'w+') as configfile:
             config.write(configfile)
@@ -1802,6 +1819,11 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_adding.grid(row=21,column=0,sticky=W)
         rb_playing=Radiobutton(master, text="when playing URL", variable=self.download_media_url_upon_var, value="play")
         rb_playing.grid(row=22,column=0,sticky=W)
+        Label(master, text="Youtube video quality:").grid(row=23, sticky=W)
+        self.youtube_video_quality_var=StringVar()
+        self.youtube_video_quality_var.set(config.get('config','youtube_video_quality',0))
+        om_quality = OptionMenu(master, self.youtube_video_quality_var, "high", "medium", "small")
+        om_quality.grid(row=24, column=0, sticky=W)
 
         Label(master, text="Initial directory for tracks:").grid(row=0, column=2, sticky=W)
         self.e_tracks = Entry(master)
@@ -1883,6 +1905,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','ytdl_location',self.e_ytdl_location.get())
         config.set('config','ytdl_prefered_transcoder',self.ytdl_prefered_transcoder_var.get())
         config.set('config','download_media_url_upon',self.download_media_url_upon_var.get())
+        config.set('config','youtube_video_quality',self.youtube_video_quality_var.get())
         config.set('config','geometry',self.geometry_var)
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
@@ -2049,5 +2072,5 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 10 October 2015"
+    datestring=" 31 October 2015"
     bplayer = TBOPlayer()
