@@ -290,7 +290,6 @@ class Ytdl:
     _STATUS_REXP = re.compile("\n")
     _WRN_REXP = re.compile("WARNING:")
     _ERR_REXP = re.compile("ERROR:")
-    _LINK_REXP = re.compile("(http[s]{0,1}://[\w.,?&/\-=+]+)")
     _SERVICES_REGEXPS = ()
     
     _ACCEPTED_LINK_REXP_FORMAT = "(http[s]{0,1}://(?:\w|\.{0,1})+%s\.(?:[a-z]{2,3})(?:\.[a-z]{2,3}){0,1}/)"
@@ -766,7 +765,7 @@ class TBOPlayer:
         if self.play_state == self._OMX_STARTING:
             self.start_omx(media_url,skip_ytdl_check=True)
         self.refresh_playlist_display()
-        self.playlist.select(self.playlist.length() - 1)
+        self.playlist.select(track[0])
         self.display_selected_track(self.playlist.selected_track_index())
 
     def treat_youtube_playlist_data(self, data):
