@@ -759,7 +759,10 @@ class TBOPlayer:
 
     def treat_video_data(self, data):
         media_url = self._treat_video_data(data, data['extractor'])
-        if not media_url: media_url = data['url']
+        if not media_url and self.options.youtube_video_quality == "small":  
+            media_url = self._treat_video_data(data, data['extractor'],"medium")
+        if not media_url: 
+            media_url = data['url']
         track = self.playlist.waiting_track()
         self.playlist.replace(track[0],[media_url, data['title']])
         if self.play_state == self._OMX_STARTING:
@@ -771,23 +774,29 @@ class TBOPlayer:
     def treat_youtube_playlist_data(self, data):
         for entry in data['entries']:
             media_url = self._treat_video_data(entry, data['extractor'])
-            if not media_url: media_url = entry['url']
+            if not media_url and self.options.youtube_video_quality == "small":
+                media_url = self._treat_video_data(entry, data['extractor'],"medium")
+            if not media_url:
+                media_url = entry['url']
             self.playlist.append([media_url,entry['title'],'',''])
         self.refresh_playlist_display()
         self.playlist.select(self.playlist.length() - len(data['entries']))
         self.display_selected_track(self.playlist.selected_track_index())
 
-    def _treat_video_data(self, data, extractor):
+    def _treat_video_data(self, data, extractor,force_quality=False):
         media_url = None
-        if extractor != "youtube" or (self.options.youtube_media_format == "mp4" and 
-                                                        self.options.youtube_video_quality == "high"):
+        media_format = self.options.youtube_media_format
+        quality = self.options.youtube_video_quality if not force_quality else force_quality
+        if extractor != "youtube" or (media_format == "mp4" and quality == "high"):
             media_url = data['url']
         else:
             preference = -100
             for format in data['formats']:
-                if ((self.options.youtube_media_format == format['ext'] == "m4a") or 
-                                                (self.options.youtube_media_format == format['ext'] == "mp4" and
-                                                self.options.youtube_video_quality == format['format_note'])):
+                if ((media_format == format['ext'] == "m4a" and
+                                ((quality == "high" and format['abr'] == 256) or 
+                                (quality in ("medium", "small") and format['abr'] == 128))) or 
+                                (media_format == format['ext'] == "mp4" and
+                                quality == format['format_note'])):
                     if 'preference' in format and format['preference'] > preference:
                         preference = format['preference']
                         media_url = format['url']
@@ -893,8 +902,8 @@ class TBOPlayer:
 
         OMXPlayer.set_omx_location(self.options.omx_location)
 
-        self._SUPPORTED_AUDIO_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3g2",".3gp",".wav")
-        self._SUPPORTED_VIDEO_FORMATS = (".avi",".flv",".mp4",".mkv",".mov",".mj2",".mpg",".ogv")
+        self._SUPPORTED_FILE_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3g2",".3gp",".wav",
+                                        ".avi",".flv",".mp4",".mkv",".mov",".mj2",".mpg",".ogv")
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -1250,7 +1259,7 @@ class TBOPlayer:
         self.vprogress_bar_window.video_width = int(vsize[0] * (screenres[1] / float(vsize[1])))
         self.vprogress_bar_window.bar_height = 15
 
-        if self.vprogress_bar_window.video_width > screenres[0]:
+        if self.vprogress_bar_window.video_width > screenres[0] + 20:
             self.vprogress_bar_window.video_width = screenres[0]
             self.vprogress_bar_window.video_height = int(vsize[1] * (screenres[0] / float(vsize[0])))
 
@@ -1259,7 +1268,8 @@ class TBOPlayer:
         self.vprogress_bar_window.geometry(geometry)
         self.vprogress_bar_window.resizable(False,False)
         self.vprogress_bar = Progressbar(self.vprogress_bar_window, orient=HORIZONTAL, length=self.progress_bar_total_steps, mode='determinate', 
-                                                                        maximum=self.progress_bar_total_steps, variable=self.progress_bar_var)
+                                                                        maximum=self.progress_bar_total_steps, variable=self.progress_bar_var,
+                                                                        style="progressbar.Horizontal.TProgressbar")
         self.vprogress_bar.pack(fill=BOTH)
         self.vprogress_bar.bind("<ButtonRelease-1>", self.set_track_position)
         self.vprogress_bar.bind("<Enter>", self.enter_vprogress_bar)
@@ -1370,8 +1380,7 @@ class TBOPlayer:
 # ***************************************
 
     def is_file_supported(self, f):
-        ext = f[-4:]
-        return (ext in self._SUPPORTED_AUDIO_FORMATS or ext in self._SUPPORTED_VIDEO_FORMATS)
+        return f[-4:] in self._SUPPORTED_FILE_FORMATS
 
     def add_track(self):                                
         """
@@ -2068,5 +2077,5 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 1 November 2015"
+    datestring=" 8 November 2015"
     bplayer = TBOPlayer()
