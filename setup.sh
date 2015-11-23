@@ -14,18 +14,25 @@ else
     sudo apt-get -y --only-upgrade install omxplayer >/dev/null 2>&1
 fi
 
+command -v pip >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    sudo apt-get install -y python-pip >/dev/null 2>&1
+fi
+
 python -c 'import pexpect' >/dev/null 2>&1
 PEXPECT_INSTALLED=$?
 python -c 'import ptyprocess' >/dev/null 2>&1
 PTYPROCESS_INSTALLED=$?
 if [ $PEXPECT_INSTALLED -eq 1 ]; then 
     echo "* Installing pexpect..."
-    command -v pip >/dev/null 2>&1
-    if [ $? -eq 1 ]; then 
-        sudo apt-get install -y python-pip >/dev/null 2>&1
-    fi
     [[ $PTYPROCESS_INSTALLED -eq 1 ]] && ptyprocess='ptyprocess' || ptyprocess=''
     yes | sudo pip install pexpect $ptyprocess >/dev/null 2>&1
+fi
+
+python -c 'import requests' >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    echo "* Installing requests..."
+    sudo apt-get install -y python-requests >/dev/null 2>&1
 fi
 
 python -c 'import gobject' >/dev/null 2>&1

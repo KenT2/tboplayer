@@ -5,7 +5,7 @@ INSTALLATION
 
 Instructions for installation on the official Raspbian image:
 
-You can use the installer that comes with TBOPlayer, or install it manually.
+You can use the installer that comes with TBOPlayer, or if that does not work for some reason you can install it manually.
 
 To use the installer, from a terminal window open in your home directory, type:
 
@@ -18,64 +18,45 @@ After that, TBOPlayer will have been installed on your system. To run it, just t
 If you prefer to install it manually, do as follows:
 	
 Update omxplayer
----------------
+-----------------------------
 
 Ensure you have the latest version of omxplayer by typing the following in a terminal window open in the home directory:
 
         sudo apt-get -y update
         sudo apt-get install --only-upgrade -y omxplayer
 
-Install pexpect
+Install dependencies
 -----------------------------
 
-From a terminal window, type to install pip if you don't have it yet
+Type (or copy-paste) this into the terminal to install TBOPlayer's dependencies:
 
-        sudo apt-get install -y python-pip
-	
-Then to install pexpect, in the terminal window, type 
-
+        # install pip, gobject, requests, avconv, ffmpeg
+        sudo apt-get install -y python-pip python-gobject-2 python-requests libav-tools ffmpeg
+	# install pexpect, ptyprocess
         sudo pip install pexpect ptyprocess
-
-Install gobject
------------------------------
-
-From a terminal window, type 
-
-        sudo apt-get install -y python-gobject-2
+	# install youtube-dl
+	sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl
+        sudo chmod a+rx /usr/local/bin/youtube-dl
+	# or update youtube-dl
+	sudo youtube-dl -U
 
 Download and Install TBOPlayer
 ------------------------------
 
-From a terminal window open in your home directory, type:
+From a terminal window, type:
 
-        wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
+        cd ~ && wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
 
 There should now be a directory 'KenT2-tboplayer-xxxx' in your home directory. Rename the directory to tboplayer.
 
 Open a terminal window and type:
 
-        python /path/to/tboplayer.py
+        python /home/pi/tboplayer-KenT2-*/tboplayer.py
+
+where pi is the name of your system's user.
 
 TBOPlayer is developed on Raspbian Wheezy with python 2.7
 
-**Note**: If you want to be able to watch videos from online services like Youtube, then you must have up-to-date **youtube-dl** installed on your system, as well as either **avconv 9.14**+ or **ffmpeg 0.8.17**+.
-
-See this link for a list of services supported by youtube-dl: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/OMXplayer)
-
-Download and Install youtube-dl
------------------------------
-
-This is specified here https://github.com/rg3/youtube-dl/#installation and copied below:
-
-From a terminal window open in your home directory, type:
-
-        sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl
-        sudo chmod a+rx /usr/local/bin/youtube-dl
-	
-Or update it with:
-
-        sudo youtube-dl -U
-	
 OPERATION
 =========
 
@@ -146,6 +127,8 @@ Removing the selected track can be done by pressing the Delete key.
 During playing of a track, a clickable progress bar will appear below the playlist, which lets you seek a position, and if playing a video it's possible to see the progress bar if you move your mouse to the lowest side of the video.
 
 Again during playing of a track, a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer. A list of commands is provided in the help menu. Note: some of the commands are not implemented by omxplayer. 
+
+See this link for a list of services supported by youtube-dl: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/OMXplayer)
 
 TROUBLESHOOTING
 =========
