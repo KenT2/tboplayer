@@ -23,7 +23,7 @@ Update omxplayer
 Ensure you have the latest version of omxplayer by typing the following in a terminal window open in the home directory:
 
         sudo apt-get -y update
-        sudo apt-get --upgrade-only -y omxplayer
+        sudo apt-get install --only-upgrade -y omxplayer
 
 Install pexpect
 -----------------------------
@@ -82,33 +82,33 @@ OPERATION
 Buttons
 -------
 
-* ADD - duplicates the Track>Add menu item
+* `ADD` - duplicates the Track>Add menu item
 
-* ADD DIR - duplicates the Track>Add Dir menu item
+* `ADD DIR` - duplicates the Track>Add Dir menu item
 
-* EDIT - duplicates the Track>Edit menu item
+* `EDIT` - duplicates the Track>Edit menu item
 
-* OPEN/SAVE/CLEAR LIST - duplicates the Playlist>Open,Save,Clear menu item
+* `OPEN/SAVE/CLEAR LIST` - duplicates the Playlist>Open,Save,Clear menu item
 
-* PLAY/PAUSE - Play the selected track or pause if playing
+* `PLAY/PAUSE` - Play the selected track or pause if playing
 
-* STOP - Stop playing, operational only during playing
+* `STOP` - Stop playing, operational only during playing
 
-* PREVIOUS - Play previous track, operational only after played some track
+* `PREVIOUS` - Play previous track, operational only after played some track
 
-* NEXT - Play next track, up to mode that you set
+* `NEXT` - Play next track, up to mode that you set
 
-* `-`VOL + - Minus/plus volume control
+* `- VOL +` - Minus/plus volume control
 
 Menus
 -----
-* Track - add tracks (for selecting multiple tracks, hold ctrl when clicking) or directories, edit or remove tracks (or URLs) from the current playlist
+* `Track` - add tracks (for selecting multiple tracks, hold ctrl when clicking) or directories, edit or remove tracks (or URLs) from the current playlist
  
-* Playlist - save the current playlist or open a saved one or load youtube playlist
+* `Playlist` - save the current playlist or open a saved one or load youtube playlist
  
-* OMX - display the track information for the last played track (needs to be enabled in options)
+* `OMX` - display the track information for the last played track (needs to be enabled in options)
  
-* Options -
+* `Options` -
 
     * Audio Output - play sound to hdmi or local output, auto does not send an audio option to omxplayer.
 	

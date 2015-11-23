@@ -98,7 +98,7 @@ class OMXPlayer(object):
     subtitles_visible = False
 
     #****** KenT added argument to control dictionary generation
-    def __init__(self, mediafile, args=None, start_playback=False, do_dict=False):
+    def __init__(self, mediafile, args=None, start_playback=False):
         if not args:
             args = ""
         #******* KenT signals to tell the gui playing has started and ended
@@ -746,12 +746,11 @@ class TBOPlayer:
             else:
                 self.treat_video_data(result)
         else:
-            if self.ytdl.result[0] == -1:
-                waiting_track = self.playlist.waiting_track()
-                if waiting_track:
-                    self.track_titles_display.delete(waiting_track[0],waiting_track[0])
-                    self.playlist.remove(waiting_track[0])
-                    self.blank_selected_track()
+            waiting_track = self.playlist.waiting_track()
+            if waiting_track:
+                self.track_titles_display.delete(waiting_track[0],waiting_track[0])
+                self.playlist.remove(waiting_track[0])
+                self.blank_selected_track()
             if self.play_state==self._OMX_STARTING:
                 self.quit_sent_signal = True
             self.display_selected_track_title.set(self.ytdl.result[1])
@@ -760,7 +759,7 @@ class TBOPlayer:
     def treat_video_data(self, data):
         media_url = self._treat_video_data(data, data['extractor'])
         if not media_url and self.options.youtube_video_quality == "small":  
-            media_url = self._treat_video_data(data, data['extractor'],"medium")
+            media_url = self._treat_video_data(data, data['extractor'], "medium")
         if not media_url: 
             media_url = data['url']
         track = self.playlist.waiting_track()
@@ -775,7 +774,7 @@ class TBOPlayer:
         for entry in data['entries']:
             media_url = self._treat_video_data(entry, data['extractor'])
             if not media_url and self.options.youtube_video_quality == "small":
-                media_url = self._treat_video_data(entry, data['extractor'],"medium")
+                media_url = self._treat_video_data(entry, data['extractor'], "medium")
             if not media_url:
                 media_url = entry['url']
             self.playlist.append([media_url,entry['title'],'',''])
@@ -783,7 +782,7 @@ class TBOPlayer:
         self.playlist.select(self.playlist.length() - len(data['entries']))
         self.display_selected_track(self.playlist.selected_track_index())
 
-    def _treat_video_data(self, data, extractor,force_quality=False):
+    def _treat_video_data(self, data, extractor, force_quality=False):
         media_url = None
         media_format = self.options.youtube_media_format
         quality = self.options.youtube_video_quality if not force_quality else force_quality
@@ -822,9 +821,9 @@ class TBOPlayer:
             self.refresh_playlist_display()
             return
         track= "'"+ track.replace("'","'\\''") + "'"
-        opts= (self.options.omx_user_options + " "+ self.options.omx_audio_option + " " +
-                                                                        self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
-        self.omx = OMXPlayer(track, args=opts, start_playback=True, do_dict = self.options.generate_track_info)
+        opts= (self.options.omx_user_options + " " + self.options.omx_audio_option + " " +
+                                                        self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
+        self.omx = OMXPlayer(track, args=opts, start_playback=True)
 
         self.monitor("            >Play: " + track + " with " + opts)
 
@@ -945,6 +944,7 @@ class TBOPlayer:
         filemenu.add_command(label='Add Dir', command = self.add_dir)
         filemenu.add_command(label='Add Dirs', command = self.add_dirs)
         filemenu.add_command(label='Add URL', command = self.add_url)
+        filemenu.add_command(label='Youtube search', command = self.youtube_search)
         filemenu.add_command(label='Remove', command = self.remove_track)
         filemenu.add_command(label='Edit', command = self.edit_track)
         
@@ -1489,6 +1489,22 @@ class TBOPlayer:
             self.playlist.select(self.playlist.length()-1)
             self.display_selected_track(self.playlist.selected_track_index())
 
+
+    def youtube_search(self):
+        """edit the options then read them from file"""
+        eo = YoutubeSearchDialog(self.root, self)
+
+
+    def add_url_from_search(self,link):
+        if self.ytdl_state != self._YTDL_CLOSED: return
+        result = [link,'']
+        self.go_ytdl(result[0])
+        result[1] = self.ytdl.WAIT_TAG + result[0]
+        self.playlist.append(result)
+        self.track_titles_display.insert(END, result[1])  
+        self.playlist.select(self.playlist.length()-1)
+        self.display_selected_track(self.playlist.selected_track_index())
+
    
     def remove_track(self,*event):
         if  self.playlist.length()>0 and self.playlist.track_is_selected():
@@ -1637,9 +1653,12 @@ class TBOPlayer:
 
     
     def show_omx_track_info(self):
-
         if self.options.generate_track_info:
-            tkMessageBox.showinfo("Track Information", self.playlist.selected_track()[PlayList.LOCATION]  +"\n"+ pformat(self.omx.__dict__))
+            try:
+                tkMessageBox.showinfo("Track Information", self.playlist.selected_track()[PlayList.LOCATION]  +"\n\n"+ 
+                                                "Video: " + str(self.omx.video) + "\nAudio: " + str(self.omx.audio) + "\nTime: " + str(self.omx.timenf))
+            except:
+                return
         else:
             tkMessageBox.showinfo("Track Information","Not Enabled")
 
@@ -2070,6 +2089,158 @@ class PlayList():
         return False
 
 
+from urllib import quote_plus
+import requests
+
+class YoutubeSearchDialog(tkSimpleDialog.Dialog):
+
+    def __init__(self, parent, player):
+        # store subclass attributes
+        self.result_cells = []
+        self.player = player
+        # init the super class
+        tkSimpleDialog.Dialog.__init__(self, parent, "Youtube search")
+
+    def body(self, master):
+        self.geometry("450x350")
+        self.field1 = Entry(master)
+        self.field1.grid(row=0, column=0)
+
+        Button(master, width = 5, height = 1, text = 'Search!',
+                              fg='black', command = self.search, 
+                              bg='light grey').grid(row=0, column=1)
+        Button(master, width = 5, height = 1, text = 'Clear',
+                              fg='black', command = self.clear_search, 
+                              bg='light grey').grid(row=0, column=2)
+
+        self.frame = VerticalScrolledFrame(master)
+        self.frame.grid(row=1,column=0,columnspan=3,rowspan=6)
+        self.frame.configure_scrolling()
+        return self.field1
+
+    def search(self):
+        self.clear_search()
+        terms = self.field1.get().decode('latin1').encode('utf8')
+        searchurl = "https://www.youtube.com/results?search_query=" + quote_plus(terms)
+        pagesrc = requests.get(searchurl).text
+        parser = YtsearchParser()
+        parser.feed(pagesrc)
+        self.show_result(parser.result)
+
+    def show_result(self, result):
+        for r in result:
+            self.result_cells.append(YtresultCell(self.frame.interior,self,r[0],r[1]))
+        return
+
+    def clear_search(self):
+        for r in self.result_cells:
+            r.destroy()
+        self.result_cells = []
+        self.frame.canvas.yview_moveto(0)
+        return
+
+    def apply(self):
+        return
+
+
+from HTMLParser import HTMLParser
+
+class YtsearchParser(HTMLParser):
+
+    def __init__(self):
+        self.result = []
+        HTMLParser.__init__(self)
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'div' : 
+            for t in attrs:
+                if "yt-lockup-dismissable" in t: 
+                    self.result.append(['',''])
+                    break
+        elif tag == 'a' : 
+            if not len(self.result): return
+            for t in attrs:
+                if "class" in t and "yt-uix-tile-link" in t[1]: 
+                    self.result[len(self.result) - 1][0] = attrs[0][1]
+                    for y in attrs:
+                        if "title" in y:
+                            self.result[len(self.result) - 1][1] = y[1]
+                            break
+                    break
+
+
+class YtresultCell(Frame):
+
+    def __init__(self, parent, window, link, title):
+        Frame.__init__(self, parent)
+        self.grid(sticky=W)
+        self.video_name = tk.StringVar()
+        self.video_link = tk.StringVar()
+        self.video_name.set(title)
+        self.video_link.set("https://www.youtube.com" + link)
+        self.createWidgets()
+        self.window = window
+
+    def createWidgets(self):
+        Label(self, font=('Comic Sans', 10),
+                              fg = 'black', wraplength = 300, height = 2,
+                              textvariable=self.video_name,
+                              bg="grey").grid(row = 0, column=0, columnspan=2, sticky=W)
+        Button(self, width = 5, height = 1, text='Add',
+                              fg='black', command = self.add_link, 
+                              bg="light grey").grid(row = 0, column=2, sticky=W)
+
+    def add_link(self,*event):
+        self.window.player.add_url_from_search(self.video_link.get())
+
+
+class VerticalScrolledFrame(Frame):
+    """A pure Tkinter scrollable frame that actually works!
+
+    * Use the 'interior' attribute to place widgets inside the scrollable frame
+    * Construct and pack/place/grid normally
+    * This frame only allows vertical scrolling
+    
+    """
+    def _configure_interior(self,event):
+        # update the scrollbars to match the size of the inner frame
+        size = (self.interior.winfo_reqwidth(), self.interior.winfo_reqheight())
+        self.canvas.config(scrollregion="0 0 %s %s" % size)
+        if self.interior.winfo_reqwidth() != self.canvas.winfo_width():
+            # update the canvas's width to fit the inner frame
+            self.canvas.config(width=self.interior.winfo_reqwidth())
+        self.interior.bind('<Configure>', _configure_interior)
+
+    def _configure_canvas(self,event):
+        if self.interior.winfo_reqwidth() != self.canvas.winfo_width():
+            # update the inner frame's width to fill the canvas
+            self.canvas.itemconfigure(self.interior_id, width=self.canvas.winfo_width())
+        self.canvas.bind('<Configure>', _configure_canvas)
+        return
+
+    def configure_scrolling(self):
+        # create a canvas object and a vertical scrollbar for scrolling it
+        vscrollbar = Scrollbar(self, orient=VERTICAL)
+        vscrollbar.grid(row=0,column=1,sticky=N+S+W)
+        self.canvas = Canvas(self, bd=0, highlightthickness=0,
+                        yscrollcommand=vscrollbar.set)
+        self.canvas.grid(row=0,column=0,sticky=N+S+E)
+        vscrollbar.config(command=self.canvas.yview)
+
+        # reset the view
+        self.canvas.xview_moveto(0)
+        self.canvas.yview_moveto(0)
+
+        # create a frame inside the canvas which will be scrolled with it
+        self.interior = interior = Frame(self.canvas)
+        self.interior.grid(row=0,column=0,sticky=N+S+E)
+        self.interior_id = self.canvas.create_window(0, 0, window=interior,
+                                           anchor=NW)
+
+        # track changes to the canvas and frame width and sync them,
+        # also updating the scrollbar    
+
+        
 
 # ***************************************
 # MAIN
@@ -2077,5 +2248,5 @@ class PlayList():
 
 
 if __name__ == "__main__":
-    datestring=" 8 November 2015"
+    datestring=" 23 November 2015"
     bplayer = TBOPlayer()
