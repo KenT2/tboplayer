@@ -49,9 +49,9 @@ From a terminal window, type:
 
 There should now be a directory 'KenT2-tboplayer-xxxx' in your home directory. Rename the directory to tboplayer.
 
-Open a terminal window and type:
+To run TBOPlayer, type in a terminal window:
 
-        python /home/pi/tboplayer-KenT2-*/tboplayer.py
+        python /home/pi/tboplayer/tboplayer.py
 
 where pi is the name of your system's user.
 
