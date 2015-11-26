@@ -128,14 +128,16 @@ During playing of a track, a clickable progress bar will appear below the playli
 
 Again during playing of a track, a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer. A list of commands is provided in the help menu. Note: some of the commands are not implemented by omxplayer. 
 
-See this link for a list of services supported by youtube-dl: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/OMXplayer)
+While playing videos, you can hit the F11 key for toggling full screen mode. In windowed mode, you can move the video window by clicking and holding the first mouse button over the video area.
+
+For a list of streaming services supported by youtube-dl, see this link: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/OMXplayer)
 
 TROUBLESHOOTING
 =========
 
 If you have problems playing a track try it from the command line with omxplayer -o hdmi file or omxplayer -o local file to make sure it's not a problem with omxplayer.
 
-If the progress bar or volume bar don't work for you, it may be that you have another instance of omxplayer running in the background. In that case, you can try to close that instance, and then play the track again. You can force omxplayer to terminate by typing in a terminal:
+If the progress bar, volume bar, or windowed video mode don't work for you, it may be that you have another instance of omxplayer running in the background. In that case, you can try to close that instance, and then play the track again. You can force omxplayer to terminate by typing in a terminal:
 
         sudo pkill -9 omxplayer
 
