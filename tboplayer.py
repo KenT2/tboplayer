@@ -934,13 +934,14 @@ class TBOPlayer:
         self.root.bind("<Control-v>", self.key_paste)
         self.root.bind("<Escape>", self.key_escape)
         self.root.bind("<F11>", self.toggle_full_screen)
+        self.root.bind("<Control_L>", self.vwindow_start_resize)
+        self.root.bind("<KeyRelease-Control_L>", self.vwindow_stop_resize)
 
         self.root.bind("<Key>", self.key_pressed)
 
         self.style = Style()
         self.style.theme_use("alt")
 
-	
 
 # define menu
         menubar = Menu(self.root)
@@ -1102,7 +1103,7 @@ class TBOPlayer:
 
     #exit
     def app_exit(self):
-        self.options.set_geometry(self.root.geometry())
+        self.options.save_geometry(self.root.geometry())
         try:
             self.omx
         except AttributeError:
@@ -1263,6 +1264,7 @@ class TBOPlayer:
         self.vprogress_bar_window.video_height = screenres[1]
         self.vprogress_bar_window.video_width = int(vsize[0] * (screenres[1] / float(vsize[1])))
         self.vprogress_bar_window.bar_height = 15
+        self.vprogress_bar_window.resizing = 0
         
         if self.vprogress_bar_window.video_width > screenres[0] + 20:
             self.vprogress_bar_window.video_width = screenres[0]
@@ -1274,7 +1276,7 @@ class TBOPlayer:
         self.vprogress_bar_window.overrideredirect(1)
 
         if self.options.full_screen == 0:
-            self.options.full_screen = int(not self.options.full_screen)
+            self.options.full_screen = 1
             self.toggle_full_screen()
 
         self.vprogress_bar_window.resizable(False,False)
@@ -1300,14 +1302,33 @@ class TBOPlayer:
         if self.options.full_screen == 1: return
         self.vprogress_bar_window.x = None
         self.vprogress_bar_window.y = None
+        self.vprogress_bar_window.resizing = 0
 
     def vwindow_motion(self, event):
         if self.options.full_screen == 1: return
         deltax = event.x - self.vprogress_bar_window.x
         deltay = event.y - self.vprogress_bar_window.y
-        x = self.vprogress_bar_window.winfo_x() + deltax
-        y = self.vprogress_bar_window.winfo_y() + deltay
-        self.vprogress_bar_window.geometry("+%s+%s" % (x, y))
+        if not self.vprogress_bar_window.resizing:
+            x = self.vprogress_bar_window.winfo_x() + (deltax/2)
+            y = self.vprogress_bar_window.winfo_y() + (deltay/2)
+            self.vprogress_bar_window.geometry("+%s+%s" % (x, y))
+        else:
+            w = self.vprogress_bar_window.winfo_width() + (deltax/2)
+            h = self.vprogress_bar_window.winfo_height() + (deltay/2)
+            try:
+                self.vprogress_bar_window.geometry("%sx%s" % (w, h))
+            except:
+                self.options.full_screen = 1
+                self.toggle_full_screen()
+
+
+    def vwindow_start_resize(self,event):
+        if not self.media_is_video() or self.options.full_screen == 1 or self.vprogress_bar_window.resizing: return
+        self.vprogress_bar_window.resizing = 1
+
+    def vwindow_stop_resize(self,event):
+        if not self.media_is_video() or self.options.full_screen == 1: return
+        self.vprogress_bar_window.resizing = 0
 
     def enter_vprogress_bar(self,*event):
         if not self.dbus_connected or self.options.full_screen == 0: return
@@ -1349,9 +1370,8 @@ class TBOPlayer:
         if self.options.full_screen == 1: 
             self.options.full_screen = 0
             vsize = self.omx.video['dimensions']
-            geometry = str(vsize[0]) + "x" + str(vsize[1] + self.vprogress_bar_window.bar_height) + "+200+200"
+            geometry = str(vsize[0]) + "x" + str(vsize[1] + self.vprogress_bar_window.bar_height) + self.options.windowed_mode_coords
             self.vprogress_bar_window.geometry(geometry)
-            self.move_video()
         else:
             self.options.full_screen = 1
             screenres = self.get_screen_res()
@@ -1363,7 +1383,7 @@ class TBOPlayer:
 
     def move_video(self,*event):
         if not self.dbus_connected or self.options.full_screen == 1: return
-        vsize = self.omx.video['dimensions']
+        #vsize = self.omx.video['dimensions']
         screenres = self.get_screen_res()
         geometry_pattern = self._geometry_regexp.match(self.vprogress_bar_window.geometry())
         if not geometry_pattern: return
@@ -1385,6 +1405,11 @@ class TBOPlayer:
 
     def destroy_vprogress_bar(self):
         if self.vprogress_bar_window:
+            x = self.vprogress_bar_window.winfo_x()
+            y = self.vprogress_bar_window.winfo_y()
+            coords = ("+" if x>0 else "")+str(x)+("+" if y>0 else "")+str(y)
+            self.options.windowed_mode_coords = coords
+            self.options.save_video_window_coordinates(coords)
             self.vprogress_bar_window.destroy()
             self.vprogress_bar_window = None
     
@@ -1807,6 +1832,7 @@ class Options:
             self.youtube_video_quality = config.get('config','youtube_video_quality',0)
             self.geometry = config.get('config','geometry',0)
             self.full_screen = int(config.get('config','full_screen',0))
+            self.windowed_mode_coords = config.get('config','windowed_mode_coords',0)
 
             if config.get('config','debug',0) == 'on':
                 self.debug = True
@@ -1846,11 +1872,12 @@ class Options:
         config.set('config','youtube_video_quality','medium')
         config.set('config','geometry','408x340+350+250')
         config.set('config','full_screen','1')
+        config.set('config','windowed_mode_coords','+200+200')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
             configfile.close()
 
-    def set_geometry(self, geometry):
+    def save_geometry(self, geometry):
         config=ConfigParser.ConfigParser()
         config.add_section('config')
         config.set('config','audio',self.omx_audio_option.replace("-o ",''))
@@ -1869,6 +1896,31 @@ class Options:
         config.set('config','youtube_video_quality',self.youtube_video_quality)
         config.set('config','geometry',geometry)
         config.set('config','full_screen',self.full_screen)
+        config.set('config','windowed_mode_coords',self.windowed_mode_coords)
+        with open(self.options_file, 'w+') as configfile:
+            config.write(configfile)
+            configfile.close()
+
+    def save_video_window_coordinates(self, coordinates):
+        config=ConfigParser.ConfigParser()
+        config.add_section('config')
+        config.set('config','audio',self.omx_audio_option.replace("-o ",''))
+        config.set('config','subtitles',"on" if "on" in self.omx_subtitles_option else "off")       
+        config.set('config','mode',self.mode)
+        config.set('config','playlists',self.initial_playlist_dir)
+        config.set('config','tracks',self.initial_track_dir)
+        config.set('config','omx_options',self.omx_user_options)
+        config.set('config','debug',"on" if self.debug else "off")
+        config.set('config','track_info',"on" if self.generate_track_info else "off")
+        config.set('config','youtube_media_format',self.youtube_media_format)
+        config.set('config','omx_location',self.omx_location)
+        config.set('config','ytdl_location',self.ytdl_location)
+        config.set('config','ytdl_prefered_transcoder',self.ytdl_prefered_transcoder)
+        config.set('config','download_media_url_upon',self.download_media_url_upon)
+        config.set('config','youtube_video_quality',self.youtube_video_quality)
+        config.set('config','geometry',self.geometry)
+        config.set('config','full_screen',self.full_screen)
+        config.set('config','windowed_mode_coords',coordinates)
         with open(self.options_file, 'w+') as configfile:
             config.write(configfile)
             configfile.close()
@@ -1893,6 +1945,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.read(self.options_file)
         self.geometry_var = config.get('config','geometry',0)
         self.full_screen_var = config.get('config','full_screen',0)
+        self.windowed_mode_coords_var = config.get('config','windowed_mode_coords',0)
 
         Label(master, text="Audio Output:").grid(row=0, sticky=W)
         self.audio_var=StringVar()
@@ -2020,6 +2073,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','youtube_video_quality',self.youtube_video_quality_var.get())
         config.set('config','geometry',self.geometry_var)
         config.set('config','full_screen',self.full_screen_var)
+        config.set('config','windowed_mode_coords',self.windowed_mode_coords_var)
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
             optionsfile.close()
@@ -2337,5 +2391,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 7 December 2015"
+    datestring=" 8 December 2015"
     bplayer = TBOPlayer()

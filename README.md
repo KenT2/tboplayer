@@ -33,7 +33,7 @@ Type (or copy-paste) this into the terminal to install TBOPlayer's dependencies:
         # install pip, gobject, requests, avconv, ffmpeg
         sudo apt-get install -y python-pip python-gobject-2 python-requests libav-tools ffmpeg
         # install pexpect, ptyprocess
-        sudo pip install pexpect ptyprocess
+        yes | sudo pip instal --user pexpect ptyprocess
         # install youtube-dl
         sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl
         sudo chmod a+rx /usr/local/bin/youtube-dl
@@ -128,7 +128,7 @@ During playing of a track, a clickable progress bar will appear below the playli
 
 Again during playing of a track, a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer. A list of commands is provided in the help menu. Note: some of the commands are not implemented by omxplayer. 
 
-While playing videos, you can hit the F11 key for toggling full screen mode. In windowed mode, you can move the video window by clicking and holding the first mouse button over the video area.
+While playing videos, you can hit the F11 key for toggling full screen mode. In windowed mode, to move the video window, click and hold the first mouse button over the video area and then move the mouse; and to resize the video, hold left Control, click and hold the first mouse button over the video area and then move the mouse.
 
 For a list of streaming services supported by youtube-dl, see this link: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/OMXplayer)
 
