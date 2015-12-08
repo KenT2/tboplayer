@@ -490,12 +490,12 @@ class TBOPlayer:
                     self.omx.start_play_signal=False
                     self.play_state=self._OMX_PLAYING
                     self.monitor("      State machine: omx_playing started")
+                    self.dbus_connected = self.omx.init_dbus_link()
                     if not self.progress_bar_var.get():
                         self.show_progress_bar()
                         self.set_progress_bar()
                         if self.media_is_video():
                             self.create_vprogress_bar()
-                    self.dbus_connected = self.omx.init_dbus_link()
             except:
                 self.monitor("      OMXPlayer not started yet.")
             self.root.after(350, self.play_state_machine)
@@ -740,17 +740,16 @@ class TBOPlayer:
                 result = loads(self.ytdl.result[1])
             except:
                 self.display_selected_track_title.set(self.ytdl.MSGS[2])
+                self.remove_waiting_track()
+                if self.play_state==self._OMX_STARTING:
+                    self.quit_sent_signal = True
                 return
             if 'entries' in result:
                 self.treat_youtube_playlist_data(result)
             else:
                 self.treat_video_data(result)
         else:
-            waiting_track = self.playlist.waiting_track()
-            if waiting_track:
-                self.track_titles_display.delete(waiting_track[0],waiting_track[0])
-                self.playlist.remove(waiting_track[0])
-                self.blank_selected_track()
+            self.remove_waiting_track()
             if self.play_state==self._OMX_STARTING:
                 self.quit_sent_signal = True
             self.display_selected_track_title.set(self.ytdl.result[1])
@@ -802,7 +801,13 @@ class TBOPlayer:
                     else:
                         media_url = format['url']
         return media_url
- 
+
+    def remove_waiting_track(self):
+        waiting_track = self.playlist.waiting_track()
+        if waiting_track:
+            self.track_titles_display.delete(waiting_track[0],waiting_track[0])
+            self.playlist.remove(waiting_track[0])
+            self.blank_selected_track() 
 
 # ***************************************
 # WRAPPER FOR JBAITER'S PYOMXPLAYER
@@ -1081,6 +1086,7 @@ class TBOPlayer:
         self.root.grid_rowconfigure(6, weight=1)
         self.root.grid_rowconfigure(7, weight=1)
 
+        self._geometry_regexp = re.compile("([0-9]+)x([0-9]+)([\+|\-][0-9]+)([\+|\-][0-9]+)")
 
         # if files were passed in the command line, add them to the playlist
         for f in sys.argv[1:]:
@@ -1286,14 +1292,17 @@ class TBOPlayer:
         self.vprogress_bar_window.protocol ("WM_TAKE_FOCUS", self.focus_root)
 
     def vwindow_start_move(self, event):
+        if self.options.full_screen == 1: return
         self.vprogress_bar_window.x = event.x
         self.vprogress_bar_window.y = event.y
 
     def vwindow_stop_move(self, event):
+        if self.options.full_screen == 1: return
         self.vprogress_bar_window.x = None
         self.vprogress_bar_window.y = None
 
     def vwindow_motion(self, event):
+        if self.options.full_screen == 1: return
         deltax = event.x - self.vprogress_bar_window.x
         deltay = event.y - self.vprogress_bar_window.y
         x = self.vprogress_bar_window.winfo_x() + deltax
@@ -1356,7 +1365,7 @@ class TBOPlayer:
         if not self.dbus_connected or self.options.full_screen == 1: return
         vsize = self.omx.video['dimensions']
         screenres = self.get_screen_res()
-        geometry_pattern = re.compile("([0-9]+)x([0-9]+)([\+|\-][0-9]+)([\+|\-][0-9]+)").match(self.vprogress_bar_window.geometry())
+        geometry_pattern = self._geometry_regexp.match(self.vprogress_bar_window.geometry())
         if not geometry_pattern: return
 
         vwindow_width = int(geometry_pattern.group(1))
@@ -2328,5 +2337,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 26 November 2015"
+    datestring=" 7 December 2015"
     bplayer = TBOPlayer()
