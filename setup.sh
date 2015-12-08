@@ -26,7 +26,7 @@ PTYPROCESS_INSTALLED=$?
 if [ $PEXPECT_INSTALLED -eq 1 ]; then 
     echo "* Installing pexpect..."
     [[ $PTYPROCESS_INSTALLED -eq 1 ]] && ptyprocess='ptyprocess' || ptyprocess=''
-    yes | sudo pip install pexpect $ptyprocess >/dev/null 2>&1
+    yes | sudo pip install --user pexpect $ptyprocess >/dev/null 2>&1
 fi
 
 python -c 'import requests' >/dev/null 2>&1
