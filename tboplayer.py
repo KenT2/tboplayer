@@ -1087,9 +1087,8 @@ class TBOPlayer:
         self.root.grid_rowconfigure(6, weight=1)
         self.root.grid_rowconfigure(7, weight=1)
 
-        self._geometry_regexp = re.compile("([0-9]+)x([0-9]+)([\+|\-][0-9]+)([\+|\-][0-9]+)")
-
-        # if files were passed in the command line, add them to the playlist
+  
+# if files were passed in the command line, add them to the playlist
         for f in sys.argv[1:]:
             if (os.path.isfile(f) and self.is_file_supported(f)):
                 self.file = f
@@ -1419,7 +1418,10 @@ class TBOPlayer:
         return (screen_width(), screen_height())
 
     def media_is_video(self):
-        return bool(len(self.omx.video))
+        try:
+            return bool(len(self.omx.video))
+        except:
+           return 0;
 
     def focus_root(self, *event):
         self.root.focus()
@@ -2393,5 +2395,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 8 December 2015"
+    datestring=" 9 December 2015"
     bplayer = TBOPlayer()
