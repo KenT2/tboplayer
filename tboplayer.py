@@ -1306,15 +1306,15 @@ class TBOPlayer:
 
     def vwindow_motion(self, event):
         if self.options.full_screen == 1: return
-        deltax = event.x - self.vprogress_bar_window.x
-        deltay = event.y - self.vprogress_bar_window.y
+        deltax = (event.x - self.vprogress_bar_window.x)/2
+        deltay = (event.y - self.vprogress_bar_window.y)/2
         if not self.vprogress_bar_window.resizing:
-            x = self.vprogress_bar_window.winfo_x() + (deltax/2)
-            y = self.vprogress_bar_window.winfo_y() + (deltay/2)
+            x = self.vprogress_bar_window.winfo_x() + deltax
+            y = self.vprogress_bar_window.winfo_y() + deltay
             self.vprogress_bar_window.geometry("+%s+%s" % (x, y))
         else:
-            w = self.vprogress_bar_window.winfo_width() + (deltax/2)
-            h = self.vprogress_bar_window.winfo_height() + (deltay/2)
+            w = self.vprogress_bar_window.winfo_width() + deltax
+            h = self.vprogress_bar_window.winfo_height() + deltay
             try:
                 self.vprogress_bar_window.geometry("%sx%s" % (w, h))
             except:
@@ -1323,11 +1323,18 @@ class TBOPlayer:
 
 
     def vwindow_start_resize(self,event):
-        if not self.media_is_video() or self.options.full_screen == 1 or self.vprogress_bar_window.resizing: return
+        if (not self.media_is_video() or 
+          self.options.full_screen == 1 or 
+          not self.vprogress_bar_window or 
+          self.vprogress_bar_window.resizing == 1): 
+            return
         self.vprogress_bar_window.resizing = 1
 
     def vwindow_stop_resize(self,event):
-        if not self.media_is_video() or self.options.full_screen == 1: return
+        if (not self.media_is_video() or 
+          self.options.full_screen == 1 or 
+          not self.vprogress_bar_window): 
+            return
         self.vprogress_bar_window.resizing = 0
 
     def enter_vprogress_bar(self,*event):
@@ -1383,15 +1390,10 @@ class TBOPlayer:
 
     def move_video(self,*event):
         if not self.dbus_connected or self.options.full_screen == 1: return
-        #vsize = self.omx.video['dimensions']
-        screenres = self.get_screen_res()
-        geometry_pattern = self._geometry_regexp.match(self.vprogress_bar_window.geometry())
-        if not geometry_pattern: return
-
-        vwindow_width = int(geometry_pattern.group(1))
-        vwindow_height = int(geometry_pattern.group(2))
-        vwindow_x = int(geometry_pattern.group(3))
-        vwindow_y = int(geometry_pattern.group(4))
+        vwindow_width = self.vprogress_bar_window.winfo_width()
+        vwindow_height = self.vprogress_bar_window.winfo_height()
+        vwindow_x = self.vprogress_bar_window.winfo_x()
+        vwindow_y = self.vprogress_bar_window.winfo_y()
 
         try:
             self.omx.set_video_geometry(vwindow_x, 
