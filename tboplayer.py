@@ -1406,11 +1406,12 @@ class TBOPlayer:
 
     def destroy_vprogress_bar(self):
         if self.vprogress_bar_window:
-            x = self.vprogress_bar_window.winfo_x()
-            y = self.vprogress_bar_window.winfo_y()
-            coords = ("+" if x>0 else "")+str(x)+("+" if y>0 else "")+str(y)
-            self.options.windowed_mode_coords = coords
-            self.options.save_video_window_coordinates(coords)
+            if self.options.full_screen == 0:
+                x = self.vprogress_bar_window.winfo_x()
+                y = self.vprogress_bar_window.winfo_y()
+                coords = ("+" if x>0 else "")+str(x)+("+" if y>0 else "")+str(y)
+                self.options.windowed_mode_coords = coords
+                self.options.save_video_window_coordinates(coords)
             self.vprogress_bar_window.destroy()
             self.vprogress_bar_window = None
     
@@ -2402,5 +2403,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 9 December 2015"
+    datestring=" 10 December 2015"
     bplayer = TBOPlayer()
