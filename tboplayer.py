@@ -281,9 +281,9 @@ class Ytdl:
     """
 
     _YTLAUNCH_CMD = ''
-    _YTLAUNCH_ARGS_FORMAT = ' --prefer-%s -j -f %s "%s"'
+    _YTLAUNCH_ARGS_FORMAT = ' --prefer-%s -j -f %s --youtube-skip-dash-manifest "%s"'
     _YTLAUNCH_PLST_CMD = ''
-    _YTLAUNCH_PLST_ARGS_FORMAT = ' --prefer-%s -J -f mp4 "%s"'
+    _YTLAUNCH_PLST_ARGS_FORMAT = ' --prefer-%s -J -f mp4 --youtube-skip-dash-manifest "%s"'
     _PREFERED_TRANSCODER = ''
     _YOUTUBE_MEDIA_TYPE = ''
     
@@ -1610,8 +1610,13 @@ class TBOPlayer:
 
     def add_url_from_search(self,link):
         if self.ytdl_state != self._YTDL_CLOSED: return
+        if "list=" in link:
+            self.go_ytdl(link,playlist=True)
+            self.display_selected_track_title.set("Wait. Loading playlist content...")
+            return
+
         result = [link,'']
-        self.go_ytdl(result[0])
+        self.go_ytdl(link)
         result[1] = self.ytdl.WAIT_TAG + result[0]
         self.playlist.append(result)
         self.track_titles_display.insert(END, result[1])  
@@ -2329,6 +2334,8 @@ class YtresultCell(Frame):
         self.window = window
 
     def createWidgets(self):
+        if "list=" in self.video_link.get():
+            self.video_name.set("(playlist) " + self.video_name.get())
         Label(self, font=('Comic Sans', 10),
                               fg = 'black', wraplength = 300, height = 2,
                               textvariable=self.video_name,
