@@ -41,6 +41,12 @@ if [ $? -eq 1 ]; then
     sudo apt-get install -y python-gobject-2 >/dev/null 2>&1
 fi
 
+python -c 'import gtk' >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    echo "* Installing gtk..."
+    sudo apt-get install -y python-gtk2 >/dev/null 2>&1
+fi
+
 # install avconv and ffmpeg if either of them is not installed
 command -v avconv >/dev/null 2>&1
 AVCONV_INSTALLED=$?
@@ -81,7 +87,7 @@ if [ $? -eq 1 ]; then
     chmod +x $FAKE_BIN
 fi
 
-# install tboplayer 'shortcut' in /home/<user>/bin
+# install tboplayer 'shortcut' in /home/<user>/Desktop
 DESKTOP_ENTRY=~/Desktop/tboplayer.desktop
 $DESKTOP_ENTRY >/dev/null 2>&1
 if [ $? -eq 127 ]; then 

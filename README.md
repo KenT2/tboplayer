@@ -22,7 +22,7 @@ Update omxplayer
 
 Ensure you have the latest version of omxplayer by typing the following in a terminal window open in the home directory:
 
-        sudo apt-get -y update
+        sudo apt-get update
         sudo apt-get install --only-upgrade -y omxplayer
 
 Install dependencies
@@ -30,8 +30,8 @@ Install dependencies
 
 Type (or copy-paste) this into the terminal to install TBOPlayer's dependencies:
 
-        # install pip, gobject, requests, avconv, ffmpeg
-        sudo apt-get install -y python-pip python-gobject-2 python-requests libav-tools ffmpeg
+        # install pip, gobject, gtk, requests, avconv, ffmpeg
+        sudo apt-get install -y python-pip python-gobject-2 python-gtk2 python-requests libav-tools ffmpeg
         # install pexpect, ptyprocess
         yes | pip install --user pexpect ptyprocess
         # install youtube-dl
