@@ -1,7 +1,8 @@
 #!/bin/bash
 
+echo ""
 echo "Installing TBOPlater and its dependencies..."
-echo "*"
+echo ""
 echo "* Updating distro packages database... This may take some seconds."
 sudo apt-get update >/dev/null 2>&1
 
@@ -79,9 +80,14 @@ fi
 # install fake tboplayer executable in /home/<user>/bin
 command -v tboplayer >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
-    echo "* Installing tboplayer..."
+    mv ~/KenT2-tboplayer-*  ~/tboplayer >/dev/null 2>&1 || mv ~/tboplayer-master ~/tboplayer >/dev/null 2>&1
+    if [ $? -eq 1 ]; then 
+        echo ""
+        echo "Installation failed. :( Please, move this folder to "$HOME" and try again."
+	exit
+    fi
+    echo "* Creating tboplayer's bash executable..."
     FAKE_BIN=~/bin/tboplayer
-    mv ~/KenT2-tboplayer-* ~/tboplayer
     echo '#!/bin/bash' >> $FAKE_BIN
     echo 'python ~/tboplayer/tboplayer.py' >> $FAKE_BIN
     chmod +x $FAKE_BIN
@@ -101,12 +107,13 @@ if [ $? -eq 127 ]; then
     echo 'Type=Application' >> $DESKTOP_ENTRY
 fi
 
-echo "* Installation finished."
-echo "*"
-echo "* If all went as expected, TBOPlayer is now installed in your system." 
-echo "* To run it, type 'tboplayer', or use the shortcut created on your Desktop."
-echo "* Oh, just keep the tboplayer folder in your "$HOME" directory, alright?"
-echo "*"
+echo ""
+echo "Installation finished."
+echo ""
+echo "If all went as expected, TBOPlayer is now installed in your system." 
+echo "To run it, type 'tboplayer', or use the shortcut created on your Desktop."
+echo "Oh, just keep the tboplayer folder in your "$HOME" directory, alright?"
+echo ""
 echo "Good bye! ;)"
 
-exit;
+exit

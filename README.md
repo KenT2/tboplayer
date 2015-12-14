@@ -5,12 +5,11 @@ INSTALLATION
 
 Instructions for installation on the official Raspbian image:
 
-You can use the installer that comes with TBOPlayer, or if that does not work for some reason you can install it manually.
+You can use the automatic installer, or if that does not work for some reason you can install it manually.
 
-To use the installer, from a terminal window open in your home directory, type:
+To download and run the installer, from a terminal window, type (or copy-paste):
 
-        # skip this first line if you have already downloaded and extracted the tarball
-        wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
+        cd ~ && wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
         cd KenT2-tboplayer-* && chmod +x setup.sh && ./setup.sh
 	
 After that, TBOPlayer will have been installed on your system. To run it, just type 'tboplayer', or use the shortcut created in your Desktop.
@@ -20,7 +19,7 @@ If you prefer to install it manually, do as follows:
 Update omxplayer
 -----------------------------
 
-Ensure you have the latest version of omxplayer by typing the following in a terminal window open in the home directory:
+Ensure you have the latest version of omxplayer by typing the following in a terminal window:
 
         sudo apt-get update
         sudo apt-get install --only-upgrade -y omxplayer
@@ -28,7 +27,7 @@ Ensure you have the latest version of omxplayer by typing the following in a ter
 Install dependencies
 -----------------------------
 
-Type (or copy-paste) this into the terminal to install TBOPlayer's dependencies:
+Type this into the terminal to install TBOPlayer's dependencies:
 
         # install pip, gobject, gtk, requests, avconv, ffmpeg
         sudo apt-get install -y python-pip python-gobject-2 python-gtk2 python-requests libav-tools ffmpeg
@@ -135,7 +134,7 @@ For a list of streaming services supported by youtube-dl, see this link: https:/
 TROUBLESHOOTING
 =========
 
-If you have problems playing a track try it from the command line with omxplayer -o hdmi file or omxplayer -o local file to make sure it's not a problem with omxplayer.
+If you have problems playing a track try it from the command line with `omxplayer -o hdmi filename` or `omxplayer -o local filename` to make sure it's not a problem with omxplayer.
 
 If the progress bar, volume bar, or windowed video mode don't work for you, it may be that you have another instance of omxplayer running in the background. In that case, you can try to close that instance, and then play the track again. You can force omxplayer to terminate by typing in a terminal: `sudo pkill -9 omxplayer`
 
