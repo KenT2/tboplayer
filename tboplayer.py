@@ -113,7 +113,7 @@ class OMXPlayer(object):
         # self._process.logfile_send = sys.stdout
         
         # ******* KenT dictionary generation moved to a function so it can be omitted.
-        sleep(0.5)
+        sleep(0.2)
         self.make_dict()
             
         self._position_thread = Thread(target=self._get_position)
@@ -1096,19 +1096,18 @@ class TBOPlayer:
                 self.playlist.append([self.file, self.file_pieces[-1],'',''])
                 self.track_titles_display.insert(END, self.file_pieces[-1])
 
-        # and display them going with Tkinter event loop
+        # then start Tkinter event loop
         self.root.mainloop()
 
 
     #exit
     def app_exit(self):
-        self.options.save_geometry(self.root.geometry())
+        self.options.geometry = self.root.geometry()
+        self.options.save_state()
         try:
-            self.omx
-        except AttributeError:
-            exit()
-        else:
             self.omx.stop()
+            exit()
+        except:
             exit()
 
 
@@ -1301,7 +1300,6 @@ class TBOPlayer:
         if self.options.full_screen == 1: return
         self.vprogress_bar_window.x = None
         self.vprogress_bar_window.y = None
-        self.vprogress_bar_window.resizing = 0
 
     def vwindow_motion(self, event):
         if self.options.full_screen == 1: return
@@ -1320,12 +1318,10 @@ class TBOPlayer:
                 self.options.full_screen = 1
                 self.toggle_full_screen()
 
-
     def vwindow_start_resize(self,event):
         if (not self.media_is_video() or 
           self.options.full_screen == 1 or 
-          not self.vprogress_bar_window or 
-          self.vprogress_bar_window.resizing == 1): 
+          not self.vprogress_bar_window): 
             return
         self.vprogress_bar_window.resizing = 1
 
@@ -1371,7 +1367,7 @@ class TBOPlayer:
             self.monitor(e)
 
     def toggle_full_screen(self,*event):
-        if not self.dbus_connected or not self.media_is_video(): return
+        if not self.dbus_connected or not self.media_is_video() or not self.vprogress_bar_window: return
         
         if self.options.full_screen == 1: 
             self.options.full_screen = 0
@@ -1411,7 +1407,6 @@ class TBOPlayer:
                 y = self.vprogress_bar_window.winfo_y()
                 coords = ("+" if x>0 else "")+str(x)+("+" if y>0 else "")+str(y)
                 self.options.windowed_mode_coords = coords
-                self.options.save_video_window_coordinates(coords)
             self.vprogress_bar_window.destroy()
             self.vprogress_bar_window = None
     
@@ -1606,7 +1601,7 @@ class TBOPlayer:
 
     def youtube_search(self):
         """edit the options then read them from file"""
-        eo = YoutubeSearchDialog(self.root, self)
+        YoutubeSearchDialog(self.root, self)
 
 
     def add_url_from_search(self,link):
@@ -1887,31 +1882,7 @@ class Options:
             config.write(configfile)
             configfile.close()
 
-    def save_geometry(self, geometry):
-        config=ConfigParser.ConfigParser()
-        config.add_section('config')
-        config.set('config','audio',self.omx_audio_option.replace("-o ",''))
-        config.set('config','subtitles',"on" if "on" in self.omx_subtitles_option else "off")       
-        config.set('config','mode',self.mode)
-        config.set('config','playlists',self.initial_playlist_dir)
-        config.set('config','tracks',self.initial_track_dir)
-        config.set('config','omx_options',self.omx_user_options)
-        config.set('config','debug',"on" if self.debug else "off")
-        config.set('config','track_info',"on" if self.generate_track_info else "off")
-        config.set('config','youtube_media_format',self.youtube_media_format)
-        config.set('config','omx_location',self.omx_location)
-        config.set('config','ytdl_location',self.ytdl_location)
-        config.set('config','ytdl_prefered_transcoder',self.ytdl_prefered_transcoder)
-        config.set('config','download_media_url_upon',self.download_media_url_upon)
-        config.set('config','youtube_video_quality',self.youtube_video_quality)
-        config.set('config','geometry',geometry)
-        config.set('config','full_screen',self.full_screen)
-        config.set('config','windowed_mode_coords',self.windowed_mode_coords)
-        with open(self.options_file, 'w+') as configfile:
-            config.write(configfile)
-            configfile.close()
-
-    def save_video_window_coordinates(self, coordinates):
+    def save_state(self):
         config=ConfigParser.ConfigParser()
         config.add_section('config')
         config.set('config','audio',self.omx_audio_option.replace("-o ",''))
@@ -1930,7 +1901,7 @@ class Options:
         config.set('config','youtube_video_quality',self.youtube_video_quality)
         config.set('config','geometry',self.geometry)
         config.set('config','full_screen',self.full_screen)
-        config.set('config','windowed_mode_coords',coordinates)
+        config.set('config','windowed_mode_coords',self.windowed_mode_coords)
         with open(self.options_file, 'w+') as configfile:
             config.write(configfile)
             configfile.close()
@@ -2331,10 +2302,10 @@ class YtresultCell(Frame):
         self.video_link = tk.StringVar()
         self.video_name.set(title)
         self.video_link.set("https://www.youtube.com" + link)
-        self.createWidgets()
         self.window = window
+        self.create_widgets()
 
-    def createWidgets(self):
+    def create_widgets(self):
         if "list=" in self.video_link.get():
             self.video_name.set("(playlist) " + self.video_name.get())
         Label(self, font=('Comic Sans', 10),
@@ -2403,5 +2374,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 10 December 2015"
+    datestring=" 13 December 2015"
     bplayer = TBOPlayer()
