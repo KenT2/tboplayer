@@ -494,7 +494,7 @@ class TBOPlayer:
                     if not self.progress_bar_var.get():
                         self.show_progress_bar()
                         self.set_progress_bar()
-                        if self.media_is_video():
+                        if self.media_is_video() and not self.options.forbid_windowed_mode:
                             self.create_vprogress_bar()
             except:
                 self.monitor("      OMXPlayer not started yet.")
@@ -1125,19 +1125,21 @@ class TBOPlayer:
 
     def show_help (self):
         tkMessageBox.showinfo("Help",
-          " To control playing type a character\n p - pause/play\n spacebar - pause/play\n q - quit\n"
-        + "+ - increase volume\n - - decrease volume\n z - tv show info\n 1 - reduce speed\n"
-        + "2 - increase speed\n j - previous audio index\n k - next audio index\n i - back a chapter\n"
-        + "o - forward a chapter\n n - previous subtitle index\n m - next subtitle index\n"
-        + "s - toggle subtitles\n >cursor - seek forward 30\n <cursor - seek back 30\n"
-        + "SHIFT >cursor - seek forward 600\n SHIFT <cursor - seek back 600\n"
-        + "CTRL >cursor - next track\n CTRL <cursor - previous track\n"
-        + "F11 - toggle full screen/windowed mode")
+          " To control playing type a character\np - pause/play\nspacebar - pause/play\nq - quit\n"
+        + "+ - increase volume\n- - decrease volume\nz - tv show info\n1 - reduce speed\n"
+        + "2 - increase speed\nj - previous audio index\nk - next audio index\ni - back a chapter\n"
+        + "o - forward a chapter\nn - previous subtitle index\nm - next subtitle index\n"
+        + "s - toggle subtitles\n>cursor - seek forward 30\n<cursor - seek back 30\n"
+        + "SHIFT >cursor - seek forward 600\nSHIFT <cursor - seek back 600\n"
+        + "CTRL >cursor - next track\nCTRL <cursor - previous track\n"
+        + "F11 - toggle full screen/windowed mode\n\n"
+        + "For more help, consult the 'Operation' section of the README file")
   
 
     def about (self):
         tkMessageBox.showinfo("About","GUI for omxplayer using jbaiter's pyomxplayer wrapper\n"
-                   +"Version dated: " + datestring + "\nAuthor: Ken Thompson  - KenT")
+                   +"Version dated: " + datestring + "\nAuthor:\n    Ken Thompson  - KenT2\n"
+                   +"Contributors:\n    heniotierra\n    krugg\n    popiazaza")
 
     def monitor(self,text):
         if self.options.debug: print text
@@ -1363,7 +1365,7 @@ class TBOPlayer:
                                 (screenres[0] - video_width)/2 + video_width,
                                 (screenres[1] - video_height)/2 + video_height)
         except Exception, e:
-            self.monitor('      [!] leave_vprogress_bar failed')
+            self.monitor('      [!] set_full_screen failed')
             self.monitor(e)
 
     def toggle_full_screen(self,*event):
@@ -1401,7 +1403,7 @@ class TBOPlayer:
         self.focus_root()
 
     def destroy_vprogress_bar(self):
-        if self.vprogress_bar_window:
+        try:
             if self.options.full_screen == 0:
                 x = self.vprogress_bar_window.winfo_x()
                 y = self.vprogress_bar_window.winfo_y()
@@ -1409,6 +1411,8 @@ class TBOPlayer:
                 self.options.windowed_mode_coords = coords
             self.vprogress_bar_window.destroy()
             self.vprogress_bar_window = None
+        except:
+            self.monitor("Failed trying to destroy video window: video window inexistant.") 
     
     def get_screen_res(self):
         return (screen_width(), screen_height())
@@ -1417,7 +1421,7 @@ class TBOPlayer:
         try:
             return bool(len(self.omx.video))
         except:
-           return 0;
+            return 0;
 
     def focus_root(self, *event):
         self.root.focus()
@@ -1838,6 +1842,7 @@ class Options:
             self.geometry = config.get('config','geometry',0)
             self.full_screen = int(config.get('config','full_screen',0))
             self.windowed_mode_coords = config.get('config','windowed_mode_coords',0)
+            self.forbid_windowed_mode = int(config.get('config','forbid_windowed_mode',0))
 
             if config.get('config','debug',0) == 'on':
                 self.debug = True
@@ -1878,6 +1883,7 @@ class Options:
         config.set('config','geometry','408x340+350+250')
         config.set('config','full_screen','1')
         config.set('config','windowed_mode_coords','+200+200')
+        config.set('config','forbid_windowed_mode','0')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
             configfile.close()
@@ -1902,6 +1908,7 @@ class Options:
         config.set('config','geometry',self.geometry)
         config.set('config','full_screen',self.full_screen)
         config.set('config','windowed_mode_coords',self.windowed_mode_coords)
+        config.set('config','forbid_windowed_mode',self.forbid_windowed_mode)
         with open(self.options_file, 'w+') as configfile:
             config.write(configfile)
             configfile.close()
@@ -1969,7 +1976,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.youtube_video_quality_var=StringVar()
         self.youtube_video_quality_var.set(config.get('config','youtube_video_quality',0))
         om_quality = OptionMenu(master, self.youtube_video_quality_var, "high", "medium", "small")
-        om_quality.grid(row=24, column=0, sticky=W)
+        om_quality.grid(row=24, sticky=W)
 
         Label(master, text="Initial directory for tracks:").grid(row=0, column=2, sticky=W)
         self.e_tracks = Entry(master)
@@ -1992,7 +1999,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
 
         self.subtitles_var = StringVar()
         self.cb_subtitles = Checkbutton(master,text="Subtitles",variable=self.subtitles_var, onvalue="on",offvalue="off")
-        self.cb_subtitles.grid(row=15, column=2, columnspan=2, sticky = W)
+        self.cb_subtitles.grid(row=15, column=2, sticky = W)
         if config.get('config','subtitles',0)=="on":
             self.cb_subtitles.select()
         else:
@@ -2011,6 +2018,14 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_avconv.grid(row=21,column=2,sticky=W)
         rb_ffmpeg=Radiobutton(master, text="ffmpeg", variable=self.ytdl_prefered_transcoder_var, value="ffmpeg")
         rb_ffmpeg.grid(row=22,column=2,sticky=W)
+        self.forbid_windowed_mode_var = IntVar()
+        self.forbid_windowed_mode_var.set(int(config.get('config','forbid_windowed_mode',0)))
+        self.cb_forbid = Checkbutton(master,text="Forbid windowed mode",variable=self.forbid_windowed_mode_var, onvalue=1,offvalue=0)
+        self.cb_forbid.grid(row=24, column=2, sticky = W)
+        if self.forbid_windowed_mode_var.get()==1:
+            self.cb_forbid.select()
+        else:
+            self.cb_forbid.deselect()
 
         Label(master, text="").grid(row=51, sticky=W)
         self.debug_var = StringVar()
@@ -2055,6 +2070,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','geometry',self.geometry_var)
         config.set('config','full_screen',self.full_screen_var)
         config.set('config','windowed_mode_coords',self.windowed_mode_coords_var)
+        config.set('config','forbid_windowed_mode',self.forbid_windowed_mode_var.get())
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
             optionsfile.close()
@@ -2374,5 +2390,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 13 December 2015"
+    datestring=" 21 December 2015"
     bplayer = TBOPlayer()

@@ -113,6 +113,8 @@ Menus
     * youtube-dl location - path to youtube-dl binary
     
     * youtube-dl transcoder - prefer to use either avconv or ffmpeg when using youtube-dl for extracting data from online supported services
+    
+    * Forbid windowed mode - if enabled will make videos always show in full screen, disabling the video window mode and video progress bar - useful if you're using tboplayer through a remote desktop
 	
     * Debug - prints some debug text to the command line
 	
