@@ -1,8 +1,30 @@
 #!/bin/bash
 
+TBOPLAYER_PATH=$HOME/tboplayer
+SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 echo ""
-echo "Installing TBOPlater and its dependencies..."
+echo "Installing TBOPlayer and its dependencies..."
 echo ""
+
+$TBOPLAYER_PATH >/dev/null 2>&1
+if [ $? -eq 126 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then
+    rm -Rf $TBOPLAYER_PATH >/dev/null 2>&1
+fi
+
+mv $SCRIPT_PATH $TBOPLAYER_PATH >/dev/null 2>&1
+if [ $? -eq 1 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then 
+    echo ""
+    echo "Installation failed. :("
+    echo "Please, move this folder to "$HOME" and then run this setup script (setup.sh) again."
+    exit
+fi
+
+$HOME/bin >/dev/null 2>&1
+if [ $? -eq 127 ]; then
+    mkdir $HOME/bin
+fi
+
 echo "* Updating distro packages database... This may take some seconds."
 sudo apt-get update >/dev/null 2>&1
 
@@ -72,39 +94,28 @@ else
     sudo youtube-dl -U >/dev/null 2>&1
 fi
 
-~/bin >/dev/null 2>&1
-if [ $? -eq 127 ]; then
-    mkdir ~/bin
-fi
 
 # install fake tboplayer executable in /home/<user>/bin
 command -v tboplayer >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
-    mv ~/KenT2-tboplayer-*  ~/tboplayer >/dev/null 2>&1 || mv ~/tboplayer-master ~/tboplayer >/dev/null 2>&1
-    if [ $? -eq 1 ]; then 
-        echo ""
-        echo "Installation failed. :( Please, move this folder to "$HOME" and try again."
-	exit
-    fi
     echo "* Creating tboplayer's bash executable..."
-    FAKE_BIN=~/bin/tboplayer
+    FAKE_BIN=$HOME/bin/tboplayer
     echo '#!/bin/bash' >> $FAKE_BIN
-    echo 'python ~/tboplayer/tboplayer.py' >> $FAKE_BIN
+    echo 'python $HOME/tboplayer/tboplayer.py' >> $FAKE_BIN
     chmod +x $FAKE_BIN
 fi
 
 # install tboplayer 'shortcut' in /home/<user>/Desktop
-DESKTOP_ENTRY=~/Desktop/tboplayer.desktop
+DESKTOP_ENTRY=$HOME/Desktop/tboplayer.desktop
 $DESKTOP_ENTRY >/dev/null 2>&1
 if [ $? -eq 127 ]; then 
     echo "* Creating shortcut in desktop..."
     echo '[Desktop Entry]' >> $DESKTOP_ENTRY
     echo 'Name=TBOPlayer' >> $DESKTOP_ENTRY
-    echo 'Comment=UI for omxplayer' >> $DESKTOP_ENTRY
+    echo 'Comment=GUI for omxplayer' >> $DESKTOP_ENTRY
     echo 'Exec=python '$HOME'/tboplayer/tboplayer.py "%F"' >> $DESKTOP_ENTRY
     echo 'Icon=/usr/share/pixmaps/python.xpm' >> $DESKTOP_ENTRY
     echo 'Terminal=false' >> $DESKTOP_ENTRY
-    echo 'Type=Application' >> $DESKTOP_ENTRY
 fi
 
 echo ""
