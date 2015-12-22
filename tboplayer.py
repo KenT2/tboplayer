@@ -1125,7 +1125,7 @@ class TBOPlayer:
 
     def show_help (self):
         tkMessageBox.showinfo("Help",
-          " To control playing type a character\np - pause/play\nspacebar - pause/play\nq - quit\n"
+          "To control playing type a character\np - pause/play\nspacebar - pause/play\nq - quit\n"
         + "+ - increase volume\n- - decrease volume\nz - tv show info\n1 - reduce speed\n"
         + "2 - increase speed\nj - previous audio index\nk - next audio index\ni - back a chapter\n"
         + "o - forward a chapter\nn - previous subtitle index\nm - next subtitle index\n"
@@ -1412,7 +1412,7 @@ class TBOPlayer:
             self.vprogress_bar_window.destroy()
             self.vprogress_bar_window = None
         except:
-            self.monitor("Failed trying to destroy video window: video window inexistant.") 
+            self.monitor("Failed trying to destroy video window: video window nonexistent.") 
     
     def get_screen_res(self):
         return (screen_width(), screen_height())
@@ -2021,20 +2021,13 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.forbid_windowed_mode_var = IntVar()
         self.forbid_windowed_mode_var.set(int(config.get('config','forbid_windowed_mode',0)))
         self.cb_forbid = Checkbutton(master,text="Forbid windowed mode",variable=self.forbid_windowed_mode_var, onvalue=1,offvalue=0)
-        self.cb_forbid.grid(row=24, column=2, sticky = W)
+
+        Label(master, text="").grid(row=51, sticky=W)
+        self.cb_forbid.grid(row=52, sticky = W)
         if self.forbid_windowed_mode_var.get()==1:
             self.cb_forbid.select()
         else:
             self.cb_forbid.deselect()
-
-        Label(master, text="").grid(row=51, sticky=W)
-        self.debug_var = StringVar()
-        self.cb_debug = Checkbutton(master,text="Debug",variable=self.debug_var, onvalue="on",offvalue="off")
-        self.cb_debug.grid(row=52,columnspan=2, sticky = W)
-        if config.get('config','debug',0)=="on":
-            self.cb_debug.select()
-        else:
-            self.cb_debug.deselect()
 
         self.track_info_var = StringVar()
         self.cb_track_info = Checkbutton(master,text="Generate Track Information", variable= self.track_info_var, onvalue="on",offvalue="off")
@@ -2043,6 +2036,13 @@ class OptionsDialog(tkSimpleDialog.Dialog):
             self.cb_track_info.select()
         else:
             self.cb_track_info.deselect()
+        self.debug_var = StringVar()
+        self.cb_debug = Checkbutton(master,text="Debug",variable=self.debug_var, onvalue="on",offvalue="off")
+        self.cb_debug.grid(row=60,column=2, sticky = W)
+        if config.get('config','debug',0)=="on":
+            self.cb_debug.select()
+        else:
+            self.cb_debug.deselect()
         return None    # no initial focus
 
     def apply(self):
