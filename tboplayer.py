@@ -1370,15 +1370,19 @@ class TBOPlayer:
 
     def toggle_full_screen(self,*event):
         if not self.dbus_connected or not self.media_is_video() or not self.vprogress_bar_window: return
-        
+        screenres = self.get_screen_res()
         if self.options.full_screen == 1: 
             self.options.full_screen = 0
             vsize = self.omx.video['dimensions']
-            geometry = str(vsize[0]) + "x" + str(vsize[1] + self.vprogress_bar_window.bar_height) + self.options.windowed_mode_coords
+            coords_m = re.compile("([\+|-][0-9]+)([\+|-][0-9]+)").match(self.options.windowed_mode_coords)
+            if int(coords_m.group(1))>screenres[0] or int(coords_m.group(2))>screenres[1]:
+                coords = "+200+200"
+            else:
+                coords = self.options.windowed_mode_coords
+            geometry = str(vsize[0]) + "x" + str(vsize[1] + self.vprogress_bar_window.bar_height) + coords
             self.vprogress_bar_window.geometry(geometry)
         else:
             self.options.full_screen = 1
-            screenres = self.get_screen_res()
             geometry = (str(self.vprogress_bar_window.video_width - 1) + 'x' + str(self.vprogress_bar_window.bar_height) + '-' 
                                                                                                        + str((screenres[0] - self.vprogress_bar_window.video_width)/2) + '-0')
             self.vprogress_bar_window.geometry(geometry)
@@ -2390,5 +2394,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 21 December 2015"
+    datestring=" 24 December 2015"
     bplayer = TBOPlayer()
