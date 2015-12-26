@@ -849,8 +849,6 @@ class TBOPlayer:
         if (command in '+=-pz12jkionms') and self.play_state ==  self._OMX_PLAYING:
             self.monitor("            >Send Command: "+command)
             self.omx.send_command(command)
-            if command in ('+' , '=', '-'):
-                self.set_volume()
             return True
         else:
             self.monitor ("            !>Send command: illegal control or track not playing")
