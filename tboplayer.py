@@ -842,21 +842,17 @@ class TBOPlayer:
 
 
     def send_command(self,command):
+        if command in ('+' , '='):
+            self.set_volume_bar_step(self.volume_var.get() + 3)
+        elif command == '-':
+            self.set_volume_bar_step(self.volume_var.get() - 3)
         if (command in '+=-pz12jkionms') and self.play_state ==  self._OMX_PLAYING:
             self.monitor("            >Send Command: "+command)
             self.omx.send_command(command)
-            if self.dbus_connected and command in ('+' , '=', '-'):
-                sleep(0.1)
-                try:
-                    self.set_volume_bar_step(int(self.vol2dB(self.omx.volume())+self.volume_normal_step))
-                except:
-                    self.monitor("Failed to set volume bar step")
+            if command in ('+' , '=', '-'):
+                self.set_volume()
             return True
         else:
-            if command in ('+' , '='): 
-                self.set_volume_bar_step(self.volume_var.get() + 3)
-            elif command == '-':
-                self.set_volume_bar_step(self.volume_var.get() - 3)
             self.monitor ("            !>Send command: illegal control or track not playing")
             return False
 
