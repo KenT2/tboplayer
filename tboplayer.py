@@ -1265,6 +1265,7 @@ class TBOPlayer:
         self.vprogress_bar_window.video_width = int(vsize[0] * (screenres[1] / float(vsize[1])))
         self.vprogress_bar_window.bar_height = 15
         self.vprogress_bar_window.resizing = 0
+        self.vprogress_bar_window.coords_re = re.compile("([\+|-][0-9]+)([\+|-][0-9]+)")
         
         if self.vprogress_bar_window.video_width > screenres[0] + 20:
             self.vprogress_bar_window.video_width = screenres[0]
@@ -1374,7 +1375,7 @@ class TBOPlayer:
         if self.options.full_screen == 1: 
             self.options.full_screen = 0
             vsize = self.omx.video['dimensions']
-            coords_m = re.compile("([\+|-][0-9]+)([\+|-][0-9]+)").match(self.options.windowed_mode_coords)
+            coords_m = self.vprogress_bar_window.coords_re.match(self.options.windowed_mode_coords)
             if int(coords_m.group(1))>screenres[0] or int(coords_m.group(2))>screenres[1]:
                 coords = "+200+200"
             else:
@@ -1383,6 +1384,7 @@ class TBOPlayer:
             self.vprogress_bar_window.geometry(geometry)
         else:
             self.options.full_screen = 1
+            self.save_video_window_coordinates()
             geometry = (str(self.vprogress_bar_window.video_width - 1) + 'x' + str(self.vprogress_bar_window.bar_height) + '-' 
                                                                                                        + str((screenres[0] - self.vprogress_bar_window.video_width)/2) + '-0')
             self.vprogress_bar_window.geometry(geometry)
@@ -1409,10 +1411,7 @@ class TBOPlayer:
     def destroy_vprogress_bar(self):
         try:
             if self.options.full_screen == 0:
-                x = self.vprogress_bar_window.winfo_x()
-                y = self.vprogress_bar_window.winfo_y()
-                coords = ("+" if x>0 else "")+str(x)+("+" if y>0 else "")+str(y)
-                self.options.windowed_mode_coords = coords
+                self.save_video_window_coordinates()
             self.vprogress_bar_window.destroy()
             self.vprogress_bar_window = None
         except:
@@ -1430,6 +1429,11 @@ class TBOPlayer:
     def focus_root(self, *event):
         self.root.focus()
         return
+
+    def save_video_window_coordinates(self):
+        x = self.vprogress_bar_window.winfo_x()
+        y = self.vprogress_bar_window.winfo_y()
+        self.options.windowed_mode_coords = ("+" if x>0 else "")+str(x)+("+" if y>0 else "")+str(y)
 
 
 # ***************************************
@@ -2394,5 +2398,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 24 December 2015"
+    datestring=" 25 December 2015"
     bplayer = TBOPlayer()
