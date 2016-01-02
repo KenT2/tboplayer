@@ -13,7 +13,7 @@ INSTALLATION
   *  type python tboplayer.py from a terminal opened in the directory within which tboplayer.py is stored
   *  If you want to be able to watch videos from online services like Youtube, then you must have up-to-date youtube-dl installed on your system, as well as avconv 10 or later
   *  developed on raspbian wheezy with python 2.7
-  *  2015 version developed on ubuntu mate 15.04 and mint 17.2
+  *  2015-2016 version developed on ubuntu mate 15.04 and mint 17.2
   *  
   *  see README.md for better instructions
   *  
@@ -26,30 +26,35 @@ Menus
  OMX - display the track information for the last played track (needs to be enabled in options)
  Options -
     Audio Output - play sound to hdmi or local output, auto does not send an audio option to omxplayer.
-    Mode - play the Single selected track, Repeat the single track, rotate around the Playlist starting from the selected track, or play at Random.
-    Download from Youtube - defines whether to download video and audio or audio only from Youtube (other online video services will always be asked for mp4)
+    Mode - play the Single selected track, Repeat the single track, rotate around the Playlist starting from the selected track, randomly play a track from the Playlist.
+    Initial directory for tracks - where Add Track starts looking.
+    Initial directory for playlists - where Open Playlist starts looking
+    Enable subtitles
     OMXPlayer location - path to omxplayer binary
     OMXplayer options - add your own (no validation so be careful)
     Download from Youtube - defines whether to download video and audio or audio only from Youtube (other online video services will always be asked for "video and audio")
     Download actual media URL [when] - defines when to extract the actual media from the given URL, either upon adding the URL or when playing it
+    Youtube video quality - lets you choose between "small", "medium" and "high" qualities (Youtube only feature)
     youtube-dl location - path to youtube-dl binary
     youtube-dl transcoder - prefer to use either avconv or ffmpeg when using youtube-dl for extracting data from online supported services
+    Forbid windowed mode - if enabled will make videos always show in full screen, disabling the video window mode and video progress bar - useful if you're using tboplayer through a remote desktop
     Debug - prints some debug text to the command line
     Generate Track Information - parses the output of omxplayer, disabled by default as it may cause problems with some tracks.
+
 
 A track is selected using a single click of the mouse, playing is started by pressing the Play button or the . key
 
 During playing of a track a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer.
 A list  of comands is provided in the help menu. Note: some of the commands are not implemented by omxplayer.
 
-If you have problems playing a track try it from the command line with omxplayer -o hdmi file or omxplayer -o local file
+If you have problems playing a track try it from the command line with 'omxplayer -o hdmi file' or 'omxplayer -o local file'. If this works, it probably means TBOPlayer is to blame.
+
 
 TODO (maybe)
 --------
 sort out black border around some videos
 gapless playback, by running two instances of pyomxplayer
 read and write m3u and pls playlists
-
 
 
 PROBLEMS
@@ -272,6 +277,7 @@ class OMXPlayer(object):
 from hashlib import sha256
 from json import loads
 
+
 # ***************************************
 # YTDL CLASS
 # ***************************************
@@ -281,7 +287,7 @@ class Ytdl:
     """
         interface for youtube-dl
     """
-
+    
     _YTLOCATION = ''
     _YTLAUNCH_CMD = ''
     _YTLAUNCH_ARGS_FORMAT = ' --prefer-%s -j -f %s --youtube-skip-dash-manifest "%s"'
@@ -290,19 +296,16 @@ class Ytdl:
     _PREFERED_TRANSCODER = ''
     _YOUTUBE_MEDIA_TYPE = ''
     
-    _STATUS_REXP = re.compile("\n")
-    _WRN_REXP = re.compile("WARNING:")
-    _ERR_REXP = re.compile("ERROR:")
-    _SERVICES_REGEXPS = ()
-    _UPD_STATUS_REXP = re.compile("Restart youtube-dl to use the new version.")
+    _FINISHED_STATUS = "\n"
+    _WRN_STATUS = "WARNING:"
+    _ERR_STATUS = "ERROR:"
+    _UPDATED_STATUS = "Restart youtube-dl to use the new version."
     
+    _SERVICES_REGEXPS = ()
     _ACCEPTED_LINK_REXP_FORMAT = "(http[s]{0,1}://(?:\w|\.{0,1})+%s\.(?:[a-z]{2,3})(?:\.[a-z]{2,3}){0,1}/)"
     
-    
-    updated = False
-    end_signal = False
-
-    
+    _process = None
+        
     MSGS = ("Problem retreiving content. Do you have up-to-date dependencies?", 
                                      "Problem retreiving content. Content may be copyrighted or the link invalid.",
                                      "Problem retrieving content. Content may have been truncated.")
@@ -325,10 +328,10 @@ class Ytdl:
             r = (-2, '')
         else:
             data = self._process.before
-            if self._WRN_REXP.search(data):
+            if self._WRN_STATUS in data:
                 # warning message
                 r = (0, self.MSGS[0])
-            elif self._ERR_REXP.search(data):
+            elif self._ERR_STATUS in data:
                 # error message
                 r = (-1, self.MSGS[1])
             else: 
@@ -341,10 +344,10 @@ class Ytdl:
     def _background_process(self):
         while self.is_running():
             try:
-                index = self._process.expect([self._STATUS_REXP,
+                index = self._process.expect([self._FINISHED_STATUS,
                                                 pexpect.TIMEOUT,
                                                 pexpect.EOF,
-                                                self._STATUS_REXP])
+                                                self._FINISHED_STATUS])
                 if index == 1: continue
                 elif index in (2, 3):
                     self.end_signal = True
@@ -378,7 +381,7 @@ class Ytdl:
         return url[:4] == "http" and any(regxp.match(url) for regxp in self._SERVICES_REGEXPS)
 
     def is_running(self):
-        return self._process.isalive()
+        return self._process is not None and self._process.isalive()
 
     def set_options(self, options):
         self._YTLOCATION=options.ytdl_location
@@ -409,9 +412,9 @@ class Ytdl:
         updated = False
         while self.is_running():
             try:
-                index = self._process.expect([self._UPD_STATUS_REXP,
+                index = self._process.expect([self._UPDATED_STATUS,
                                                 pexpect.TIMEOUT,
-                                                self._ERR_REXP])
+                                                self._ERR_STATUS])
                 if index in (1,2):
                     break
                 elif index == 0:
@@ -420,6 +423,7 @@ class Ytdl:
             except:
                 break
             sleep(0.15)
+        
         if updated:
             callback()
 
@@ -1136,8 +1140,9 @@ class TBOPlayer:
                 self.file_pieces = self.file.split("/")
                 self.playlist.append([self.file, self.file_pieces[-1],'',''])
                 self.track_titles_display.insert(END, self.file_pieces[-1])
-
-        self.ytdl.check_for_update(self.ytdl_updated)
+        
+        if pexpect.spawn("dpkg --print-architecture").expect(["armhf", pexpect.EOF]) == 0:
+            self.ytdl.check_for_update(self.ytdl_updated)
 
         # then start Tkinter event loop
         self.root.mainloop()

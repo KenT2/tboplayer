@@ -140,8 +140,6 @@ If you have problems playing a track try it from the command line with `omxplaye
 
 If the progress bar, volume bar, or windowed video mode don't work for you, it may be that you have another instance of omxplayer running in the background. In that case, you can try to close that instance, and then play the track again. You can force omxplayer to terminate by typing in a terminal: `sudo pkill -9 omxplayer`
 
-If you keep geting a lot of "Content may be copyrighted or the link invalid" when trying to play videos from streaming services supported by youtube-dl, you can try to update youtube-dl by typing in a terminal: `sudo youtube-dl -U`
-
 Contributors:
 -------------
 
