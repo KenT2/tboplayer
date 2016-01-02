@@ -269,6 +269,8 @@ class OMXPlayer(object):
         OMXPlayer._LAUNCH_CMD = location + OMXPlayer._LAUNCH_ARGS_FORMAT
 
 
+from hashlib import sha256
+from json import loads
 
 # ***************************************
 # YTDL CLASS
@@ -280,6 +282,7 @@ class Ytdl:
         interface for youtube-dl
     """
 
+    _YTLOCATION = ''
     _YTLAUNCH_CMD = ''
     _YTLAUNCH_ARGS_FORMAT = ' --prefer-%s -j -f %s --youtube-skip-dash-manifest "%s"'
     _YTLAUNCH_PLST_CMD = ''
@@ -291,8 +294,14 @@ class Ytdl:
     _WRN_REXP = re.compile("WARNING:")
     _ERR_REXP = re.compile("ERROR:")
     _SERVICES_REGEXPS = ()
+    _UPD_STATUS_REXP = re.compile("Restart youtube-dl to use the new version.")
     
     _ACCEPTED_LINK_REXP_FORMAT = "(http[s]{0,1}://(?:\w|\.{0,1})+%s\.(?:[a-z]{2,3})(?:\.[a-z]{2,3}){0,1}/)"
+    
+    
+    updated = False
+    end_signal = False
+
     
     MSGS = ("Problem retreiving content. Do you have up-to-date dependencies?", 
                                      "Problem retreiving content. Content may be copyrighted or the link invalid.",
@@ -354,11 +363,13 @@ class Ytdl:
         self._background_thread.start()
 
     def retrieve_media_url(self, url):
+        if self.is_running(): return
         ytcmd = self._YTLAUNCH_CMD % (self._PREFERED_TRANSCODER, self._get_link_media_format(url), url)
         self._process = pexpect.spawn(ytcmd)
         self._spawn_thread()
 
     def retrieve_youtube_playlist(self, playlist_url):
+        if self.is_running(): return
         ytcmd = self._YTLAUNCH_PLST_CMD % (self._PREFERED_TRANSCODER, playlist_url)
         self._process = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
         self._spawn_thread()
@@ -370,21 +381,51 @@ class Ytdl:
         return self._process.isalive()
 
     def set_options(self, options):
-        self._YTLAUNCH_CMD=options.ytdl_location + self._YTLAUNCH_ARGS_FORMAT
-        self._YTLAUNCH_PLST_CMD=options.ytdl_location + self._YTLAUNCH_PLST_ARGS_FORMAT
+        self._YTLOCATION=options.ytdl_location
+        self._YTLAUNCH_CMD=self._YTLOCATION + self._YTLAUNCH_ARGS_FORMAT
+        self._YTLAUNCH_PLST_CMD=self._YTLOCATION + self._YTLAUNCH_PLST_ARGS_FORMAT
         self._PREFERED_TRANSCODER=options.ytdl_prefered_transcoder
         self._YOUTUBE_MEDIA_TYPE=options.youtube_media_format
 
     def quit(self):
         self._terminate_sent_signal = True
         self._process.terminate(force=True)
+    
+    def check_for_update(self, callback):
+        try:
+            versionsurl = "http://rg3.github.io/youtube-dl/update/versions.json"
+            versions = loads(requests.get(versionsurl).text)
+        except:
+            return
+        current_version_hash = sha256(open(self._YTLOCATION, 'rb').read()).hexdigest()
+        latest_version_hash = versions['versions'][versions['latest']]['bin'][1]
+        
+        if current_version_hash != latest_version_hash:
+            self._process = pexpect.spawn("sudo " + self._YTLOCATION + " -U")
+            self._update_thread = Thread(target=self._update_process,args=[callback])
+            self._update_thread.start()
+
+    def _update_process(self, callback):
+        updated = False
+        while self.is_running():
+            try:
+                index = self._process.expect([self._UPD_STATUS_REXP,
+                                                pexpect.TIMEOUT,
+                                                self._ERR_REXP])
+                if index in (1,2):
+                    break
+                elif index == 0:
+                    updated = True
+                    break
+            except:
+                break
+            sleep(0.15)
+        if updated:
+            callback()
 
 
-
-#from pyomxplayer import OMXPlayer
 from pprint import ( pformat, pprint )
 from random import randint
-from json import loads
 from math import log10
 from getpass import getuser
 from Tkinter import *
@@ -398,7 +439,6 @@ import tkFont
 import csv
 import os
 import ConfigParser
-
 
 
 #**************************
@@ -842,15 +882,22 @@ class TBOPlayer:
 
 
     def send_command(self,command):
-        if command in ('+' , '='):
-            self.set_volume_bar_step(self.volume_var.get() + 3)
-        elif command == '-':
-            self.set_volume_bar_step(self.volume_var.get() - 3)
-        if (command in '+=-pz12jkionms') and self.play_state ==  self._OMX_PLAYING:
+           
+        if command in "+=-pz12jkionms" and self.play_state ==  self._OMX_PLAYING:
             self.monitor("            >Send Command: "+command)
             self.omx.send_command(command)
+            if self.dbus_connected and command in ('+' , '=', '-'):
+                sleep(0.1)
+                try:
+                    self.set_volume_bar_step(int(self.vol2dB(self.omx.volume())+self.volume_normal_step))
+                except:
+                    self.monitor("Failed to set volume bar step")
             return True
         else:
+            if command in "+=":
+                self.set_volume_bar_step(self.volume_var.get() + 3)
+            elif command == '-':
+                self.set_volume_bar_step(self.volume_var.get() - 3)         
             self.monitor ("            !>Send command: illegal control or track not playing")
             return False
 
@@ -1090,6 +1137,8 @@ class TBOPlayer:
                 self.playlist.append([self.file, self.file_pieces[-1],'',''])
                 self.track_titles_display.insert(END, self.file_pieces[-1])
 
+        self.ytdl.check_for_update(self.ytdl_updated)
+
         # then start Tkinter event loop
         self.root.mainloop()
 
@@ -1134,6 +1183,9 @@ class TBOPlayer:
         tkMessageBox.showinfo("About","GUI for omxplayer using jbaiter's pyomxplayer wrapper\n"
                    +"Version dated: " + datestring + "\nAuthor:\n    Ken Thompson  - KenT2\n"
                    +"Contributors:\n    heniotierra\n    krugg\n    popiazaza")
+    
+    def ytdl_updated(self):
+        tkMessageBox.showinfo("","youtube-dl has been updated")
 
     def monitor(self,text):
         if self.options.debug: print text
@@ -2392,5 +2444,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 25 December 2015"
+    datestring=" 2 January 2016"
     bplayer = TBOPlayer()
