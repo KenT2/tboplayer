@@ -116,6 +116,7 @@ if [ $? -eq 127 ]; then
     echo 'Exec=python '$HOME'/tboplayer/tboplayer.py "%F"' >> $DESKTOP_ENTRY
     echo 'Icon=/usr/share/pixmaps/python.xpm' >> $DESKTOP_ENTRY
     echo 'Terminal=false' >> $DESKTOP_ENTRY
+    echo 'Type=Application' >> $DESKTOP_ENTRY
 fi
 
 echo ""
