@@ -151,7 +151,7 @@ class OMXPlayer(object):
                     self.position=0.0
                     break
                 else:
-                    self.position = float(self._process.match.group(1)) / 1000000
+                    self.position = float(self._process.match.group(1))/1000000
             except Exception:
                 break
             sleep(0.05)
@@ -509,6 +509,7 @@ class TBOPlayer:
             self.playing_location = self.playlist.selected_track_location
             self.play_state=self._OMX_STARTING
             self.dbus_connected = False
+            self._cued = False
 
             #play the selelected track
             self.start_omx(self.playlist.selected_track_location)
@@ -540,6 +541,8 @@ class TBOPlayer:
                         self.set_progress_bar()
                         if self.media_is_video() and not self.options.forbid_windowed_mode:
                             self.create_vprogress_bar()
+                    if self.options.cue_track_mode:
+                        self.toggle_pause()
             except:
                 self.monitor("      OMXPlayer not started yet.")
             self.root.after(350, self.play_state_machine)
@@ -551,7 +554,7 @@ class TBOPlayer:
                 self.monitor("      Service stop required signal")
                 self.stop_omx()
                 self.stop_required_signal=False
-            else:
+            else:#if not self.options.cue_track_mode or (self.options.cue_track_mode and self._cued and self.paused):
                 # quit command has been sent or omxplayer reports it is terminating so change to ending state
                 if self.quit_sent_signal == True or self.omx.end_play_signal== True or not self.omx.is_running():
                     if self.quit_sent_signal:
@@ -560,6 +563,7 @@ class TBOPlayer:
                     if self.omx.end_play_signal:
                         self.monitor("            <end play signal received")
                         self.monitor("            <end detected at: " + str(self.omx.position))
+                    #if not self.options.cue_track_mode or (self._cued and self.paused):
                     self.play_state =self. _OMX_ENDING
                     self.reset_progress_bar()
                     if self.media_is_video():
@@ -588,6 +592,9 @@ class TBOPlayer:
             self.display_time.set(self.time_string(self.omx.position))
             if abs(self.omx.position - self.progress_bar_var.get()) > self.progress_bar_step_rate:
                 self.set_progress_bar_step()
+            if self.options.cue_track_mode and not self._cued and self.omx.position >= self.omx.timenf['duration'] - 1:
+                self.toggle_pause()
+                self._cued = True
         else:
             self.display_time.set("Paused")           
 
@@ -650,6 +657,8 @@ class TBOPlayer:
                 self.paused=True
                 self.set_play_button_state(0)
             else:
+                if(self.options.cue_track_mode and self._cued):
+                    self.stop_omx()
                 self.paused=False
                 self.set_play_button_state(1)
 
@@ -1902,6 +1911,7 @@ class Options:
             self.full_screen = int(config.get('config','full_screen',0))
             self.windowed_mode_coords = config.get('config','windowed_mode_coords',0)
             self.forbid_windowed_mode = int(config.get('config','forbid_windowed_mode',0))
+            self.cue_track_mode = int(config.get('config','cue_track_mode',0))
 
             if config.get('config','debug',0) == 'on':
                 self.debug = True
@@ -1943,6 +1953,7 @@ class Options:
         config.set('config','full_screen','1')
         config.set('config','windowed_mode_coords','+200+200')
         config.set('config','forbid_windowed_mode','0')
+        config.set('config','cue_track_mode','0')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
             configfile.close()
@@ -1968,6 +1979,7 @@ class Options:
         config.set('config','full_screen',self.full_screen)
         config.set('config','windowed_mode_coords',self.windowed_mode_coords)
         config.set('config','forbid_windowed_mode',self.forbid_windowed_mode)
+        config.set('config','cue_track_mode',self.cue_track_mode)
         with open(self.options_file, 'w+') as configfile:
             config.write(configfile)
             configfile.close()
@@ -2031,7 +2043,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_adding.grid(row=21,column=0,sticky=W)
         rb_playing=Radiobutton(master, text="when playing URL", variable=self.download_media_url_upon_var, value="play")
         rb_playing.grid(row=22,column=0,sticky=W)
-        Label(master, text="Youtube video quality:").grid(row=23, sticky=W)
+        Label(master, text="Youtube media quality:").grid(row=23, sticky=W)
         self.youtube_video_quality_var=StringVar()
         self.youtube_video_quality_var.set(config.get('config','youtube_video_quality',0))
         om_quality = OptionMenu(master, self.youtube_video_quality_var, "high", "medium", "small")
@@ -2082,11 +2094,22 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.cb_forbid = Checkbutton(master,text="Forbid windowed mode",variable=self.forbid_windowed_mode_var, onvalue=1,offvalue=0)
 
         Label(master, text="").grid(row=51, sticky=W)
-        self.cb_forbid.grid(row=52, sticky = W)
+        self.cb_forbid.grid(row=52, column=2, sticky = W)
         if self.forbid_windowed_mode_var.get()==1:
             self.cb_forbid.select()
         else:
             self.cb_forbid.deselect()
+
+        self.cue_track_mode_var = IntVar()
+        self.cue_track_mode_var.set(int(config.get('config','cue_track_mode',0)))
+        self.cb_cue = Checkbutton(master,text="Begin/End track paused",variable=self.cue_track_mode_var, onvalue=1,offvalue=0)
+
+        Label(master, text="").grid(row=51, sticky=W)
+        self.cb_cue.grid(row=52, column=0, sticky = W)
+        if self.cue_track_mode_var.get()==1:
+            self.cb_cue.select()
+        else:
+            self.cb_cue.deselect()
 
         self.track_info_var = StringVar()
         self.cb_track_info = Checkbutton(master,text="Generate Track Information", variable= self.track_info_var, onvalue="on",offvalue="off")
@@ -2130,6 +2153,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','full_screen',self.full_screen_var)
         config.set('config','windowed_mode_coords',self.windowed_mode_coords_var)
         config.set('config','forbid_windowed_mode',self.forbid_windowed_mode_var.get())
+        config.set('config','cue_track_mode',self.cue_track_mode_var.get())
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
             optionsfile.close()
@@ -2449,5 +2473,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 2 January 2016"
+    datestring=" 25 January 2016"
     bplayer = TBOPlayer()
