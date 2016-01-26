@@ -108,17 +108,19 @@ Menus
      
     * Download actual media URL [when] - defines when to extract the actual media from the given URL, either upon adding the URL or when playing it
     
-    * Youtube video quality - lets you choose between "small", "medium" and "high" qualities (Youtube only feature)
+    * Youtube media quality - lets you choose among "small", "medium" and "high" qualities (Youtube only feature)
     
     * youtube-dl location - path to youtube-dl binary
     
     * youtube-dl transcoder - prefer to use either avconv or ffmpeg when using youtube-dl for extracting data from online supported services
     
+    * Start/End track paused - Pauses the track both in the beginning and in the end of the track
+    
     * Forbid windowed mode - if enabled will make videos always show in full screen, disabling the video window mode and video progress bar - useful if you're using tboplayer through a remote desktop
 	
     * Debug - prints some debug text to the command line
 	
-    * Generate Track Information - parses the output of omxplayer, disabled by default as it may cause problems with some tracks.
+    * Generate Track Information - parses the output of omxplayer, disabled by default as it may cause problems with some tracks
 
 
 A track is selected using a single click of the mouse or up-down arrow key, playing is started by pressing the Play/Pause button, the . key or the Return key.
