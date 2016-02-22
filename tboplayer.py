@@ -2377,7 +2377,7 @@ class YtsearchParser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == 'div' : 
             for t in attrs:
-                if "yt-lockup-dismissable" in t: 
+                if "yt-lockup-dismissable" in t[1]: 
                     self.result.append(['',''])
                     break
         elif tag == 'a' : 
