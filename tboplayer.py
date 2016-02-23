@@ -1673,7 +1673,7 @@ class TBOPlayer:
 
     def youtube_search(self):
         """edit the options then read them from file"""
-        YoutubeSearchDialog(self.root, self)
+        YoutubeSearchDialog(self.root, self.add_url_from_search)
 
 
     def add_url_from_search(self,link):
@@ -2317,10 +2317,10 @@ import requests
 
 class YoutubeSearchDialog(tkSimpleDialog.Dialog):
 
-    def __init__(self, parent, player):
+    def __init__(self, parent, add_url_function):
         # store subclass attributes
         self.result_cells = []
-        self.player = player
+        self.add_url = add_url_function
         # init the super class
         tkSimpleDialog.Dialog.__init__(self, parent, "Youtube search")
 
@@ -2352,7 +2352,7 @@ class YoutubeSearchDialog(tkSimpleDialog.Dialog):
 
     def show_result(self, result):
         for r in result:
-            self.result_cells.append(YtresultCell(self.frame.interior,self,r[0],r[1]))
+            self.result_cells.append(YtresultCell(self.frame.interior,self.add_url,r[0],r[1]))
         return
 
     def clear_search(self):
@@ -2383,10 +2383,10 @@ class YtsearchParser(HTMLParser):
         elif tag == 'a' : 
             if not len(self.result): return
             for t in attrs:
-                if "class" in t and "yt-uix-tile-link" in t[1]: 
+                if t[0] == "class" and "yt-uix-tile-link" in t[1]: 
                     self.result[len(self.result) - 1][0] = attrs[0][1]
                     for y in attrs:
-                        if "title" in y:
+                        if y[0] == "title":
                             self.result[len(self.result) - 1][1] = y[1]
                             break
                     break
@@ -2394,14 +2394,14 @@ class YtsearchParser(HTMLParser):
 
 class YtresultCell(Frame):
 
-    def __init__(self, parent, window, link, title):
+    def __init__(self, parent, add_url_function, link, title):
         Frame.__init__(self, parent)
         self.grid(sticky=W)
         self.video_name = tk.StringVar()
         self.video_link = tk.StringVar()
         self.video_name.set(title)
         self.video_link.set("https://www.youtube.com" + link)
-        self.window = window
+        self.add_url = add_url_function
         self.create_widgets()
 
     def create_widgets(self):
@@ -2416,7 +2416,7 @@ class YtresultCell(Frame):
                               bg="light grey").grid(row = 0, column=2, sticky=W)
 
     def add_link(self,*event):
-        self.window.player.add_url_from_search(self.video_link.get())
+        self.add_url(self.video_link.get())
 
 
 class VerticalScrolledFrame(Frame):
@@ -2473,5 +2473,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 25 January 2016"
+    datestring=" 22 February 2016"
     bplayer = TBOPlayer()
