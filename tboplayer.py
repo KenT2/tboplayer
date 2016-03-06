@@ -298,8 +298,8 @@ class Ytdl:
     
     _FINISHED_STATUS = "\n"
     _WRN_STATUS = "WARNING:"
-    _ERR_STATUS = "ERROR:"
     _UPDATED_STATUS = "Restart youtube-dl to use the new version."
+    _ERR_STATUS = "ERROR:"
     
     _SERVICES_REGEXPS = ()
     _ACCEPTED_LINK_REXP_FORMAT = "(http[s]{0,1}://(?:\w|\.{0,1})+%s\.(?:[a-z]{2,3})(?:\.[a-z]{2,3}){0,1}/)"
@@ -589,7 +589,7 @@ class TBOPlayer:
         # we are playing so just update time display
         # self.monitor("Position: " + str(self.omx.position))
         if self.paused == False:
-            self.display_time.set(self.time_string(self.omx.position) + "\n/" + self.time_string(self.omx.timenf['duration']))
+            self.display_time.set(self.time_string(self.omx.position) + "\n/ " + self.time_string(self.omx.timenf['duration']))
             if abs(self.omx.position - self.progress_bar_var.get()) > self.progress_bar_step_rate:
                 self.set_progress_bar_step()
             if self.options.cue_track_mode and not self._cued and self.omx.position >= self.omx.timenf['duration'] - 1:
@@ -1089,7 +1089,7 @@ class TBOPlayer:
                               bg="grey").grid(row=2, column=1, columnspan=6, sticky=N+W+E)
 
         # define time/status display for selected track
-        Label(self.root, font=('Comic Sans', 11),
+        Label(self.root, font=('Comic Sans', 9),
                               fg = 'black', wraplength = 100,
                               textvariable=self.display_time,
                               bg="grey").grid(row=2, column=6, columnspan=1)
@@ -1151,7 +1151,9 @@ class TBOPlayer:
                 self.track_titles_display.insert(END, self.file_pieces[-1])
         
         if pexpect.spawn("dpkg --print-architecture").expect(["armhf", pexpect.EOF]) == 0:
-            self.ytdl.check_for_update(self.ytdl_updated)
+            def ytdl_updated():
+                tkMessageBox.showinfo("","youtube-dl has been updated")
+            self.ytdl.check_for_update(ytdl_updated)
 
         # then start Tkinter event loop
         self.root.mainloop()
@@ -1197,9 +1199,6 @@ class TBOPlayer:
         tkMessageBox.showinfo("About","GUI for omxplayer using jbaiter's pyomxplayer wrapper\n"
                    +"Version dated: " + datestring + "\nAuthor:\n    Ken Thompson  - KenT2\n"
                    +"Contributors:\n    heniotierra\n    krugg\n    popiazaza")
-    
-    def ytdl_updated(self):
-        tkMessageBox.showinfo("","youtube-dl has been updated")
 
     def monitor(self,text):
         if self.options.debug: print text
@@ -1672,26 +1671,23 @@ class TBOPlayer:
 
 
     def youtube_search(self):
-        """edit the options then read them from file"""
-        YoutubeSearchDialog(self.root, self.add_url_from_search)
+        def add_url_from_search(link):
+            if self.ytdl_state != self._YTDL_CLOSED: return
+            if "list=" in link:
+                self.go_ytdl(link,playlist=True)
+                self.display_selected_track_title.set("Wait. Loading playlist content...")
+                return
+
+            result = [link,'']
+            self.go_ytdl(link)
+            result[1] = self.ytdl.WAIT_TAG + result[0]
+            self.playlist.append(result)
+            self.track_titles_display.insert(END, result[1])  
+            self.playlist.select(self.playlist.length()-1)
+            self.display_selected_track(self.playlist.selected_track_index())
+        YoutubeSearchDialog(self.root, add_url_from_search)
 
 
-    def add_url_from_search(self,link):
-        if self.ytdl_state != self._YTDL_CLOSED: return
-        if "list=" in link:
-            self.go_ytdl(link,playlist=True)
-            self.display_selected_track_title.set("Wait. Loading playlist content...")
-            return
-
-        result = [link,'']
-        self.go_ytdl(link)
-        result[1] = self.ytdl.WAIT_TAG + result[0]
-        self.playlist.append(result)
-        self.track_titles_display.insert(END, result[1])  
-        self.playlist.select(self.playlist.length()-1)
-        self.display_selected_track(self.playlist.selected_track_index())
-
-   
     def remove_track(self,*event):
         if  self.playlist.length()>0 and self.playlist.track_is_selected():
             if self.playlist.selected_track()[1][:6] == self.ytdl.WAIT_TAG and self.ytdl_state==self._YTDL_WORKING:
