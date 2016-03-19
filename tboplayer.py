@@ -589,7 +589,10 @@ class TBOPlayer:
         # we are playing so just update time display
         # self.monitor("Position: " + str(self.omx.position))
         if self.paused == False:
-            self.display_time.set(self.time_string(self.omx.position) + "\n/ " + self.time_string(self.omx.timenf['duration']))
+            time_string = self.time_string(self.omx.position)
+            if self.omx.timenf:
+                time_string += "\n/ " + self.time_string(self.omx.timenf['duration'])
+            self.display_time.set(time_string)
             if abs(self.omx.position - self.progress_bar_var.get()) > self.progress_bar_step_rate:
                 self.set_progress_bar_step()
             if self.options.cue_track_mode and not self._cued and self.omx.position >= self.omx.timenf['duration'] - 1:
@@ -2469,5 +2472,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 05 March 2016"
+    datestring=" 19 March 2016"
     bplayer = TBOPlayer()
