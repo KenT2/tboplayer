@@ -2398,9 +2398,11 @@ class YtresultCell(Frame):
         self.grid(sticky=W)
         self.video_name = tk.StringVar()
         self.video_link = tk.StringVar()
-        self.video_name.set(title)
         self.video_link.set("https://www.youtube.com" + link)
         self.add_url = add_url_function
+        try: self.video_name.set(title)
+        except Exception, e: print e
+            
         self.create_widgets()
 
     def create_widgets(self):
@@ -2472,5 +2474,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 19 March 2016"
+    datestring=" 21 March 2016"
     bplayer = TBOPlayer()
