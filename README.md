@@ -144,6 +144,8 @@ If the progress bar, volume bar, or windowed video mode don't work for you, it m
 
 In Raspbian, youtube-dl should always be up-to-date, but if you use another OS and keep getting a lot of "Content may be copyrighted or the link invalid" when trying to play videos from streaming services supported by youtube-dl, you can try to update youtube-dl by typing in a terminal: `sudo youtube-dl -U`
 
+If the videos appear displaced by any amount of pixels, you must be having overscan problems. To disable overscan go to Menu>Preferences>Raspberry Pi Configuration and then set Overscan to Disabled.
+
 Contributors:
 -------------
 
