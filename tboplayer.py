@@ -536,11 +536,10 @@ class TBOPlayer:
                     self.play_state=self._OMX_PLAYING
                     self.monitor("      State machine: omx_playing started")
                     self.dbus_connected = self.omx.init_dbus_link()
-                    if not self.progress_bar_var.get():
-                        self.show_progress_bar()
-                        self.set_progress_bar()
-                        if self.media_is_video() and not self.options.forbid_windowed_mode:
-                            self.create_vprogress_bar()
+                    self.show_progress_bar()
+                    self.set_progress_bar()
+                    if self.media_is_video() and not self.options.forbid_windowed_mode:
+                        self.create_vprogress_bar()
                     if self.options.cue_track_mode:
                         self.toggle_pause()
             except:
@@ -548,13 +547,12 @@ class TBOPlayer:
             self.root.after(350, self.play_state_machine)
 
         elif self.play_state == self._OMX_PLAYING:
-            # self.monitor("      State machine: " + self.play_state)
             # service any queued stop signals
             if self.stop_required_signal==True:
                 self.monitor("      Service stop required signal")
                 self.stop_omx()
                 self.stop_required_signal=False
-            else:#if not self.options.cue_track_mode or (self.options.cue_track_mode and self._cued and self.paused):
+            else:
                 # quit command has been sent or omxplayer reports it is terminating so change to ending state
                 if self.quit_sent_signal == True or self.omx.end_play_signal== True or not self.omx.is_running():
                     if self.quit_sent_signal:
@@ -563,7 +561,6 @@ class TBOPlayer:
                     if self.omx.end_play_signal:
                         self.monitor("            <end play signal received")
                         self.monitor("            <end detected at: " + str(self.omx.position))
-                    #if not self.options.cue_track_mode or (self._cued and self.paused):
                     self.play_state =self. _OMX_ENDING
                     self.reset_progress_bar()
                     if self.media_is_video():
@@ -595,7 +592,7 @@ class TBOPlayer:
             self.display_time.set(time_string)
             if abs(self.omx.position - self.progress_bar_var.get()) > self.progress_bar_step_rate:
                 self.set_progress_bar_step()
-            if self.options.cue_track_mode and not self._cued and self.omx.position >= self.omx.timenf['duration'] - 1:
+            if self.options.cue_track_mode and not self._cued and self.omx.timenf and self.omx.position >= self.omx.timenf['duration'] - 1:
                 self.toggle_pause()
                 self._cued = True
         else:
@@ -2474,5 +2471,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 21 March 2016"
+    datestring=" 17 May 2016"
     bplayer = TBOPlayer()
