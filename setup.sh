@@ -13,6 +13,35 @@ DESKTOP_ENTRIES=($HOME/Desktop/tboplayer.desktop
 MIMEAPPS_FILE=/home/$USER/.config/mimeapps.list
 MIMEAPPS_FILE_SECTION='Added Associations'
 
+# uninstall TBOPlayer
+if [ "$1" == "uninstall" ]; then
+    echo "Do you really wish to uninstall TBOPlayer? [Y/N]" 
+    read answer
+    if [ "$answer" == "Y" || "$answer" == "y" ]; then
+        echo "* Removing TBOPlayer..."
+        rm -Rf $TBOPLAYER_PATH && rm -f $BIN_PATH/tboplayer
+        for DESKTOP_ENTRY in "${DESKTOP_ENTRIES[@]}"; do
+            sudo rm -f $DESKTOP_ENTRY 
+        done
+        for TYPE in "${SUPPORTED_TYPES[@]}"; do
+            crudini --del $MIMEAPPS_FILE $MIMEAPPS_FILE_SECTION $TYPE
+        done
+        echo ""
+        echo "Would you like to remove all of TBOPlayer dependencies too? [Y/N]" 
+        read answer
+        if [ "$answer" == "Y" || "$answer" == "y" ]; then
+            echo ""
+            echo "* Removing TBOPlayer dependencies..."
+            yes | pip uninstall pexpect ptyprocess >/dev/null 2>&1
+            sudo apt-get -y remove python-gobject-2 python-gtk2 python-requests crudini pip >/dev/null 2>&1
+            sudo rm -f /usr/local/bin/youtube-dl >/dev/null 2>&1
+        fi
+        echo ""
+        echo "TBOPlayer has been uninstalled."
+    fi
+    exit
+fi
+
 # install TBOPlayer
 $TBOPLAYER_PATH >/dev/null 2>&1
 if [ $? -eq 126 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then
