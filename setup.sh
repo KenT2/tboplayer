@@ -108,11 +108,6 @@ if [ $? -eq 1 ]; then
     toaptinstall+="libav-tools "
 fi
 
-command -v ffmpeg >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    toaptinstall+="ffmpeg "
-fi
-
 echo "* Installing dependencies: "$toaptinstall
 
 command -v crudini >/dev/null 2>&1
@@ -122,7 +117,7 @@ fi
 
 command -v pip >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
-    toaptinstall+="python-pip"
+    toaptinstall+="python-pip "
 fi
 
 sudo apt-get -y install $toaptinstall >/dev/null 2>&1
