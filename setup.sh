@@ -2,17 +2,28 @@
 
 TBOPLAYER_PATH=$HOME/tboplayer
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BIN_PATH=$HOME/bin
+DESKTOP_PATH=$HOME/Desktop
+SUPPORTED_TYPES=('application/ogg' 'video/ogg' 'audio/ogg' 
+		'video/mpeg' 'audio/mpeg' 'video/mp4' 'audio/x-aac' 
+		'video/3gp' 'video/3gpp2' 'video/quicktime' 'video/x-f4v' 
+		'video/flv' 'audio/x-wav' 'video/x-msvideo')
+DESKTOP_ENTRIES=($HOME/Desktop/tboplayer.desktop 
+		usr/share/applications/tboplayer.desktop)
+MIMEAPPS_FILE=/home/$USER/.config/mimeapps.list
+MIMEAPPS_FILE_SECTION='Added Associations'
+
+# install TBOPlayer
+$TBOPLAYER_PATH >/dev/null 2>&1
+if [ $? -eq 126 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then
+    rm -Rf $TBOPLAYER_PATH
+fi
 
 echo ""
 echo "Installing TBOPlayer and its dependencies..."
 echo ""
 
-$TBOPLAYER_PATH >/dev/null 2>&1
-if [ $? -eq 126 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then
-    rm -Rf $TBOPLAYER_PATH >/dev/null 2>&1
-fi
-
-mv $SCRIPT_PATH $TBOPLAYER_PATH >/dev/null 2>&1
+mv $SCRIPT_PATH $TBOPLAYER_PATH
 if [ $? -eq 1 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then 
     echo ""
     echo "Installation failed. :("
@@ -20,9 +31,14 @@ if [ $? -eq 1 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then
     exit
 fi
 
-$HOME/bin >/dev/null 2>&1
+$BIN_PATH >/dev/null 2>&1
 if [ $? -eq 127 ]; then
-    mkdir $HOME/bin
+    mkdir $BIN_PATH
+fi
+
+$DESKTOP_PATH >/dev/null 2>&1
+if [ $? -eq 127 ]; then
+    mkdir $DESKTOP_PATH
 fi
 
 echo "* Updating distro packages database... This may take some seconds."
@@ -52,36 +68,42 @@ if [ $PEXPECT_INSTALLED -eq 1 ]; then
     yes | pip install --user pexpect $ptyprocess >/dev/null 2>&1
 fi
 
+tosudoinstall=""
+
 python -c 'import requests' >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
-    echo "* Installing requests..."
-    sudo apt-get install -y python-requests >/dev/null 2>&1
+    tosudoinstall+="python-requests "
 fi
 
 python -c 'import gobject' >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
-    echo "* Installing gobject..."
-    sudo apt-get install -y python-gobject-2 >/dev/null 2>&1
+    tosudoinstall+="python-gobject-2 "
 fi
 
 python -c 'import gtk' >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
-    echo "* Installing gtk..."
-    sudo apt-get install -y python-gtk2 >/dev/null 2>&1
+    tosudoinstall+="python-gtk2 "
 fi
 
 # install avconv and ffmpeg if either of them is not installed
 command -v avconv >/dev/null 2>&1
-AVCONV_INSTALLED=$?
-command -v ffmpeg >/dev/null 2>&1
-FFMPEG_INSTALLED=$?
-if [ $AVCONV_INSTALLED -eq 1 ] || [ $FFMPEG_INSTALLED -eq 1 ]; then
-    echo "* Installing avconv and ffmpeg..."
-    sudo apt-get -y install libav-tools ffmpeg >/dev/null 2>&1
-else
-    echo "* Updating avconv and ffmpeg..."
-    sudo apt-get -y --only-upgrade install libav-tools ffmpeg >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    tosudoinstall+="libav-tools "
 fi
+
+command -v ffmpeg >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    tosudoinstall+="ffmpeg "
+fi
+
+echo "* Installing dependencies: "$tosudoinstall
+
+command -v crudini >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    tosudoinstall+="crudini"
+fi
+
+sudo apt-get -y install $tosudoinstall
 
 # install youtube-dl it's if not installed
 command -v youtube-dl >/dev/null 2>&1
@@ -94,7 +116,6 @@ else
     sudo youtube-dl -U >/dev/null 2>&1
 fi
 
-
 # install fake tboplayer executable in /home/<user>/bin
 command -v tboplayer >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
@@ -106,24 +127,31 @@ if [ $? -eq 1 ]; then
 fi
 
 # install tboplayer 'shortcut' in /home/<user>/Desktop
-DESKTOP_ENTRY=$HOME/Desktop/tboplayer.desktop
-$DESKTOP_ENTRY >/dev/null 2>&1
-if [ $? -eq 127 ]; then 
-    echo "* Creating shortcut in desktop..."
-    echo '[Desktop Entry]' >> $DESKTOP_ENTRY
-    echo 'Name=TBOPlayer' >> $DESKTOP_ENTRY
-    echo 'Comment=GUI for omxplayer' >> $DESKTOP_ENTRY
-    echo 'Exec=python '$HOME'/tboplayer/tboplayer.py "%F"' >> $DESKTOP_ENTRY
-    echo 'Icon=/usr/share/pixmaps/python.xpm' >> $DESKTOP_ENTRY
-    echo 'Terminal=false' >> $DESKTOP_ENTRY
-    echo 'Type=Application' >> $DESKTOP_ENTRY
-fi
+
+echo "* Creating shortcuts and configuring links..."
+for DESKTOP_ENTRY in "${DESKTOP_ENTRIES[@]}"; do 
+    $DESKTOP_ENTRY >/dev/null 2>&1
+    if [ $? -eq 127 ]; then 
+        sudo echo '[Desktop Entry]' >> $DESKTOP_ENTRY
+        sudo echo 'Name=TBOPlayer' >> $DESKTOP_ENTRY
+        sudo echo 'Comment=GUI for omxplayer' >> $DESKTOP_ENTRY
+        sudo echo 'Exec=python '$HOME'/tboplayer/tboplayer.py %F' >> $DESKTOP_ENTRY
+        sudo echo 'Icon=/usr/share/pixmaps/python.xpm' >> $DESKTOP_ENTRY
+        sudo echo 'Terminal=false' >> $DESKTOP_ENTRY
+        sudo echo 'Type=Application' >> $DESKTOP_ENTRY
+        sudo echo 'Categories=Application;Multimedia;Audio;AudioVideo' >> $DESKTOP_ENTRY
+    fi
+done
+
+for TYPE in "${SUPPORTED_TYPES[@]}"; do
+	crudini --set $MIMEAPPS_FILE $MIMEAPPS_FILE_SECTION $TYPE 'tboplayer.desktop'
+done
 
 echo ""
 echo "Installation finished."
 echo ""
 echo "If all went as expected, TBOPlayer is now installed in your system." 
-echo "To run it, type 'tboplayer', or use the shortcut created on your Desktop."
+echo "To run it, type 'tboplayer', use the shortcut created on your Desktop, or right-click on files."
 echo "Oh, just keep the tboplayer folder in your "$HOME" directory, alright?"
 echo ""
 echo "Good bye! ;)"
