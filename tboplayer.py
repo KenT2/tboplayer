@@ -960,8 +960,8 @@ class TBOPlayer:
 
         OMXPlayer.set_omx_location(self.options.omx_location)
 
-        self._SUPPORTED_FILE_FORMATS = (".m4a",".mp2",".mp3",".ogg",".aac",".3g2",".3gp",".wav",
-                                        ".avi",".flv",".mp4",".mkv",".mov",".mj2",".mpg",".ogv")
+        self._SUPPORTED_FILE_FORMATS = (".m4a",".mp2",".mp3",".mpa",".mpe",".mpv2",".ogg",".aac",".3g2",".3gp",".wav",
+                                        ".avi",".flv",".f4v",".mp4",".mkv",".mov",".mj2",".mpg",".ogv")
 
         # bind some display fields
         self.filename = tk.StringVar()
