@@ -2471,5 +2471,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 17 May 2016"
+    datestring=" 27 Jun 2016"
     bplayer = TBOPlayer()
