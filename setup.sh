@@ -4,6 +4,7 @@ TBOPLAYER_PATH=$HOME/tboplayer
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BIN_PATH=$HOME/bin
 DESKTOP_PATH=$HOME/Desktop
+FAKE_BIN=$BIN_PATH/tboplayer
 SUPPORTED_TYPES=('application/ogg' 'video/ogg' 'audio/ogg' 
 		'video/mpeg' 'audio/mpeg' 'video/mp4' 'audio/x-aac' 
 		'video/3gp' 'video/3gpp2' 'video/quicktime' 'video/x-f4v' 
@@ -22,7 +23,7 @@ if [ "$1" == "uninstall" ]; then
 	echo ""
         echo "* Removing TBOPlayer..."
         rm -Rf $TBOPLAYER_PATH
-	rm -f $BIN_PATH/tboplayer
+	rm -f $FAKE_BIN
 	rm -f "${DESKTOP_ENTRIES[0]}" 
         sudo rm -f "${DESKTOP_ENTRIES[1]}" 
         for TYPE in "${SUPPORTED_TYPES[@]}"; do
@@ -35,7 +36,7 @@ if [ "$1" == "uninstall" ]; then
             echo ""
             echo "* Removing TBOPlayer dependencies..."
             yes | pip uninstall pexpect ptyprocess >/dev/null 2>&1
-            sudo apt-get -y remove python-gobject-2 python-gtk2 python-requests crudini pip >/dev/null 2>&1
+            sudo apt-get -y remove python-gobject-2 python-gtk2 python-requests crudini python-pip >/dev/null 2>&1
             sudo rm -f /usr/local/bin/youtube-dl >/dev/null 2>&1
         fi
         echo ""
@@ -84,10 +85,47 @@ else
     sudo apt-get -y --only-upgrade install omxplayer >/dev/null 2>&1
 fi
 
+toaptinstall=""
+
+python -c 'import requests' >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    toaptinstall+="python-requests "
+fi
+
+python -c 'import gobject' >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    toaptinstall+="python-gobject-2 "
+fi
+
+python -c 'import gtk' >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    toaptinstall+="python-gtk2 "
+fi
+
+# install avconv and ffmpeg if either of them is not installed
+command -v avconv >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    toaptinstall+="libav-tools "
+fi
+
+command -v ffmpeg >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    toaptinstall+="ffmpeg "
+fi
+
+echo "* Installing dependencies: "$toaptinstall
+
+command -v crudini >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    toaptinstall+="crudini "
+fi
+
 command -v pip >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
-    sudo apt-get install -y python-pip >/dev/null 2>&1
+    toaptinstall+="python-pip"
 fi
+
+sudo apt-get -y install $toaptinstall >/dev/null 2>&1
 
 python -c 'import pexpect' >/dev/null 2>&1
 PEXPECT_INSTALLED=$?
@@ -98,43 +136,6 @@ if [ $PEXPECT_INSTALLED -eq 1 ]; then
     [[ $PTYPROCESS_INSTALLED -eq 1 ]] && ptyprocess='ptyprocess' || ptyprocess=''
     yes | pip install --user pexpect $ptyprocess >/dev/null 2>&1
 fi
-
-tosudoinstall=""
-
-python -c 'import requests' >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    tosudoinstall+="python-requests "
-fi
-
-python -c 'import gobject' >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    tosudoinstall+="python-gobject-2 "
-fi
-
-python -c 'import gtk' >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    tosudoinstall+="python-gtk2 "
-fi
-
-# install avconv and ffmpeg if either of them is not installed
-command -v avconv >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    tosudoinstall+="libav-tools "
-fi
-
-command -v ffmpeg >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    tosudoinstall+="ffmpeg "
-fi
-
-echo "* Installing dependencies: "$tosudoinstall
-
-command -v crudini >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    tosudoinstall+="crudini"
-fi
-
-sudo apt-get -y install $tosudoinstall >/dev/null 2>&1
 
 # install youtube-dl it's if not installed
 command -v youtube-dl >/dev/null 2>&1
@@ -151,9 +152,8 @@ fi
 command -v tboplayer >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
     echo "* Creating tboplayer's bash executable..."
-    FAKE_BIN=$HOME/bin/tboplayer
     echo '#!/bin/bash' >> $FAKE_BIN
-    echo 'python $HOME/tboplayer/tboplayer.py' >> $FAKE_BIN
+    echo 'python $TBOPLAYER_PATH/tboplayer.py' >> $FAKE_BIN
     chmod +x $FAKE_BIN
 fi
 
@@ -175,14 +175,14 @@ fi
 sudo cp $DESKTOP_ENTRY "${DESKTOP_ENTRIES[1]}"
 
 for TYPE in "${SUPPORTED_TYPES[@]}"; do
-	crudini --set "$MIMEAPPS_FILE" "$MIMEAPPS_FILE_SECTION" $TYPE 'tboplayer.desktop'
+    crudini --set "$MIMEAPPS_FILE" "$MIMEAPPS_FILE_SECTION" $TYPE 'tboplayer.desktop'
 done
 
 echo ""
 echo "Installation finished."
 echo ""
 echo "If all went as expected, TBOPlayer is now installed in your system." 
-echo "To run it, type 'tboplayer', use the shortcut created on your Desktop, or open with right-click when using your file manager."
+echo "To run it, type 'tboplayer', use the shortcut created on your Desktop, or open a file directly by double clicking on it, or using the right-click menu, when using your file manager."
 echo "Oh, just keep the tboplayer folder in your "$HOME" directory, alright?"
 echo ""
 echo "Good bye! ;)"
