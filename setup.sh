@@ -9,27 +9,29 @@ SUPPORTED_TYPES=('application/ogg' 'video/ogg' 'audio/ogg'
 		'video/3gp' 'video/3gpp2' 'video/quicktime' 'video/x-f4v' 
 		'video/flv' 'audio/x-wav' 'video/x-msvideo')
 DESKTOP_ENTRIES=($HOME/Desktop/tboplayer.desktop 
-		usr/share/applications/tboplayer.desktop)
+		/usr/share/applications/tboplayer.desktop)
 MIMEAPPS_FILE=/home/$USER/.config/mimeapps.list
 MIMEAPPS_FILE_SECTION='Added Associations'
 
 # uninstall TBOPlayer
 if [ "$1" == "uninstall" ]; then
+    echo ""
     echo "Do you really wish to uninstall TBOPlayer? [Y/N]" 
     read answer
-    if [ "$answer" == "Y" || "$answer" == "y" ]; then
+    if [ "$answer" == "Y" ] || [ "$answer" == "y" ]; then
+	echo ""
         echo "* Removing TBOPlayer..."
         rm -Rf $TBOPLAYER_PATH && rm -f $BIN_PATH/tboplayer
         for DESKTOP_ENTRY in "${DESKTOP_ENTRIES[@]}"; do
             sudo rm -f $DESKTOP_ENTRY 
         done
         for TYPE in "${SUPPORTED_TYPES[@]}"; do
-            crudini --del $MIMEAPPS_FILE $MIMEAPPS_FILE_SECTION $TYPE
+            crudini --del "$MIMEAPPS_FILE" "$MIMEAPPS_FILE_SECTION" $TYPE >/dev/null 2>&1
         done
         echo ""
         echo "Would you like to remove all of TBOPlayer dependencies too? [Y/N]" 
         read answer
-        if [ "$answer" == "Y" || "$answer" == "y" ]; then
+        if [ "$answer" == "Y" ] || [ "$answer" == "y" ]; then
             echo ""
             echo "* Removing TBOPlayer dependencies..."
             yes | pip uninstall pexpect ptyprocess >/dev/null 2>&1
@@ -132,7 +134,7 @@ if [ $? -eq 1 ]; then
     tosudoinstall+="crudini"
 fi
 
-sudo apt-get -y install $tosudoinstall
+sudo apt-get -y install $tosudoinstall >/dev/null 2>&1
 
 # install youtube-dl it's if not installed
 command -v youtube-dl >/dev/null 2>&1
@@ -173,14 +175,14 @@ for DESKTOP_ENTRY in "${DESKTOP_ENTRIES[@]}"; do
 done
 
 for TYPE in "${SUPPORTED_TYPES[@]}"; do
-	crudini --set $MIMEAPPS_FILE $MIMEAPPS_FILE_SECTION $TYPE 'tboplayer.desktop'
+	crudini --set "$MIMEAPPS_FILE" "$MIMEAPPS_FILE_SECTION" $TYPE 'tboplayer.desktop'
 done
 
 echo ""
 echo "Installation finished."
 echo ""
 echo "If all went as expected, TBOPlayer is now installed in your system." 
-echo "To run it, type 'tboplayer', use the shortcut created on your Desktop, or right-click on files."
+echo "To run it, type 'tboplayer', use the shortcut created on your Desktop, or open with right-click when using your file manager."
 echo "Oh, just keep the tboplayer folder in your "$HOME" directory, alright?"
 echo ""
 echo "Good bye! ;)"
