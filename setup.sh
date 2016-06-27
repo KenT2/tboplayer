@@ -21,10 +21,10 @@ if [ "$1" == "uninstall" ]; then
     if [ "$answer" == "Y" ] || [ "$answer" == "y" ]; then
 	echo ""
         echo "* Removing TBOPlayer..."
-        rm -Rf $TBOPLAYER_PATH && rm -f $BIN_PATH/tboplayer
-        for DESKTOP_ENTRY in "${DESKTOP_ENTRIES[@]}"; do
-            sudo rm -f $DESKTOP_ENTRY 
-        done
+        rm -Rf $TBOPLAYER_PATH
+	rm -f $BIN_PATH/tboplayer
+	rm -f "${DESKTOP_ENTRIES[0]}" 
+        sudo rm -f "${DESKTOP_ENTRIES[1]}" 
         for TYPE in "${SUPPORTED_TYPES[@]}"; do
             crudini --del "$MIMEAPPS_FILE" "$MIMEAPPS_FILE_SECTION" $TYPE >/dev/null 2>&1
         done
@@ -160,19 +160,19 @@ fi
 # install tboplayer 'shortcut' in /home/<user>/Desktop
 
 echo "* Creating shortcuts and configuring links..."
-for DESKTOP_ENTRY in "${DESKTOP_ENTRIES[@]}"; do 
-    $DESKTOP_ENTRY >/dev/null 2>&1
-    if [ $? -eq 127 ]; then 
-        sudo echo '[Desktop Entry]' >> $DESKTOP_ENTRY
-        sudo echo 'Name=TBOPlayer' >> $DESKTOP_ENTRY
-        sudo echo 'Comment=GUI for omxplayer' >> $DESKTOP_ENTRY
-        sudo echo 'Exec=python '$HOME'/tboplayer/tboplayer.py %F' >> $DESKTOP_ENTRY
-        sudo echo 'Icon=/usr/share/pixmaps/python.xpm' >> $DESKTOP_ENTRY
-        sudo echo 'Terminal=false' >> $DESKTOP_ENTRY
-        sudo echo 'Type=Application' >> $DESKTOP_ENTRY
-        sudo echo 'Categories=Application;Multimedia;Audio;AudioVideo' >> $DESKTOP_ENTRY
-    fi
-done
+DESKTOP_ENTRY="${DESKTOP_ENTRIES[0]}"
+$DESKTOP_ENTRY >/dev/null 2>&1
+if [ $? -eq 127 ]; then 
+    echo '[Desktop Entry]' >> $DESKTOP_ENTRY
+    echo 'Name=TBOPlayer' >> $DESKTOP_ENTRY
+    echo 'Comment=GUI for omxplayer' >> $DESKTOP_ENTRY
+    echo 'Exec=python '$HOME'/tboplayer/tboplayer.py %F' >> $DESKTOP_ENTRY
+    echo 'Icon=/usr/share/pixmaps/python.xpm' >> $DESKTOP_ENTRY
+    echo 'Terminal=false' >> $DESKTOP_ENTRY
+    echo 'Type=Application' >> $DESKTOP_ENTRY
+    echo 'Categories=Application;Multimedia;Audio;AudioVideo' >> $DESKTOP_ENTRY
+fi
+sudo cp $DESKTOP_ENTRY "${DESKTOP_ENTRIES[1]}"
 
 for TYPE in "${SUPPORTED_TYPES[@]}"; do
 	crudini --set "$MIMEAPPS_FILE" "$MIMEAPPS_FILE_SECTION" $TYPE 'tboplayer.desktop'
