@@ -9,9 +9,9 @@ SUPPORTED_TYPES=('application/ogg' 'video/ogg' 'audio/ogg'
 		'video/mpeg' 'audio/mpeg' 'video/mp4' 'audio/x-aac' 
 		'video/3gp' 'video/3gpp2' 'video/quicktime' 'video/x-f4v' 
 		'video/flv' 'audio/x-wav' 'video/x-msvideo')
-DESKTOP_ENTRIES=($HOME/Desktop/tboplayer.desktop 
+DESKTOP_ENTRIES=($DESKTOP_PATH/tboplayer.desktop 
 		/usr/share/applications/tboplayer.desktop)
-MIMEAPPS_FILE=/home/$USER/.config/mimeapps.list
+MIMEAPPS_FILE=$HOME/.config/mimeapps.list
 MIMEAPPS_FILE_SECTION='Added Associations'
 
 # uninstall TBOPlayer
@@ -36,7 +36,7 @@ if [ "$1" == "uninstall" ]; then
             echo ""
             echo "* Removing TBOPlayer dependencies..."
             yes | pip uninstall pexpect ptyprocess >/dev/null 2>&1
-            sudo apt-get -y remove python-gobject-2 python-gtk2 python-requests crudini python-pip >/dev/null 2>&1
+            sudo apt-get -y remove python-gobject-2 python-gtk2 python-requests crudini >/dev/null 2>&1
             sudo rm -f /usr/local/bin/youtube-dl >/dev/null 2>&1
         fi
         echo ""
@@ -87,40 +87,32 @@ fi
 
 toaptinstall=""
 
-python -c 'import requests' >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    toaptinstall+="python-requests "
-fi
+function addToAptInstall {
+    local command=$1
+    local package=$2
+    local python=$3
+    if [ $python ]; then
+        python -c "import "$command >/dev/null 2>&1
+	local cmdres=$? 
+    else
+        command -v $command >/dev/null 2>&1
+	local cmdres=$? 
+    fi
+    if [ $cmdres -eq 1 ]; then 
+        toaptinstall+=$package" "
+    fi
+}
 
-python -c 'import gobject' >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    toaptinstall+="python-gobject-2 "
-fi
-
-python -c 'import gtk' >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    toaptinstall+="python-gtk2 "
-fi
-
-# install avconv and ffmpeg if either of them is not installed
-command -v avconv >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    toaptinstall+="libav-tools "
-fi
+addToAptInstall "requests" "python-requests" true
+addToAptInstall "gobject" "python-gobject-2" true
+addToAptInstall "gtk" "python-gtk2" true
+addToAptInstall "avconv" "libav-tools" false
+addToAptInstall "pip" "python-pip" false
+addToAptInstall "crudini" "crudini" false
 
 echo "* Installing dependencies: "$toaptinstall
 
-command -v crudini >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    toaptinstall+="crudini "
-fi
-
-command -v pip >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    toaptinstall+="python-pip "
-fi
-
-sudo apt-get -y install $toaptinstall >/dev/null 2>&1
+sudo apt-get -y install $toaptinstall 2>&1 >/dev/null
 
 python -c 'import pexpect' >/dev/null 2>&1
 PEXPECT_INSTALLED=$?
@@ -148,7 +140,7 @@ command -v tboplayer >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
     echo "* Creating tboplayer's bash executable..."
     echo '#!/bin/bash' >> $FAKE_BIN
-    echo 'python $TBOPLAYER_PATH/tboplayer.py' >> $FAKE_BIN
+    echo 'python '$TBOPLAYER_PATH'/tboplayer.py' >> $FAKE_BIN
     chmod +x $FAKE_BIN
 fi
 
@@ -161,7 +153,7 @@ if [ $? -eq 127 ]; then
     echo '[Desktop Entry]' >> $DESKTOP_ENTRY
     echo 'Name=TBOPlayer' >> $DESKTOP_ENTRY
     echo 'Comment=GUI for omxplayer' >> $DESKTOP_ENTRY
-    echo 'Exec=python '$HOME'/tboplayer/tboplayer.py %F' >> $DESKTOP_ENTRY
+    echo 'Exec=python '$TBOPLAYER_PATH'/tboplayer.py %F' >> $DESKTOP_ENTRY
     echo 'Icon=/usr/share/pixmaps/python.xpm' >> $DESKTOP_ENTRY
     echo 'Terminal=false' >> $DESKTOP_ENTRY
     echo 'Type=Application' >> $DESKTOP_ENTRY
