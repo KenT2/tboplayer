@@ -135,7 +135,7 @@ While playing videos, you can hit the F11 key for toggling full screen mode. In 
 
 For a list of streaming services supported by youtube-dl, see this link: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/OMXplayer)
 
-If you used the automatic installer, you should be able to open files with the right mouse click menu in your file manager.
+If you used the automatic installer, you should be able to open files with double-click, or with the right mouse click menu in your file manager.
 
 TROUBLESHOOTING
 =========
