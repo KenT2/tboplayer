@@ -290,10 +290,9 @@ class Ytdl:
     
     _YTLOCATION = ''
     _YTLAUNCH_CMD = ''
-    _YTLAUNCH_ARGS_FORMAT = ' --prefer-%s -j -f %s --youtube-skip-dash-manifest "%s"'
+    _YTLAUNCH_ARGS_FORMAT = ' -j -f %s --youtube-skip-dash-manifest "%s"'
     _YTLAUNCH_PLST_CMD = ''
-    _YTLAUNCH_PLST_ARGS_FORMAT = ' --prefer-%s -J -f mp4 --youtube-skip-dash-manifest "%s"'
-    _PREFERED_TRANSCODER = ''
+    _YTLAUNCH_PLST_ARGS_FORMAT = ' -J -f mp4 --youtube-skip-dash-manifest "%s"'
     _YOUTUBE_MEDIA_TYPE = ''
     
     _FINISHED_STATUS = "\n"
@@ -367,7 +366,7 @@ class Ytdl:
 
     def retrieve_media_url(self, url):
         if self.is_running(): return
-        ytcmd = self._YTLAUNCH_CMD % (self._PREFERED_TRANSCODER, self._get_link_media_format(url), url)
+        ytcmd = self._YTLAUNCH_CMD % (self._get_link_media_format(url), url)
         self._process = pexpect.spawn(ytcmd)
         self._spawn_thread()
 
@@ -387,7 +386,6 @@ class Ytdl:
         self._YTLOCATION=options.ytdl_location
         self._YTLAUNCH_CMD=self._YTLOCATION + self._YTLAUNCH_ARGS_FORMAT
         self._YTLAUNCH_PLST_CMD=self._YTLOCATION + self._YTLAUNCH_PLST_ARGS_FORMAT
-        self._PREFERED_TRANSCODER=options.ytdl_prefered_transcoder
         self._YOUTUBE_MEDIA_TYPE=options.youtube_media_format
 
     def quit(self):
@@ -1850,9 +1848,6 @@ class TBOPlayer:
                                             "Video: " + str(self.omx.video) + "\nAudio: " + str(self.omx.audio) + "\nTime: " + str(self.omx.timenf))
         except:
             return
-        else:
-            tkMessageBox.showinfo("Track Information","Not Enabled")
-
 
 
 # ***************************************
@@ -1909,7 +1904,6 @@ class Options:
             self.youtube_media_format = config.get('config','youtube_media_format',0)
             self.omx_location = config.get('config','omx_location',0)
             self.ytdl_location = config.get('config','ytdl_location',0)
-            self.ytdl_prefered_transcoder = config.get('config','ytdl_prefered_transcoder',0)
             self.download_media_url_upon = config.get('config','download_media_url_upon',0)
             self.youtube_video_quality = config.get('config','youtube_video_quality',0)
             self.geometry = config.get('config','geometry',0)
@@ -1946,7 +1940,6 @@ class Options:
         config.set('config','youtube_media_format','mp4')
         config.set('config','omx_location','/usr/bin/omxplayer')
         config.set('config','ytdl_location','/usr/local/bin/youtube-dl')
-        config.set('config','ytdl_prefered_transcoder','avconv')
         config.set('config','download_media_url_upon','add')
         config.set('config','youtube_video_quality','medium')
         config.set('config','geometry','408x340+350+250')
@@ -1972,7 +1965,6 @@ class Options:
         config.set('config','youtube_media_format',self.youtube_media_format)
         config.set('config','omx_location',self.omx_location)
         config.set('config','ytdl_location',self.ytdl_location)
-        config.set('config','ytdl_prefered_transcoder',self.ytdl_prefered_transcoder)
         config.set('config','download_media_url_upon',self.download_media_url_upon)
         config.set('config','youtube_video_quality',self.youtube_video_quality)
         config.set('config','geometry',self.geometry)
@@ -2017,6 +2009,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_auto=Radiobutton(master, text="Auto", variable=self.audio_var,value="auto")
         rb_auto.grid(row=3,column=0,sticky=W)
 
+        Label(master, text="").grid(row=9, sticky=W)
         Label(master, text="Mode:").grid(row=10, sticky=W)
         self.mode_var=StringVar()
         self.mode_var.set(config.get('config','mode',0))
@@ -2037,19 +2030,13 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_video.grid(row=18,column=0,sticky=W)
         rb_audio=Radiobutton(master, text="Audio only", variable=self.youtube_media_format_var, value="m4a")
         rb_audio.grid(row=19,column=0,sticky=W)
-        Label(master, text="Download actual media URL:").grid(row=20, sticky=W)
-        self.download_media_url_upon_var=StringVar()
-        self.download_media_url_upon_var.set(config.get('config','download_media_url_upon',0))
-        rb_adding=Radiobutton(master, text="when adding URL", variable=self.download_media_url_upon_var, value="add")
-        rb_adding.grid(row=21,column=0,sticky=W)
-        rb_playing=Radiobutton(master, text="when playing URL", variable=self.download_media_url_upon_var, value="play")
-        rb_playing.grid(row=22,column=0,sticky=W)
-        Label(master, text="Youtube media quality:").grid(row=23, sticky=W)
+
+        Label(master, text="Youtube media quality:").grid(row=20, sticky=W)
         self.youtube_video_quality_var=StringVar()
         self.youtube_video_quality_var.set(config.get('config','youtube_video_quality',0))
         om_quality = OptionMenu(master, self.youtube_video_quality_var, "high", "medium", "small")
-        om_quality.grid(row=24, sticky=W)
-
+        om_quality.grid(row=21, sticky=W)
+        
         Label(master, text="Initial directory for tracks:").grid(row=0, column=2, sticky=W)
         self.e_tracks = Entry(master)
         self.e_tracks.grid(row=1, column=2)
@@ -2059,19 +2046,19 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.e_playlists.grid(row=3, column=2)
         self.e_playlists.insert(0,config.get('config','playlists',0))
     
-        Label(master, text="").grid(row=10, column=2, sticky=W)
-        Label(master, text="OMXPlayer location:").grid(row=11, column=2, sticky=W)
+    
+        Label(master, text="OMXPlayer location:").grid(row=10, column=2, sticky=W)
         self.e_omx_location = Entry(master)
-        self.e_omx_location.grid(row=12, column=2)
+        self.e_omx_location.grid(row=11, column=2)
         self.e_omx_location.insert(0,config.get('config','omx_location',0))
-        Label(master, text="OMXPlayer options:").grid(row=13, column=2, sticky=W)
+        Label(master, text="OMXPlayer options:").grid(row=12, column=2, sticky=W)
         self.e_omx_options = Entry(master)
-        self.e_omx_options.grid(row=14, column=2)
+        self.e_omx_options.grid(row=13, column=2)
         self.e_omx_options.insert(0,config.get('config','omx_options',0))
 
         self.subtitles_var = StringVar()
         self.cb_subtitles = Checkbutton(master,text="Subtitles",variable=self.subtitles_var, onvalue="on",offvalue="off")
-        self.cb_subtitles.grid(row=15, column=2, sticky = W)
+        self.cb_subtitles.grid(row=14, column=2, sticky = W)
         if config.get('config','subtitles',0)=="on":
             self.cb_subtitles.select()
         else:
@@ -2083,13 +2070,13 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.e_ytdl_location.grid(row=18, column=2)
         self.e_ytdl_location.insert(0,config.get('config','ytdl_location',0))
         Label(master, text="").grid(row=19, column=2, sticky=W)
-        Label(master, text="youtube-dl transcoder:").grid(row=20, column=2, sticky=W)
-        self.ytdl_prefered_transcoder_var=StringVar()
-        self.ytdl_prefered_transcoder_var.set(config.get('config','ytdl_prefered_transcoder',0))
-        rb_avconv=Radiobutton(master, text="avconv", variable=self.ytdl_prefered_transcoder_var, value="avconv")
-        rb_avconv.grid(row=21,column=2,sticky=W)
-        rb_ffmpeg=Radiobutton(master, text="ffmpeg", variable=self.ytdl_prefered_transcoder_var, value="ffmpeg")
-        rb_ffmpeg.grid(row=22,column=2,sticky=W)
+
+        Label(master, text="Download actual media URL:").grid(row=20, column=2, sticky=W)
+        self.download_media_url_upon_var=StringVar()
+        self.download_media_url_upon_var.set("when adding URL" if config.get('config','download_media_url_upon',0) == "add" else "when playing URL")
+        om_download_media = OptionMenu(master, self.download_media_url_upon_var, "when adding URL", "when playing URL")
+        om_download_media.grid(row=21, column=2, sticky=W)
+        
         self.forbid_windowed_mode_var = IntVar()
         self.forbid_windowed_mode_var.set(int(config.get('config','forbid_windowed_mode',0)))
         self.cb_forbid = Checkbutton(master,text="Forbid windowed mode",variable=self.forbid_windowed_mode_var, onvalue=1,offvalue=0)
@@ -2148,8 +2135,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','youtube_media_format',self.youtube_media_format_var.get())
         config.set('config','omx_location',self.e_omx_location.get())
         config.set('config','ytdl_location',self.e_ytdl_location.get())
-        config.set('config','ytdl_prefered_transcoder',self.ytdl_prefered_transcoder_var.get())
-        config.set('config','download_media_url_upon',self.download_media_url_upon_var.get())
+        config.set('config','download_media_url_upon',"add" if "add" in self.download_media_url_upon_var.get() else "play")
         config.set('config','youtube_video_quality',self.youtube_video_quality_var.get())
         config.set('config','geometry',self.geometry_var)
         config.set('config','full_screen',self.full_screen_var)
