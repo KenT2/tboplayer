@@ -86,7 +86,7 @@ Menus
  
 * `Playlist` - save the current playlist or open a saved one or load youtube playlist
  
-* `OMX` - display the track information for the last played track (needs to be enabled in options)
+* `OMX` - display the track information for the last played track
  
 * `Options` -
 
@@ -117,9 +117,8 @@ Menus
     * Forbid windowed mode - if enabled will make videos always show in full screen, disabling the video window mode and video progress bar - useful if you're using tboplayer through a remote desktop
 	
     * Debug - prints some debug text to the command line
-	
-    * Generate Track Information - parses the output of omxplayer, disabled by default as it may cause problems with some tracks
 
+If you used the automatic installer, you should be able to open files with double-click, or with the right mouse click menu in your file manager.
 
 A track is selected using a single click of the mouse or up-down arrow key, playing is started by pressing the Play/Pause button, the . key or the Return key.
 
@@ -132,8 +131,6 @@ Again during playing of a track, a slightly modified set of omxplayer commands c
 While playing videos, you can hit the F11 key for toggling full screen mode. In windowed mode, to move the video window, click and hold the first mouse button over the video area and then move the mouse; and to resize the video, hold left Control, click and hold the first mouse button over the video area and then move the mouse.
 
 For a list of streaming services supported by youtube-dl, see this link: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/OMXplayer)
-
-If you used the automatic installer, you should be able to open files with double-click, or with the right mouse click menu in your file manager.
 
 TROUBLESHOOTING
 =========

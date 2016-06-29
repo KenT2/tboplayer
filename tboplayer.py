@@ -2,20 +2,14 @@
 """
 A GUI interface using jbaiter's pyomxplayer to control omxplayer
 
-
 INSTALLATION
-*** Instructions for installation on the official Debian Wheezy Raspbian image
-  *  requires the latest bug fixed version of omxplayer which you can get by doing apt-get update then apt-get upgrade or compile from https://github.com/popcornmix/omxplayer/
-  *  install pexpect by following the instructions at https://github.com/pexpect/pexpect
-  *  pyomxplayer is currently included inline in the code as I have made some modifications to jbaiter's version, his original can be seen at https://github.com/jbaiter/pyomxplayer
-  *  tboplayer is integraded with youtube-dl, so if you want to use that utility, instructions for installation are at https://rg3.github.io/youtube-dl/
-  *  download tboplayer.py into a directory
-  *  type python tboplayer.py from a terminal opened in the directory within which tboplayer.py is stored
-  *  If you want to be able to watch videos from online services like Youtube, then you must have up-to-date youtube-dl installed on your system, as well as avconv 10 or later
-  *  developed on raspbian wheezy with python 2.7
-  *  2015-2016 version developed on ubuntu mate 15.04 and mint 17.2
-  *  
-  *  see README.md for better instructions
+***
+  *  To install TBOPLayer use the commands:
+  *
+  *      chmod +x setup.sh
+  *      ./setup.sh
+  *
+  *  See README.md file for more details
   *  
   
 OPERATION
@@ -36,10 +30,8 @@ Menus
     Download actual media URL [when] - defines when to extract the actual media from the given URL, either upon adding the URL or when playing it
     Youtube video quality - lets you choose between "small", "medium" and "high" qualities (Youtube only feature)
     youtube-dl location - path to youtube-dl binary
-    youtube-dl transcoder - prefer to use either avconv or ffmpeg when using youtube-dl for extracting data from online supported services
     Forbid windowed mode - if enabled will make videos always show in full screen, disabling the video window mode and video progress bar - useful if you're using tboplayer through a remote desktop
     Debug - prints some debug text to the command line
-    Generate Track Information - parses the output of omxplayer, disabled by default as it may cause problems with some tracks.
 
 
 A track is selected using a single click of the mouse, playing is started by pressing the Play button or the . key
