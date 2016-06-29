@@ -1011,7 +1011,7 @@ class TBOPlayer:
         
         listmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
         menubar.add_cascade(label='Playlists', menu = listmenu)
-        listmenu.add_command(label='Open playlist', command = self.open_list)
+        listmenu.add_command(label='Open playlist', command = self.open_list_dialog)
         listmenu.add_command(label='Save playlist', command = self.save_list)
         listmenu.add_command(label='Load Youtube playlist', command = self.load_youtube_playlist)
         listmenu.add_command(label='Clear', command = self.clear_list)
@@ -1149,11 +1149,17 @@ class TBOPlayer:
                 self.file_pieces = self.file.split("/")
                 self.playlist.append([self.file, self.file_pieces[-1],'',''])
                 self.track_titles_display.insert(END, self.file_pieces[-1])
+            elif (os.path.isfile(f) and f[-4:]==".csv"):
+                self.open_list(f)
         
         if pexpect.spawn("dpkg --print-architecture").expect(["armhf", pexpect.EOF]) == 0:
             def ytdl_updated():
                 tkMessageBox.showinfo("","youtube-dl has been updated")
             self.ytdl.check_for_update(ytdl_updated)
+
+        if self.playlist.length() > 0 and self.options.autoplay:
+            self.select_track(False)
+            self.play_track()
 
         # then start Tkinter event loop
         self.root.mainloop()
@@ -1728,7 +1734,7 @@ class TBOPlayer:
         """
         # needs forgiving int for possible tkinter upgrade
         if self.playlist.length()>0:
-            index=int(event.widget.curselection()[0])
+            index=int(event.widget.curselection()[0]) if event else 0
             self.playlist.select(index)
             self.display_selected_track(index)
 
@@ -1768,7 +1774,7 @@ class TBOPlayer:
 # PLAYLISTS
 # ***************************************
 
-    def open_list(self):
+    def open_list_dialog(self):
         """
         opens a saved playlist
         playlists are stored as textfiles each record being "path","title"
@@ -1786,6 +1792,10 @@ class TBOPlayer:
         filename = self.filename.get()
         if filename=="":
             return
+        self.open_list(filename)
+
+
+    def open_list(self, filename):
         self.options.initial_playlist_dir = ''
         ifile  = open(filename, 'rb')
         pl=csv.reader(ifile)
@@ -1835,12 +1845,11 @@ class TBOPlayer:
 
     
     def show_omx_track_info(self):
-        if self.options.generate_track_info:
-            try:
-                tkMessageBox.showinfo("Track Information", self.playlist.selected_track()[PlayList.LOCATION]  +"\n\n"+ 
-                                                "Video: " + str(self.omx.video) + "\nAudio: " + str(self.omx.audio) + "\nTime: " + str(self.omx.timenf))
-            except:
-                return
+        try:
+            tkMessageBox.showinfo("Track Information", self.playlist.selected_track()[PlayList.LOCATION]  +"\n\n"+ 
+                                            "Video: " + str(self.omx.video) + "\nAudio: " + str(self.omx.audio) + "\nTime: " + str(self.omx.timenf))
+        except:
+            return
         else:
             tkMessageBox.showinfo("Track Information","Not Enabled")
 
@@ -1908,6 +1917,7 @@ class Options:
             self.windowed_mode_coords = config.get('config','windowed_mode_coords',0)
             self.forbid_windowed_mode = int(config.get('config','forbid_windowed_mode',0))
             self.cue_track_mode = int(config.get('config','cue_track_mode',0))
+            self.autoplay = int(config.get('config','autoplay',0))
 
             if config.get('config','debug',0) == 'on':
                 self.debug = True
@@ -1918,11 +1928,6 @@ class Options:
                 self.omx_subtitles_option = "-t on"
             else:
                 self.omx_subtitles_option = ""
-
-            if config.get('config','track_info',0) == 'on':
-                self.generate_track_info = True
-            else:
-                self.generate_track_info = False
         except:
             self.create(self.options_file)
             self.read(self.options_file)
@@ -1938,7 +1943,6 @@ class Options:
         config.set('config','tracks','')
         config.set('config','omx_options','')
         config.set('config','debug','off')
-        config.set('config','track_info','off')
         config.set('config','youtube_media_format','mp4')
         config.set('config','omx_location','/usr/bin/omxplayer')
         config.set('config','ytdl_location','/usr/local/bin/youtube-dl')
@@ -1950,6 +1954,7 @@ class Options:
         config.set('config','windowed_mode_coords','+200+200')
         config.set('config','forbid_windowed_mode','0')
         config.set('config','cue_track_mode','0')
+        config.set('config','autoplay','1')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
             configfile.close()
@@ -1964,7 +1969,6 @@ class Options:
         config.set('config','tracks',self.initial_track_dir)
         config.set('config','omx_options',self.omx_user_options)
         config.set('config','debug',"on" if self.debug else "off")
-        config.set('config','track_info',"on" if self.generate_track_info else "off")
         config.set('config','youtube_media_format',self.youtube_media_format)
         config.set('config','omx_location',self.omx_location)
         config.set('config','ytdl_location',self.ytdl_location)
@@ -1976,6 +1980,7 @@ class Options:
         config.set('config','windowed_mode_coords',self.windowed_mode_coords)
         config.set('config','forbid_windowed_mode',self.forbid_windowed_mode)
         config.set('config','cue_track_mode',self.cue_track_mode)
+        config.set('config','autoplay',self.autoplay)
         with open(self.options_file, 'w+') as configfile:
             config.write(configfile)
             configfile.close()
@@ -2107,13 +2112,15 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         else:
             self.cb_cue.deselect()
 
-        self.track_info_var = StringVar()
-        self.cb_track_info = Checkbutton(master,text="Generate Track Information", variable= self.track_info_var, onvalue="on",offvalue="off")
-        self.cb_track_info.grid(row=60,columnspan=2, sticky = W)
-        if config.get('config','track_info',0)=="on":
-            self.cb_track_info.select()
+        self.autoplay_var = IntVar()
+        self.autoplay_var.set(int(config.get('config','autoplay',0)))
+        self.cb_autoplay = Checkbutton(master,text="Autoplay at startup", variable=self.autoplay_var, onvalue=1,offvalue=0)
+        self.cb_autoplay.grid(row=60,columnspan=2, sticky = W)
+        if self.autoplay_var.get()==1:
+            self.cb_autoplay.select()
         else:
-            self.cb_track_info.deselect()
+            self.cb_autoplay.deselect()
+
         self.debug_var = StringVar()
         self.cb_debug = Checkbutton(master,text="Debug",variable=self.debug_var, onvalue="on",offvalue="off")
         self.cb_debug.grid(row=60,column=2, sticky = W)
@@ -2138,7 +2145,6 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','tracks',self.e_tracks.get())
         config.set('config','omx_options',self.e_omx_options.get())
         config.set('config','debug',self.debug_var.get())
-        config.set('config','track_info',self.track_info_var.get())
         config.set('config','youtube_media_format',self.youtube_media_format_var.get())
         config.set('config','omx_location',self.e_omx_location.get())
         config.set('config','ytdl_location',self.e_ytdl_location.get())
@@ -2150,6 +2156,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','windowed_mode_coords',self.windowed_mode_coords_var)
         config.set('config','forbid_windowed_mode',self.forbid_windowed_mode_var.get())
         config.set('config','cue_track_mode',self.cue_track_mode_var.get())
+        config.set('config','autoplay',self.autoplay_var.get())
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
             optionsfile.close()
@@ -2471,5 +2478,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 27 Jun 2016"
+    datestring=" 28 Jun 2016"
     bplayer = TBOPlayer()
