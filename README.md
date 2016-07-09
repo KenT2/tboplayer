@@ -114,6 +114,8 @@ Menus
     
     * Start/End track paused - Pauses the track both in the beginning and in the end of the track
     
+    * Autoplay at start up - If TBOPlayer has just been opened and has some file in the playlist, automatically satrt playing the first file in the list
+    
     * Forbid windowed mode - if enabled will make videos always show in full screen, disabling the video window mode and video progress bar - useful if you're using tboplayer through a remote desktop
 	
     * Debug - prints some debug text to the command line
