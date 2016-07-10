@@ -4,12 +4,18 @@ A GUI interface using jbaiter's pyomxplayer to control omxplayer
 
 INSTALLATION
 ***
-  *  To install TBOPLayer use the commands:
+  *  TBOPlayer requires avconv, youtube-dl, and also the python libraries requests, gobject2, gtk2, pexpect and ptyprocess to be installed in order to work.
   *
-  *      chmod +x setup.sh
+  *  -------------------------
+  *
+  *  To install TBOPlayer and all required libraries, you can simply use the following command from tboplayer directory:
+  *
+  *      chmod +x setup.sh 
   *      ./setup.sh
   *
-  *  See README.md file for more details
+  *  -------------------------
+  *
+  *  See README.md file for more details on installation
   *  
   
 OPERATION
@@ -30,17 +36,12 @@ Menus
     Download actual media URL [when] - defines when to extract the actual media from the given URL, either upon adding the URL or when playing it
     Youtube video quality - lets you choose between "small", "medium" and "high" qualities (Youtube only feature)
     youtube-dl location - path to youtube-dl binary
+    Start/End track paused - Pauses the track both in the beginning and in the end of the track
+    Autoplay on start up - If TBOPlayer has just been opened and has some file in the playlist, automatically satrt playing the first file in the list
     Forbid windowed mode - if enabled will make videos always show in full screen, disabling the video window mode and video progress bar - useful if you're using tboplayer through a remote desktop
     Debug - prints some debug text to the command line
 
-
-A track is selected using a single click of the mouse, playing is started by pressing the Play button or the . key
-
-During playing of a track a slightly modified set of omxplayer commands can be used from the keyboard but there must be FOCUS on TBOPlayer.
-A list  of comands is provided in the help menu. Note: some of the commands are not implemented by omxplayer.
-
-If you have problems playing a track try it from the command line with 'omxplayer -o hdmi file' or 'omxplayer -o local file'. If this works, it probably means TBOPlayer is to blame.
-
+  *  See README.md file for more details on operation in the OPERATION section
 
 TODO (maybe)
 --------
@@ -364,7 +365,7 @@ class Ytdl:
 
     def retrieve_youtube_playlist(self, playlist_url):
         if self.is_running(): return
-        ytcmd = self._YTLAUNCH_PLST_CMD % (self._PREFERED_TRANSCODER, playlist_url)
+        ytcmd = self._YTLAUNCH_PLST_CMD % (playlist_url)
         self._process = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
         self._spawn_thread()
  
@@ -1038,7 +1039,7 @@ class TBOPlayer:
 
         # open list button        
         Button(self.root, width = 5, height = 1, text='Open List',
-                              fg='black', command = self.open_list, 
+                              fg='black', command = self.open_list_dialog, 
                               bg="light grey").grid(row=0, column=4, rowspan=2)
         # save list button
         Button(self.root, width = 5, height = 1, text = 'Save List',
@@ -2093,7 +2094,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
 
         self.autoplay_var = IntVar()
         self.autoplay_var.set(int(config.get('config','autoplay',0)))
-        self.cb_autoplay = Checkbutton(master,text="Autoplay at startup", variable=self.autoplay_var, onvalue=1,offvalue=0)
+        self.cb_autoplay = Checkbutton(master,text="Autoplay on start up", variable=self.autoplay_var, onvalue=1,offvalue=0)
         self.cb_autoplay.grid(row=60,columnspan=2, sticky = W)
         if self.autoplay_var.get()==1:
             self.cb_autoplay.select()
@@ -2456,5 +2457,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 28 Jun 2016"
+    datestring=" 10 Jul 2016"
     bplayer = TBOPlayer()
