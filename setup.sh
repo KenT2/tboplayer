@@ -55,7 +55,7 @@ echo ""
 echo "Installing TBOPlayer and its dependencies..."
 echo ""
 
-mv $SCRIPT_PATH $TBOPLAYER_PATH
+mv $SCRIPT_PATH $TBOPLAYER_PATH >/dev/null 2>&1
 if [ $? -eq 1 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then 
     echo ""
     echo "Installation failed. :("
@@ -63,15 +63,8 @@ if [ $? -eq 1 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then
     exit
 fi
 
-$BIN_PATH >/dev/null 2>&1
-if [ $? -eq 127 ]; then
-    mkdir $BIN_PATH
-fi
-
-$DESKTOP_PATH >/dev/null 2>&1
-if [ $? -eq 127 ]; then
-    mkdir $DESKTOP_PATH
-fi
+mkdir $BIN_PATH >/dev/null 2>&1
+mkdir $DESKTOP_PATH >/dev/null 2>&1
 
 echo "* Updating distro packages database... This may take some seconds."
 sudo apt-get update >/dev/null 2>&1
@@ -88,14 +81,14 @@ fi
 toaptinstall=""
 
 function addToAptInstall {
-    local command=$1
+    local cmd=$1
     local package=$2
-    local python=$3
-    if [ $python ]; then
-        python -c "import "$command >/dev/null 2>&1
+    local pythn=$3
+    if [ $pythn ]; then
+        python -c "import "$cmd >/dev/null 2>&1
 	local cmdres=$? 
     else
-        command -v $command >/dev/null 2>&1
+        command -v $cmd >/dev/null 2>&1
 	local cmdres=$? 
     fi
     if [ $cmdres -eq 1 ]; then 
