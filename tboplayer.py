@@ -1135,12 +1135,12 @@ class TBOPlayer:
   
 # if files were passed in the command line, add them to the playlist
         for f in sys.argv[1:]:
-            if (os.path.isfile(f) and self.is_file_supported(f)):
+            if os.path.isfile(f) and self.is_file_supported(f):
                 self.file = f
                 self.file_pieces = self.file.split("/")
                 self.playlist.append([self.file, self.file_pieces[-1],'',''])
                 self.track_titles_display.insert(END, self.file_pieces[-1])
-            elif (os.path.isfile(f) and f[-4:]==".csv"):
+            elif os.path.isfile(f) and f[-4:]==".csv":
                 self.open_list(f)
         
         if pexpect.spawn("dpkg --print-architecture").expect(["armhf", pexpect.EOF]) == 0:
@@ -1653,7 +1653,7 @@ class TBOPlayer:
             d.result = [d.result[1],d.result[0]]
         if d.result[0] != '':
             if self.options.download_media_url_upon == "add" and self.ytdl.whether_to_use_youtube_dl(d.result[0]):
-                if self.ytdl_state != self._YTDL_CLOSED:
+                if self.ytdl_state != self._YTDL_CLOSED or self.ytdl.is_running():
                     return
                 self.go_ytdl(d.result[0])
                 d.result[1] = self.ytdl.WAIT_TAG + d.result[1]
@@ -2457,5 +2457,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 10 Jul 2016"
+    datestring=" 16 Jul 2016"
     bplayer = TBOPlayer()
