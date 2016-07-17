@@ -54,8 +54,6 @@ To run TBOPlayer, type in a terminal window:
 
         python /opt/tboplayer/tboplayer.py
 
-where pi is the name of your system's user.
-
 TBOPlayer is developed on Raspbian Wheezy with python 2.7
 
 OPERATION
