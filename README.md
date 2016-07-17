@@ -46,11 +46,13 @@ From a terminal window, type:
 
         cd ~ && wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
 
-There should now be a directory 'KenT2-tboplayer-xxxx' in your home directory. Rename the directory to tboplayer.
+Move the resulting directory to /opt (you will need superuser power):
+
+        mv KenT2-tboplayer-*  /opt/tboplayer
 
 To run TBOPlayer, type in a terminal window:
 
-        python /home/pi/tboplayer/tboplayer.py
+        python /opt/tboplayer/tboplayer.py
 
 where pi is the name of your system's user.
 
@@ -149,7 +151,7 @@ UNINSTALLING
 ==========
 To uninstall tboplayer, open a terminal window and type:
 
-        ~/tboplayer/setup.sh uninstall
+        /opt/tboplayer/setup.sh uninstall
 
 Contributors:
 -------------

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TBOPLAYER_PATH=$HOME/tboplayer
+TBOPLAYER_PATH=/opt/tboplayer
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BIN_PATH=$HOME/bin
 DESKTOP_PATH=$HOME/Desktop
@@ -22,7 +22,7 @@ if [ "$1" == "uninstall" ]; then
     if [ "$answer" == "Y" ] || [ "$answer" == "y" ]; then
 	echo ""
         echo "* Removing TBOPlayer..."
-        rm -Rf $TBOPLAYER_PATH
+        sudo rm -Rf $TBOPLAYER_PATH
 	rm -f $FAKE_BIN
 	rm -f "${DESKTOP_ENTRIES[0]}" 
         sudo rm -f "${DESKTOP_ENTRIES[1]}" 
@@ -48,14 +48,14 @@ fi
 # install TBOPlayer
 $TBOPLAYER_PATH >/dev/null 2>&1
 if [ $? -eq 126 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then
-    rm -Rf $TBOPLAYER_PATH
+    sudo rm -Rf $TBOPLAYER_PATH
 fi
 
 echo ""
 echo "Installing TBOPlayer and its dependencies..."
 echo ""
 
-mv $SCRIPT_PATH $TBOPLAYER_PATH >/dev/null 2>&1
+sudo mv $SCRIPT_PATH $TBOPLAYER_PATH >/dev/null 2>&1
 if [ $? -eq 1 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then 
     echo ""
     echo "Installation failed. :("
@@ -100,10 +100,11 @@ addToAptInstall "requests" "python-requests" true
 addToAptInstall "gobject" "python-gobject-2" true
 addToAptInstall "gtk" "python-gtk2" true
 addToAptInstall "avconv" "libav-tools" false
-addToAptInstall "pip" "python-pip" false
-addToAptInstall "crudini" "crudini" false
 
 echo "* Installing dependencies: "$toaptinstall
+
+addToAptInstall "pip" "python-pip" false
+addToAptInstall "crudini" "crudini" false
 
 sudo apt-get -y install $toaptinstall 2>&1 >/dev/null
 
@@ -130,28 +131,33 @@ fi
 
 # install fake tboplayer executable in /home/<user>/bin
 command -v tboplayer >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
-    echo "* Creating tboplayer's bash executable..."
-    echo '#!/bin/bash' >> $FAKE_BIN
-    echo 'python '$TBOPLAYER_PATH'/tboplayer.py' >> $FAKE_BIN
-    chmod +x $FAKE_BIN
+if [ $? -eq 0 ]; then 
+	rm $FAKE_BIN
 fi
+
+echo "* Creating tboplayer's bash executable..."
+echo '#!/bin/bash' >> $FAKE_BIN
+echo 'python '$TBOPLAYER_PATH'/tboplayer.py' >> $FAKE_BIN
+chmod +x $FAKE_BIN
 
 # install tboplayer 'shortcut' in /home/<user>/Desktop
 
 echo "* Creating shortcuts and configuring links..."
 DESKTOP_ENTRY="${DESKTOP_ENTRIES[0]}"
 $DESKTOP_ENTRY >/dev/null 2>&1
-if [ $? -eq 127 ]; then 
-    echo '[Desktop Entry]' >> $DESKTOP_ENTRY
-    echo 'Name=TBOPlayer' >> $DESKTOP_ENTRY
-    echo 'Comment=GUI for omxplayer' >> $DESKTOP_ENTRY
-    echo 'Exec=python '$TBOPLAYER_PATH'/tboplayer.py %F' >> $DESKTOP_ENTRY
-    echo 'Icon=/usr/share/pixmaps/python.xpm' >> $DESKTOP_ENTRY
-    echo 'Terminal=false' >> $DESKTOP_ENTRY
-    echo 'Type=Application' >> $DESKTOP_ENTRY
-    echo 'Categories=Application;Multimedia;Audio;AudioVideo' >> $DESKTOP_ENTRY
+if [ $? -eq 126 ]; then 
+	rm $DESKTOP_ENTRY
 fi
+
+echo '[Desktop Entry]' >> $DESKTOP_ENTRY
+echo 'Name=TBOPlayer' >> $DESKTOP_ENTRY
+echo 'Comment=GUI for omxplayer' >> $DESKTOP_ENTRY
+echo 'Exec=python '$TBOPLAYER_PATH'/tboplayer.py %F' >> $DESKTOP_ENTRY
+echo 'Icon=/usr/share/pixmaps/python.xpm' >> $DESKTOP_ENTRY
+echo 'Terminal=false' >> $DESKTOP_ENTRY
+echo 'Type=Application' >> $DESKTOP_ENTRY
+echo 'Categories=Application;Multimedia;Audio;AudioVideo' >> $DESKTOP_ENTRY
+
 sudo cp $DESKTOP_ENTRY "${DESKTOP_ENTRIES[1]}"
 
 for TYPE in "${SUPPORTED_TYPES[@]}"; do
@@ -162,8 +168,8 @@ echo ""
 echo "Installation finished."
 echo ""
 echo "If all went as expected, TBOPlayer is now installed in your system." 
+echo "TBOPlayer can be found at the "$TBOPLAYER_PATH" directory."
 echo "To run it, type 'tboplayer', use the shortcut created on your Desktop, or open a file directly by double clicking on it, or using the right-click menu, when using your file manager."
-echo "Oh, just keep the tboplayer folder in your "$HOME" directory, alright?"
 echo ""
 echo "Good bye! ;)"
 
