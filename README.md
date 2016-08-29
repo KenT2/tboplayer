@@ -31,8 +31,8 @@ Type this into the terminal to install TBOPlayer's dependencies:
 
         # install pip, gobject, gtk, requests, avconv, ffmpeg
         sudo apt-get install -y python-pip python-gobject-2 python-gtk2 python-requests libav-tools ffmpeg
-        # install pexpect, ptyprocess
-        yes | pip install --user pexpect ptyprocess
+        # install pexpect, ptyprocess, magic
+        yes | pip install --user pexpect ptyprocess magic
         # install youtube-dl
         sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl
         sudo chmod a+rx /usr/local/bin/youtube-dl
