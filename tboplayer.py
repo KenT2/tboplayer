@@ -951,8 +951,8 @@ class TBOPlayer:
 
         OMXPlayer.set_omx_location(self.options.omx_location)
 
-        self._SUPPORTED_FILE_FORMATS = (".m4a",".mp2",".mp3",".mpa",".mpe",".mpv2",".ogg",".aac",".3g2",".3gp",".wav",
-                                        ".avi",".flv",".f4v",".mp4",".mkv",".mov",".mj2",".mpg",".ogv")
+        self._SUPPORTED_FILE_FORMATS = ("m4a","mp2","mp3","mpa","mpe","mpv2","ogg","aac","3g2","3gp","wav",
+                                        "avi","flv","f4v","h264","mp4","mkv","mov","mj2","m4v","mpg","ogv")
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -1140,7 +1140,7 @@ class TBOPlayer:
                 self.file_pieces = self.file.split("/")
                 self.playlist.append([self.file, self.file_pieces[-1],'',''])
                 self.track_titles_display.insert(END, self.file_pieces[-1])
-            elif os.path.isfile(f) and f[-4:]==".csv":
+            elif os.path.isfile(f) and  f[f.rfind('.')+1:]=="csv":
                 self.open_list(f)
         
         if pexpect.spawn("dpkg --print-architecture").expect(["armhf", pexpect.EOF]) == 0:
@@ -1557,7 +1557,8 @@ class TBOPlayer:
 # ***************************************
 
     def is_file_supported(self, f):
-        return f[-4:] in self._SUPPORTED_FILE_FORMATS
+        return f[f.rfind('.')+1:] in self._SUPPORTED_FILE_FORMATS
+
 
     def add_track(self):                                
         """
@@ -1579,15 +1580,10 @@ class TBOPlayer:
 
         for f in filez:
             if not os.path.isfile(f) or not self.is_file_supported(f):
-                break
+                continue
             self.file = f
-
-            # split it to use leaf as the initial title
             self.file_pieces = self.file.split("/")
-            
-            # append it to the playlist
             self.playlist.append([self.file, self.file_pieces[-1],'',''])
-            # add title to playlist display
             self.track_titles_display.insert(END, self.file_pieces[-1])
 
 	# and set the selected track
@@ -1616,17 +1612,13 @@ class TBOPlayer:
                 if os.path.isfile(n) and self.is_file_supported(n):
                     self.filename.set(n)
                     self.file = self.filename.get()
-                    # split it to use leaf as the initial title
                     self.file_pieces = self.file.split("/")
-
-                    # append it to the playlist
                     self.playlist.append([self.file, self.file_pieces[-1],'',''])
-                    # add title to playlist display
                     self.track_titles_display.insert(END, self.file_pieces[-1])
             except:
                 return
 
-    
+
     def add_dir(self):
         dirname = self.get_dir()
         if dirname:
@@ -2457,5 +2449,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 16 Jul 2016"
+    datestring=" 29 Aug 2016"
     bplayer = TBOPlayer()

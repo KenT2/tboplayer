@@ -3,7 +3,7 @@ A GUI interface using jbaiter's pyomxplayer wrapper to control omxplayer
 INSTALLATION
 ============
 
-Instructions for installation on the official Raspbian image:
+Instructions for installation on the official Raspbian image (should work on Ubuntu too):
 
 You can use the automatic installer, or if that does not work for some reason you can install it manually.
 
@@ -46,9 +46,9 @@ From a terminal window, type:
 
         cd ~ && wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
 
-Move the resulting directory to /opt (you will need superuser power):
+Move the resulting directory to /opt:
 
-        mv KenT2-tboplayer-*  /opt/tboplayer
+        sudo mv KenT2-tboplayer-* /opt/tboplayer
 
 To run TBOPlayer, type in a terminal window:
 
