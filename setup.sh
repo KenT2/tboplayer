@@ -35,7 +35,7 @@ if [ "$1" == "uninstall" ]; then
         if [ "$answer" == "Y" ] || [ "$answer" == "y" ]; then
             echo ""
             echo "* Removing TBOPlayer dependencies..."
-            yes | pip uninstall pexpect ptyprocess >/dev/null 2>&1
+            yes | pip uninstall pexpect ptyprocess python-magic >/dev/null 2>&1
             sudo apt-get -y remove python-gobject-2 python-gtk2 python-requests crudini >/dev/null 2>&1
             sudo rm -f /usr/local/bin/youtube-dl >/dev/null 2>&1
         fi
@@ -121,7 +121,7 @@ fi
 python -c 'import magic' >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
     echo "* Installing magic..."
-    yes | pip install --user magic >/dev/null 2>&1
+    yes | pip install --user python-magic >/dev/null 2>&1
 fi
 
 # install youtube-dl it's if not installed
