@@ -118,6 +118,12 @@ if [ $PEXPECT_INSTALLED -eq 1 ]; then
     yes | pip install --user pexpect $ptyprocess >/dev/null 2>&1
 fi
 
+python -c 'import magic' >/dev/null 2>&1
+if [ $? -eq 1 ]; then 
+    echo "* Installing magic..."
+    yes | pip install --user magic >/dev/null 2>&1
+fi
+
 # install youtube-dl it's if not installed
 command -v youtube-dl >/dev/null 2>&1
 if [ $? -eq 1 ]; then 
