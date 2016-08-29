@@ -426,6 +426,7 @@ from getpass import getuser
 from Tkinter import *
 from ttk import ( Progressbar, Style )
 from gtk.gdk import ( screen_width, screen_height )
+from magic import from_file
 import Tkinter as tk
 import tkFileDialog
 import tkMessageBox
@@ -951,8 +952,14 @@ class TBOPlayer:
 
         OMXPlayer.set_omx_location(self.options.omx_location)
 
-        self._SUPPORTED_FILE_FORMATS = ("m4a","mp2","mp3","mpa","mpe","mpv2","ogg","aac","3g2","3gp","wav",
-                                        "avi","flv","f4v","h264","mp4","mkv","mov","mj2","m4v","mpg","ogv")
+        self._SUPPORTED_MIME_TYPES = ("video/x-msvideo", "video/quicktime", "video/mp4", "video/x-flv", 
+                "video/x-matroska", "video/3gpp", "audio/x-aac", "video/h264", "video/h263", "video/h261", 
+                "video/x-m4v", "audio/midi", "video/mj2", "audio/mpeg", "video/mpeg", "audio/mp4", 
+                "application/mp4", "audio/ogg", "video/ogg", "video/vnd.vivo", "audio/x-wav", "audio/flac", 
+                "video/3gpp2", "video/x-f4v", "application/ogg", "audio/mpeg3", "audio/x-mpeg-3", 
+                "audio/x-mpeg", "audio/mod", "audio/x-mod", "video/x-ms-asf", "audio/x-pn-realaudio",
+                "audio/x-realaudio", "video/vnd.rn-realvideo", "video/fli", "video/x-fli", "audio/x-ms-wmv"
+                "video/avi", "video/msvideo", "audio/x-wav", "video/m4v", "audio/x-ms-wma")
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -1021,9 +1028,8 @@ class TBOPlayer:
         helpmenu.add_command(label='About', command = self.about)
          
         self.root.config(menu=menubar)
-
-
-# define buttons 
+        
+        # define buttons 
         # add track button
         Button(self.root, width = 5, height = 1, text='Add',
                               fg='black', command = self.add_track, 
@@ -1557,7 +1563,7 @@ class TBOPlayer:
 # ***************************************
 
     def is_file_supported(self, f):
-        return f[f.rfind('.')+1:] in self._SUPPORTED_FILE_FORMATS
+        return from_file(f, mime=True) in self._SUPPORTED_MIME_TYPES
 
 
     def add_track(self):                                
