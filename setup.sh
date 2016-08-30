@@ -5,10 +5,18 @@ SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BIN_PATH=$HOME/bin
 DESKTOP_PATH=$HOME/Desktop
 FAKE_BIN=$BIN_PATH/tboplayer
-SUPPORTED_TYPES=('application/ogg' 'video/ogg' 'audio/ogg' 
-		'video/mpeg' 'audio/mpeg' 'video/mp4' 'audio/x-aac' 
-		'video/3gp' 'video/3gpp2' 'video/quicktime' 'video/x-f4v' 
-		'video/flv' 'audio/x-wav' 'video/x-msvideo')
+SUPPORTED_TYPES=('video/x-msvideo' 'video/quicktime' 'video/mp4'
+                'video/x-flv' 'video/x-matroska' 'video/3gpp' 'audio/x-aac' 
+                'video/h264' 'video/h263' 'video/h261' 'video/x-m4v' 'audio/midi'
+                'video/mj2' 'audio/mpeg' 'video/mpeg' 'audio/mp4' 'application/mp4'
+                'audio/ogg' 'video/ogg' 'video/vnd.vivo' 'audio/x-wav' 
+                'audio/flac' 'video/3gpp2' 'video/x-f4v' 'application/ogg' 
+                'audio/mpeg3' 'audio/x-mpeg-3' 'audio/x-mpeg' 'audio/mod' 
+                'audio/x-mod' 'video/x-ms-asf' 'audio/x-pn-realaudio' 
+                'audio/x-realaudio' 'video/vnd.rn-realvideo' 'video/fli' 
+                'video/x-fli' 'audio/x-ms-wmv' 'video/avi' 'video/msvideo' 
+                'audio/x-wav' 'video/m4v' 'audio/x-ms-wma' 'video/x-f4v' 
+                'video/flv')
 DESKTOP_ENTRIES=($DESKTOP_PATH/tboplayer.desktop 
 		/usr/share/applications/tboplayer.desktop)
 MIMEAPPS_FILE=$HOME/.config/mimeapps.list
