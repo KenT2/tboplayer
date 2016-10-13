@@ -153,6 +153,7 @@ class OMXPlayer(object):
         self.timenf = dict()
         self.video = dict()
         self.audio = dict()
+        index = -1
 
         try:
             index = self._process.expect([self._PROPS_REXP, self._DONE_REXP, pexpect.TIMEOUT])
@@ -489,6 +490,8 @@ class TBOPlayer:
 
         self.start_track_index = None
 
+        self.omx = None
+
 
     # kick off the state machine by playing a track
     def play(self):
@@ -521,26 +524,25 @@ class TBOPlayer:
         elif self.play_state == self._OMX_STARTING:
             self.monitor("      State machine: " + self.play_state)
         # if omxplayer is playing the track change to play state
-            try:
-                if self.omx.start_play_signal==True:
-                    self.monitor("            <start play signal received from omx")
-                    self.omx.start_play_signal=False
-                    self.play_state=self._OMX_PLAYING
-                    self.monitor("      State machine: omx_playing started")
-                    self.dbus_connected = self.omx.init_dbus_link()
-                    self.show_progress_bar()
-                    self.set_progress_bar()
-                    if self.media_is_video() and not self.options.forbid_windowed_mode:
-                        self.create_vprogress_bar()
-                    if self.options.cue_track_mode:
-                        self.toggle_pause()
-            except:
-                self.monitor("      OMXPlayer not started yet.")
+            if self.omx and self.omx.start_play_signal==True:
+                self.monitor("            <start play signal received from omx")
+                self.omx.start_play_signal=False
+                self.play_state=self._OMX_PLAYING
+                self.monitor("      State machine: omx_playing started")
+                self.dbus_connected = self.omx.init_dbus_link()
+                self.show_progress_bar()
+                self.set_progress_bar()
+                if self.media_is_video() and not self.options.forbid_windowed_mode:
+                    self.create_vprogress_bar()
+                if self.options.cue_track_mode:
+                    self.toggle_pause()
+            else:
+                self.monitor("      OMXPlayer did not start yet.")
             self.root.after(350, self.play_state_machine)
 
-        elif self.play_state == self._OMX_PLAYING:
+        elif self.play_state == self._OMX_PLAYING :
             # service any queued stop signals
-            if self.stop_required_signal==True:
+            if self.stop_required_signal==True :#or (self.omx and (self.omx.end_play_signal or self.omx.failed_play_signal)):
                 self.monitor("      Service stop required signal")
                 self.stop_omx()
                 self.stop_required_signal=False
@@ -953,9 +955,9 @@ class TBOPlayer:
         OMXPlayer.set_omx_location(self.options.omx_location)
 
         self._SUPPORTED_MIME_TYPES = ("video/x-msvideo", "video/quicktime", "video/mp4", "video/x-flv", 
-                "video/x-matroska", "video/3gpp", "audio/x-aac", "video/h264", "video/h263", "video/h261", 
+                "video/x-matroska", "video/3gpp", "audio/x-aac", "video/h264", "video/h263", 
                 "video/x-m4v", "audio/midi", "video/mj2", "audio/mpeg", "video/mpeg", "audio/mp4", 
-                "application/mp4", "audio/ogg", "video/ogg", "video/vnd.vivo", "audio/x-wav", "audio/flac", 
+                "application/mp4", "audio/ogg", "video/ogg", "audio/x-wav", "audio/flac", "video/h261", 
                 "video/3gpp2", "video/x-f4v", "application/ogg", "audio/mpeg3", "audio/x-mpeg-3", 
                 "audio/x-mpeg", "audio/mod", "audio/x-mod", "video/x-ms-asf", "audio/x-pn-realaudio",
                 "audio/x-realaudio", "video/vnd.rn-realvideo", "video/fli", "video/x-fli", "audio/x-ms-wmv"
@@ -1286,7 +1288,11 @@ class TBOPlayer:
 # ******************************************
 
     def set_progress_bar(self):
-        self.progress_bar_step_rate = self.omx.timenf['duration']/self.progress_bar_total_steps
+        try:
+            self.progress_bar_step_rate = self.omx.timenf['duration']/self.progress_bar_total_steps
+        except:
+            return False
+        
 
     def show_progress_bar(self):
         self.progress_bar.grid()
@@ -2216,7 +2222,7 @@ class LoadYtPlaylistDialog(tkSimpleDialog.Dialog):
 # ************************************
 
 class PlayList():
-    """
+    """https://en.wikipedia.org/wiki/Media_type
     manages a playlist of tracks and the track selected from the playlist
     """
 
@@ -2225,15 +2231,16 @@ class PlayList():
     TITLE=1
     DURATION=2
     ARTIST=3
+
     # template for a new track
     _new_track=['','','','']
     
 
     def __init__(self):
         self._num_tracks=0
-        self._tracks = []      # list of track titles
+        self._tracks = []                   # list of track titles
         self._selected_track = PlayList._new_track
-        self._selected_track_index =  -1 # index of currently selected track
+        self._selected_track_index = -1     # index of currently selected track
 
     def length(self):
         return self._num_tracks
