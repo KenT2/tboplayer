@@ -2,25 +2,22 @@
 
 TBOPLAYER_PATH=/opt/tboplayer
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-BIN_PATH=$HOME/bin
+BIN_PATH=/usr/local/bin
 DESKTOP_PATH=$HOME/Desktop
 FAKE_BIN=$BIN_PATH/tboplayer
 SUPPORTED_TYPES=('video/x-msvideo' 'video/quicktime' 'video/mp4'
                 'video/x-flv' 'video/x-matroska' 'video/3gpp' 'audio/x-aac' 
                 'video/h264' 'video/h263' 'video/h261' 'video/x-m4v' 'audio/midi'
                 'video/mj2' 'audio/mpeg' 'video/mpeg' 'audio/mp4' 'application/mp4'
-                'audio/ogg' 'video/ogg' 'video/vnd.vivo' 'audio/x-wav' 
+                'audio/ogg' 'video/ogg' 'audio/x-wav' 'video/flv'
                 'audio/flac' 'video/3gpp2' 'video/x-f4v' 'application/ogg' 
                 'audio/mpeg3' 'audio/x-mpeg-3' 'audio/x-mpeg' 'audio/mod' 
                 'audio/x-mod' 'video/x-ms-asf' 'audio/x-pn-realaudio' 
                 'audio/x-realaudio' 'video/vnd.rn-realvideo' 'video/fli' 
                 'video/x-fli' 'audio/x-ms-wmv' 'video/avi' 'video/msvideo' 
-                'audio/x-wav' 'video/m4v' 'audio/x-ms-wma' 'video/x-f4v' 
-                'video/flv')
+                'audio/x-wav' 'video/m4v' 'audio/x-ms-wma' 'video/x-f4v')
 DESKTOP_ENTRIES=($DESKTOP_PATH/tboplayer.desktop 
 		/usr/share/applications/tboplayer.desktop)
-MIMEAPPS_FILE=$HOME/.config/mimeapps.list
-MIMEAPPS_FILE_SECTION='Added Associations'
 
 # uninstall TBOPlayer
 if [ "$1" == "uninstall" ]; then
@@ -31,12 +28,10 @@ if [ "$1" == "uninstall" ]; then
 	echo ""
         echo "* Removing TBOPlayer..."
         sudo rm -Rf $TBOPLAYER_PATH
-	rm -f $FAKE_BIN
-	rm -f "${DESKTOP_ENTRIES[0]}" 
-        sudo rm -f "${DESKTOP_ENTRIES[1]}" 
-        for TYPE in "${SUPPORTED_TYPES[@]}"; do
-            crudini --del "$MIMEAPPS_FILE" "$MIMEAPPS_FILE_SECTION" $TYPE >/dev/null 2>&1
-        done
+        sudo rm $FAKE_BIN
+	rm "${DESKTOP_ENTRIES[0]}" 
+        sudo rm "${DESKTOP_ENTRIES[1]}" 
+        sudo update-desktop-database
         echo ""
         echo "Would you like to remove all of TBOPlayer dependencies too? [Y/N]" 
         read answer
@@ -44,7 +39,7 @@ if [ "$1" == "uninstall" ]; then
             echo ""
             echo "* Removing TBOPlayer dependencies..."
             yes | pip uninstall pexpect ptyprocess python-magic >/dev/null 2>&1
-            sudo apt-get -y remove python-gobject-2 python-gtk2 python-requests crudini >/dev/null 2>&1
+            sudo apt-get -y remove python-gobject-2 python-dbus python-gtk2 python-requests >/dev/null 2>&1
             sudo rm -f /usr/local/bin/youtube-dl >/dev/null 2>&1
         fi
         echo ""
@@ -71,7 +66,6 @@ if [ $? -eq 1 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then
     exit
 fi
 
-mkdir $BIN_PATH >/dev/null 2>&1
 mkdir $DESKTOP_PATH >/dev/null 2>&1
 
 echo "* Updating distro packages database... This may take some seconds."
@@ -106,13 +100,13 @@ function addToAptInstall {
 
 addToAptInstall "requests" "python-requests" true
 addToAptInstall "gobject" "python-gobject-2" true
+addToAptInstall "dbus" "python-dbus" true
 addToAptInstall "gtk" "python-gtk2" true
 addToAptInstall "avconv" "libav-tools" false
 
-echo "* Installing dependencies: "$toaptinstall
+echo "* Installing dependencies: "$toaptinstall"..."
 
 addToAptInstall "pip" "python-pip" false
-addToAptInstall "crudini" "crudini" false
 
 sudo apt-get -y install $toaptinstall 2>&1 >/dev/null
 
@@ -144,24 +138,32 @@ else
 fi
 
 # install fake tboplayer executable in /home/<user>/bin
-command -v tboplayer >/dev/null 2>&1
+command -v $FAKE_BIN >/dev/null 2>&1
 if [ $? -eq 0 ]; then 
-	rm $FAKE_BIN
+	sudo rm $FAKE_BIN
 fi
 
+TMP_BIN=$HOME/tmp.tboplayer
+
 echo "* Creating tboplayer's bash executable..."
-echo '#!/bin/bash' >> $FAKE_BIN
-echo 'python '$TBOPLAYER_PATH'/tboplayer.py' >> $FAKE_BIN
-chmod +x $FAKE_BIN
+echo '#!/bin/bash' >> ~/tmp.tboplayer $TMP_BIN
+echo 'python '$TBOPLAYER_PATH'/tboplayer.py' >> $TMP_BIN
+chmod +x $TMP_BIN
+sudo mv $TMP_BIN $FAKE_BIN
 
 # install tboplayer 'shortcut' in /home/<user>/Desktop
 
-echo "* Creating shortcuts and configuring links..."
+echo "* Creating shortcuts and file associations..."
 DESKTOP_ENTRY="${DESKTOP_ENTRIES[0]}"
 $DESKTOP_ENTRY >/dev/null 2>&1
 if [ $? -eq 126 ]; then 
 	rm $DESKTOP_ENTRY
 fi
+
+MIMETS=''
+for TYPE in "${SUPPORTED_TYPES[@]}"; do
+    MIMETS=$TYPE";"$MIMETS
+done
 
 echo '[Desktop Entry]' >> $DESKTOP_ENTRY
 echo 'Name=TBOPlayer' >> $DESKTOP_ENTRY
@@ -170,20 +172,27 @@ echo 'Exec=python '$TBOPLAYER_PATH'/tboplayer.py %F' >> $DESKTOP_ENTRY
 echo 'Icon=/usr/share/pixmaps/python.xpm' >> $DESKTOP_ENTRY
 echo 'Terminal=false' >> $DESKTOP_ENTRY
 echo 'Type=Application' >> $DESKTOP_ENTRY
-echo 'Categories=Application;Multimedia;Audio;AudioVideo' >> $DESKTOP_ENTRY
+echo 'Categories=Application;Multimedia;Audio;AudioVideo;' >> $DESKTOP_ENTRY
+echo 'MimeType='$MIMETS >> $DESKTOP_ENTRY
 
 sudo cp $DESKTOP_ENTRY "${DESKTOP_ENTRIES[1]}"
-
-for TYPE in "${SUPPORTED_TYPES[@]}"; do
-    crudini --set "$MIMEAPPS_FILE" "$MIMEAPPS_FILE_SECTION" $TYPE 'tboplayer.desktop'
-done
+sudo update-desktop-database
 
 echo ""
 echo "Installation finished."
 echo ""
 echo "If all went as expected, TBOPlayer is now installed in your system." 
 echo "TBOPlayer can be found at the "$TBOPLAYER_PATH" directory."
-echo "To run it, type 'tboplayer', use the shortcut created on your Desktop, or open a file directly by double clicking on it, or using the right-click menu, when using your file manager."
+echo "To run it, you can either type 'tboplayer',"
+echo "or use the shortcut created on your Desktop and apps menu,"
+echo "or open a file directly by double clicking on it,"
+echo "or use the right-click menu, when using your file manager."
+echo ""
+echo "If none of the options above work for you,"
+echo "try running 'python "$TBOPLAYER_PATH"/tboplayer.py'."
+echo ""
+echo "If you find a problem or need help, please contact the maintainers"
+echo "at github.com/KenT2/tboplayer/issues"
 echo ""
 echo "Good bye! ;)"
 
