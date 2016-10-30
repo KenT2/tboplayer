@@ -146,7 +146,7 @@ fi
 TMP_BIN=$HOME/tmp.tboplayer
 
 echo "* Creating tboplayer's bash executable..."
-echo '#!/bin/bash' >> ~/tmp.tboplayer $TMP_BIN
+echo '#!/bin/bash' >> $TMP_BIN
 echo 'python '$TBOPLAYER_PATH'/tboplayer.py' >> $TMP_BIN
 chmod +x $TMP_BIN
 sudo mv $TMP_BIN $FAKE_BIN
@@ -183,7 +183,7 @@ echo "Installation finished."
 echo ""
 echo "If all went as expected, TBOPlayer is now installed in your system." 
 echo "TBOPlayer can be found at the "$TBOPLAYER_PATH" directory."
-echo "To run it, you can either type 'tboplayer',"
+echo "To run it, you can type 'tboplayer' in a new terminal,"
 echo "or use the shortcut created on your Desktop and apps menu,"
 echo "or open a file directly by double clicking on it,"
 echo "or use the right-click menu, when using your file manager."
