@@ -1438,7 +1438,13 @@ class TBOPlayer:
             self.monitor(e)
 
     def toggle_full_screen(self,*event):
-        if not self.dbus_connected or not self.media_is_video() or not self.vprogress_bar_window: return
+        hasvbw = hasattr(self, 'vprogress_bar_window')
+        if (not self.dbus_connected
+            or self.options.forbid_windowed_mode
+            or not self.media_is_video()
+            or not hasvbw
+            or (hasvbw and not self.vprogress_bar_window)):
+            return
         screenres = self.get_screen_res()
         if self.options.full_screen == 1: 
             self.options.full_screen = 0
