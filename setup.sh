@@ -39,7 +39,7 @@ if [ "$1" == "uninstall" ]; then
             echo ""
             echo "* Removing TBOPlayer dependencies..."
             yes | pip uninstall pexpect ptyprocess python-magic >/dev/null 2>&1
-            sudo apt-get -y remove python-gobject-2 python-dbus python-gtk2 python-requests >/dev/null 2>&1
+            sudo apt-get -y remove python-gobject-2 python-dbus python-tk python-gtk2 python-requests >/dev/null 2>&1
             sudo rm -f /usr/local/bin/youtube-dl >/dev/null 2>&1
         fi
         echo ""
@@ -101,6 +101,7 @@ function addToAptInstall {
 addToAptInstall "requests" "python-requests" true
 addToAptInstall "gobject" "python-gobject-2" true
 addToAptInstall "dbus" "python-dbus" true
+addToAptInstall "tk" "python-tk" true
 addToAptInstall "gtk" "python-gtk2" true
 addToAptInstall "avconv" "libav-tools" false
 
