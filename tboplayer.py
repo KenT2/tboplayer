@@ -999,7 +999,7 @@ class TBOPlayer:
 
 # define menu
         menubar = Menu(self.root)
-        filemenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
+        filemenu = Menu(menubar, tearoff=0, background="grey", foreground="black")
         menubar.add_cascade(label='Track', menu = filemenu)
         filemenu.add_command(label='Add', command = self.add_track)
         filemenu.add_command(label='Add Dir', command = self.add_dir)
@@ -1009,22 +1009,22 @@ class TBOPlayer:
         filemenu.add_command(label='Remove', command = self.remove_track)
         filemenu.add_command(label='Edit', command = self.edit_track)
         
-        listmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
+        listmenu = Menu(menubar, tearoff=0, background="grey", foreground="black")
         menubar.add_cascade(label='Playlists', menu = listmenu)
         listmenu.add_command(label='Open playlist', command = self.open_list_dialog)
         listmenu.add_command(label='Save playlist', command = self.save_list)
         listmenu.add_command(label='Load Youtube playlist', command = self.load_youtube_playlist)
         listmenu.add_command(label='Clear', command = self.clear_list)
 
-        omxmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
+        omxmenu = Menu(menubar, tearoff=0, background="grey", foreground="black")
         menubar.add_cascade(label='OMX', menu = omxmenu)
         omxmenu.add_command(label='Track Info', command = self.show_omx_track_info)
 
-        optionsmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
+        optionsmenu = Menu(menubar, tearoff=0, background="grey", foreground="black")
         menubar.add_cascade(label='Options', menu = optionsmenu)
         optionsmenu.add_command(label='Edit', command = self.edit_options)
 
-        helpmenu = Menu(menubar, tearoff=0, bg="grey", fg="black")
+        helpmenu = Menu(menubar, tearoff=0, background="grey", foreground="black")
         menubar.add_cascade(label='Help', menu = helpmenu)
         helpmenu.add_command(label='Help', command = self.show_help)
         helpmenu.add_command(label='About', command = self.about)
@@ -1034,50 +1034,50 @@ class TBOPlayer:
         # define buttons 
         # add track button
         Button(self.root, width = 5, height = 1, text='Add',
-                              fg='black', command = self.add_track, 
-                              bg="light grey").grid(row=0, column=1, rowspan=2)
+                              foreground='black', command = self.add_track, 
+                              background="light grey").grid(row=0, column=1, rowspan=2)
         # add dir button        
         Button(self.root, width = 5, height = 1, text='Add Dir',
-                              fg='black', command = self.add_dir, 
-                              bg="light grey").grid(row=0, column=2, rowspan=2)
+                              foreground='black', command = self.add_dir, 
+                              background="light grey").grid(row=0, column=2, rowspan=2)
         # add url button
         Button(self.root, width = 5, height = 1, text='Add URL',
-                              fg='black', command = self.add_url, 
-                              bg="light grey").grid(row=0, column=3, rowspan=2)
+                              foreground='black', command = self.add_url, 
+                              background="light grey").grid(row=0, column=3, rowspan=2)
 
         # open list button        
         Button(self.root, width = 5, height = 1, text='Open List',
-                              fg='black', command = self.open_list_dialog, 
-                              bg="light grey").grid(row=0, column=4, rowspan=2)
+                              foreground='black', command = self.open_list_dialog, 
+                              background="light grey").grid(row=0, column=4, rowspan=2)
         # save list button
         Button(self.root, width = 5, height = 1, text = 'Save List',
-                              fg='black', command = self.save_list, 
-                              bg='light grey').grid(row=0, column=5, rowspan=2)
+                              foreground='black', command = self.save_list, 
+                              background='light grey').grid(row=0, column=5, rowspan=2)
         # clear list button
         Button(self.root, width = 5, height = 1, text = 'Clear List',
-                              fg='black', command = self.clear_list, 
-                              bg='light grey').grid(row=0, column=6, rowspan=2)
+                              foreground='black', command = self.clear_list, 
+                              background='light grey').grid(row=0, column=6, rowspan=2)
         # play/pause button
         self.play_button = Button(self.root, width = 5, height = 1, text='Play',
-                              fg='black', command = self.play_track, 
-                              bg="light grey")
+                              foreground='black', command = self.play_track, 
+                              background="light grey")
         self.play_button.grid(row=7, column=1)
         # stop track button       
         Button(self.root, width = 5, height = 1, text='Stop',
-                              fg='black', command = self.stop_track, 
-                              bg="light grey").grid(row=7, column=2)
+                              foreground='black', command = self.stop_track, 
+                              background="light grey").grid(row=7, column=2)
         # previous track button
         Button(self.root, width = 5, height = 1, text='Previous',
-                              fg='black', command = self.skip_to_previous_track, 
-                              bg="light grey").grid(row=7, column=3)
+                              foreground='black', command = self.skip_to_previous_track, 
+                              background="light grey").grid(row=7, column=3)
         # next track button
         Button(self.root, width = 5, height = 1, text='Next',
-                              fg='black', command = self.skip_to_next_track, 
-                              bg="light grey").grid(row=7, column=4)
+                              foreground='black', command = self.skip_to_next_track, 
+                              background="light grey").grid(row=7, column=4)
 
         # vol button
         minusplus_button = Button(self.root, width = 5, height = 1, text = '-  Vol +',
-                              fg='black', bg='light grey')
+                              foreground='black', background='light grey')
         minusplus_button.grid(row=7, column=5)#, sticky=E)
         minusplus_button.bind("<ButtonRelease-1>", self.volminusplus)
 
@@ -1085,17 +1085,17 @@ class TBOPlayer:
         Label(self.root, font=('Comic Sans', 10),
                               fg = 'black', wraplength = 400, height = 2,
                               textvariable=self.display_selected_track_title,
-                              bg="grey").grid(row=2, column=1, columnspan=6, sticky=N+W+E)
+                              background="grey").grid(row=2, column=1, columnspan=6, sticky=N+W+E)
 
         # define time/status display for selected track
         Label(self.root, font=('Comic Sans', 9),
                               fg = 'black', wraplength = 100,
                               textvariable=self.display_time,
-                              bg="grey").grid(row=2, column=6, columnspan=1)
+                              background="grey").grid(row=2, column=6, columnspan=1)
 
 # define display of playlist
-        self.track_titles_display = Listbox(self.root, bg="white", height = 15,
-                               fg="black", takefocus=0)
+        self.track_titles_display = Listbox(self.root, background="white", height = 15,
+                               foreground="black", takefocus=0)
         self.track_titles_display.grid(row=3, column=1, columnspan=7,rowspan=3, sticky=N+S+E+W)
         self.track_titles_display.bind("<ButtonRelease-1>", self.select_track)
         self.track_titles_display.bind("<Delete>", self.remove_track)
@@ -2323,11 +2323,11 @@ class YoutubeSearchDialog(tkSimpleDialog.Dialog):
         self.field1.grid(row=0, column=0)
 
         Button(master, width = 5, height = 1, text = 'Search!',
-                              fg='black', command = self.search, 
-                              bg='light grey').grid(row=0, column=1)
+                              foreground='black', command = self.search, 
+                              background='light grey').grid(row=0, column=1)
         Button(master, width = 5, height = 1, text = 'Clear',
-                              fg='black', command = self.clear_search, 
-                              bg='light grey').grid(row=0, column=2)
+                              foreground='black', command = self.clear_search, 
+                              background='light grey').grid(row=0, column=2)
 
         self.frame = VerticalScrolledFrame(master)
         self.frame.grid(row=1,column=0,columnspan=3,rowspan=6)
@@ -2405,10 +2405,10 @@ class YtresultCell(Frame):
         Label(self, font=('Comic Sans', 10),
                               fg = 'black', wraplength = 300, height = 2,
                               textvariable=self.video_name,
-                              bg="grey").grid(row = 0, column=0, columnspan=2, sticky=W)
+                              background="grey").grid(row = 0, column=0, columnspan=2, sticky=W)
         Button(self, width = 5, height = 1, text='Add',
-                              fg='black', command = self.add_link, 
-                              bg="light grey").grid(row = 0, column=2, sticky=W)
+                              foreground='black', command = self.add_link, 
+                              background="light grey").grid(row = 0, column=2, sticky=W)
 
     def add_link(self,*event):
         self.add_url(self.video_link.get())
@@ -2468,5 +2468,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 29 Aug 2016"
+    datestring=" 25 Dez 2016"
     bplayer = TBOPlayer()
