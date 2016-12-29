@@ -2011,6 +2011,8 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_local.grid(row=2,column=0,sticky=W)
         rb_auto=Radiobutton(master, text="Auto", variable=self.audio_var,value="auto")
         rb_auto.grid(row=3,column=0,sticky=W)
+        rb_auto=Radiobutton(master, text="ALSA", variable=self.audio_var,value="alsa")
+        rb_auto.grid(row=4,column=0,sticky=W)
 
         Label(master, text="").grid(row=9, sticky=W)
         Label(master, text="Mode:").grid(row=10, sticky=W)
