@@ -90,6 +90,10 @@ class OMXPlayer(object):
     _TOGGLE_SUB_CMD = 's'
     _QUIT_CMD = 'q'
     
+    AM_LETTERBOX = 'letterbox'
+    AM_FILL = 'fill'
+    AM_STRETCH = 'stretch'
+    
     paused = False
     playing_location = ''
     # KRT turn subtitles off as a command option is used
@@ -262,6 +266,10 @@ class OMXPlayer(object):
 
     def set_video_geometry(self, x1, y1, x2, y2):
         self.dbusif_player.VideoPos(dbus.ObjectPath('/not/used'), str(x1) + ' ' + str(y1) + ' ' + str(x2)+ ' ' + str(y2))
+        
+    def set_aspect_mode(self, mode):
+        '''Use any of the OMXPlayer.AM_??? constants as <mode>'''
+        self.dbusif_player.SetAspectMode(dbus.ObjectPath('/not/used'), mode)
 
     @staticmethod
     def set_omx_location(location):
@@ -425,7 +433,7 @@ from random import randint
 from math import log10
 from getpass import getuser
 from Tkinter import *
-from ttk import ( Progressbar, Style )
+from ttk import ( Progressbar, Style, Sizegrip )
 from gtk.gdk import ( screen_width, screen_height )
 from magic import from_file
 import Tkinter as tk
@@ -536,6 +544,7 @@ class TBOPlayer:
                     self.create_vprogress_bar()
                 if self.options.cue_track_mode:
                     self.toggle_pause()
+                self.omx.set_aspect_mode(OMXPlayer.AM_LETTERBOX)
             else:
                 self.monitor("      OMXPlayer did not start yet.")
             self.root.after(350, self.play_state_machine)
@@ -889,7 +898,7 @@ class TBOPlayer:
 
 
     def send_command(self,command):
-           
+
         if command in "+=-pz12jkionms" and self.play_state ==  self._OMX_PLAYING:
             self.monitor("            >Send Command: "+command)
             self.omx.send_command(command)
@@ -1327,8 +1336,11 @@ class TBOPlayer:
         screenres = self.get_screen_res()
         vsize = self.omx.video['dimensions']
 
-        self.vprogress_bar_window = Toplevel()
-
+        self.vprogress_bar_window = Toplevel(master=self.root, bg="black")
+        
+        #defne response to main window closing
+        self.vprogress_bar_window.protocol ("WM_DELETE_WINDOW", self.app_exit) 
+        
         self.vprogress_bar_window.video_height = screenres[1]
         self.vprogress_bar_window.video_width = int(vsize[0] * (screenres[1] / float(vsize[1])))
         self.vprogress_bar_window.bar_height = 15
@@ -1339,8 +1351,10 @@ class TBOPlayer:
             self.vprogress_bar_window.video_width = screenres[0]
             self.vprogress_bar_window.video_height = int(vsize[1] * (screenres[0] / float(vsize[0])))
 
-        geometry = (str(self.vprogress_bar_window.video_width - 1) + 'x' + str(self.vprogress_bar_window.bar_height) + '-' 
-                                                                                                       + str((screenres[0] - self.vprogress_bar_window.video_width)/2) + '-0')
+        geometry = "%dx%d-%d-0" % ( self.vprogress_bar_window.video_width - 1,
+                                    self.vprogress_bar_window.bar_height,
+                                    (screenres[0] - self.vprogress_bar_window.video_width)/2,
+                                    )
         self.vprogress_bar_window.geometry(geometry)
         self.vprogress_bar_window.overrideredirect(1)
 
@@ -1348,7 +1362,7 @@ class TBOPlayer:
             self.options.full_screen = 1
             self.toggle_full_screen()
 
-        self.vprogress_bar_window.resizable(False,False)
+        self.vprogress_bar_window.resizable(True,True)
         self.vprogress_bar = Progressbar(self.vprogress_bar_window, orient=HORIZONTAL, length=self.progress_bar_total_steps, mode='determinate', 
                                                                         maximum=self.progress_bar_total_steps, variable=self.progress_bar_var,
                                                                         style="progressbar.Horizontal.TProgressbar")
@@ -1360,8 +1374,19 @@ class TBOPlayer:
         self.vprogress_bar_window.bind("<ButtonPress-1>", self.vwindow_start_move)
         self.vprogress_bar_window.bind("<ButtonRelease-1>", self.vwindow_stop_move)
         self.vprogress_bar_window.bind("<B1-Motion>", self.vwindow_motion)
+        self.vprogress_bar_window.bind("<Double-Button-1>", self.toggle_full_screen)
+        
+        # Resize widget, placed in the lower right corner over the progress bar, not ideal.
+        grip = Sizegrip(self.vprogress_bar_window)
+        grip.place(relx=1.0, rely=1.0, anchor="se")
+        grip.lift(self.vprogress_bar)
+        grip.bind("<ButtonPress-1>", self.vwindow_start_resize)
+        grip.bind("<ButtonRelease-1>", self.vwindow_stop_resize)
+        grip.bind("<B1-Motion>", self.vwindow_motion)
+
         self.vprogress_bar_window.protocol ("WM_TAKE_FOCUS", self.focus_root)
 
+        
     def vwindow_start_move(self, event):
         if self.options.full_screen == 1: return
         self.vprogress_bar_window.x = event.x
@@ -1406,18 +1431,12 @@ class TBOPlayer:
     def enter_vprogress_bar(self,*event):
         if not self.dbus_connected or self.options.full_screen == 0: return
         screenres = self.get_screen_res()
-        video_width = self.vprogress_bar_window.video_width
-        video_height = self.vprogress_bar_window.video_height
         bar_height = self.vprogress_bar_window.bar_height
-        if video_height > screenres[1] - bar_height:
-            try:
-                self.omx.set_video_geometry((screenres[0] - video_width)/2,
-                                (screenres[1] - video_height)/2,
-                                (screenres[0] - video_width)/2 + video_width,
-                                (screenres[1] - video_height)/2 + video_height - bar_height)
-            except Exception, e:
-                self.monitor('      [!] enter_vprogress_bar failed')
-                self.monitor(e)
+        try:
+            self.omx.set_video_geometry(0, 0, screenres[0], screenres[1]-bar_height)
+        except Exception, e:
+            self.monitor('      [!] enter_vprogress_bar failed')
+            self.monitor(e)
 
     def leave_vprogress_bar(self,*event):
         if self.options.full_screen == 0: return
@@ -1426,13 +1445,8 @@ class TBOPlayer:
     def set_full_screen(self,*event):
         if not self.dbus_connected: return
         screenres = self.get_screen_res()
-        video_width = self.vprogress_bar_window.video_width
-        video_height = self.vprogress_bar_window.video_height
         try:
-            self.omx.set_video_geometry((screenres[0] - video_width)/2,
-                                (screenres[1] - video_height)/2,
-                                (screenres[0] - video_width)/2 + video_width,
-                                (screenres[1] - video_height)/2 + video_height)
+            self.omx.set_video_geometry(0, 0, screenres[0], screenres[1])
         except Exception, e:
             self.monitor('      [!] set_full_screen failed')
             self.monitor(e)
@@ -1459,8 +1473,7 @@ class TBOPlayer:
         else:
             self.options.full_screen = 1
             self.save_video_window_coordinates()
-            geometry = (str(self.vprogress_bar_window.video_width - 1) + 'x' + str(self.vprogress_bar_window.bar_height) + '-' 
-                                                                                                       + str((screenres[0] - self.vprogress_bar_window.video_width)/2) + '-0')
+            geometry = "%dx%d+%d+%d" % ( screenres[0], screenres[1], 0, 0)
             self.vprogress_bar_window.geometry(geometry)
             self.set_full_screen()
         self.focus_root()
@@ -1471,12 +1484,13 @@ class TBOPlayer:
         vwindow_height = self.vprogress_bar_window.winfo_height()
         vwindow_x = self.vprogress_bar_window.winfo_x()
         vwindow_y = self.vprogress_bar_window.winfo_y()
-
         try:
-            self.omx.set_video_geometry(vwindow_x, 
-                                vwindow_y, 
-                                vwindow_x + vwindow_width,
-                                vwindow_y + vwindow_height - self.vprogress_bar_window.bar_height)
+            self.omx.set_video_geometry(
+                    vwindow_x,
+                    vwindow_y,
+                    vwindow_x + vwindow_width,
+                    vwindow_y + vwindow_height - self.vprogress_bar_window.bar_height,
+                    )
         except Exception, e:
                 self.monitor('      [!] move_video failed')
                 self.monitor(e)
@@ -1654,7 +1668,7 @@ class TBOPlayer:
     def add_url(self):
         d = EditTrackDialog(self.root,"Add URL",
                                 "Title", "",
-                                "Location", "")
+                                "Location", self.root.clipboard_get())
         if d.result == None:
             return
         if d.result[0] == '':
@@ -2011,6 +2025,8 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_local.grid(row=2,column=0,sticky=W)
         rb_auto=Radiobutton(master, text="Auto", variable=self.audio_var,value="auto")
         rb_auto.grid(row=3,column=0,sticky=W)
+        rb_auto=Radiobutton(master, text="ALSA", variable=self.audio_var,value="alsa")
+        rb_auto.grid(row=4,column=0,sticky=W)
 
         Label(master, text="").grid(row=9, sticky=W)
         Label(master, text="Mode:").grid(row=10, sticky=W)
@@ -2460,7 +2476,8 @@ class VerticalScrolledFrame(Frame):
         # track changes to the canvas and frame width and sync them,
         # also updating the scrollbar    
 
-        
+
+
 
 # ***************************************
 # MAIN
@@ -2468,5 +2485,5 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == "__main__":
-    datestring=" 25 Dez 2016"
+    datestring=" 03 Jan 2017"
     bplayer = TBOPlayer()
