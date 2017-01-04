@@ -39,6 +39,8 @@ class Logger(logging.Logger):
         log_sh.setFormatter(self.log_formatter)
         self.addHandler(log_sh)
 
+    def exc_plus(self):
+        self.error(exc_plus())
 
     def setLogFile(self, filePath):
         log_fh = logging.FileHandler(filePath)

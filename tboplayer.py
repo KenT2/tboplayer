@@ -62,12 +62,14 @@ I think I might have fixed this but two tracks may play at the same time if you 
 # ********************************
 # PYOMXPLAYER
 # ********************************
+import logger
 
 import pexpect
 import re
 import string
 import dbus
 import gobject
+import sys
 
 from threading import Thread
 from time import sleep
@@ -150,6 +152,8 @@ class OMXPlayer(object):
                 else:
                     self.position = float(self._process.match.group(1))/1000000
             except Exception:
+                log.exc_plus()
+                sys.exc_clear()
                 break
             sleep(0.05)
 
@@ -161,7 +165,9 @@ class OMXPlayer(object):
 
         try:
             index = self._process.expect([self._PROPS_REXP, self._DONE_REXP, pexpect.TIMEOUT])
-        except:
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             if self.is_running(): self.stop()
             self.failed_play_signal = True
         finally:
@@ -217,8 +223,9 @@ class OMXPlayer(object):
             remote_object = bus.get_object("org.mpris.MediaPlayer2.omxplayer", "/org/mpris/MediaPlayer2", introspect=False)
             self.dbusif_player = dbus.Interface(remote_object, 'org.mpris.MediaPlayer2.Player')
             self.dbusif_props = dbus.Interface(remote_object, 'org.freedesktop.DBus.Properties')
-        except Exception, e:
-            print  e
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             return False
         return True
 
@@ -356,7 +363,9 @@ class Ytdl:
                 else:
                     self._response()
                     self.end_signal = True
-            except:
+            except Exception:
+                log.exc_plus()
+                sys.exc_clear()
                 break
             sleep(0.15)
 
@@ -398,7 +407,9 @@ class Ytdl:
         try:
             versionsurl = "http://rg3.github.io/youtube-dl/update/versions.json"
             versions = loads(requests.get(versionsurl).text)
-        except:
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             return
         current_version_hash = sha256(open(self._YTLOCATION, 'rb').read()).hexdigest()
         latest_version_hash = versions['versions'][versions['latest']]['bin'][1]
@@ -420,7 +431,9 @@ class Ytdl:
                 elif index == 0:
                     updated = True
                     break
-            except:
+            except Exception:
+                log.exc_plus()
+                sys.exc_clear()
                 break
             sleep(0.15)
         
@@ -794,7 +807,9 @@ class TBOPlayer:
         if self.ytdl.result[0] == 1:
             try:
                 result = loads(self.ytdl.result[1])
-            except:
+            except Exception:
+                log.exc_plus()
+                sys.exc_clear()
                 self.display_selected_track_title.set(self.ytdl.MSGS[2])
                 self.remove_waiting_track()
                 if self.play_state==self._OMX_STARTING:
@@ -906,7 +921,9 @@ class TBOPlayer:
                 sleep(0.1)
                 try:
                     self.set_volume_bar_step(int(self.vol2dB(self.omx.volume())+self.volume_normal_step))
-                except:
+                except Exception:
+                    log.exc_plus()
+                    sys.exc_clear()
                     self.monitor("Failed to set volume bar step")
             return True
         else:
@@ -937,6 +954,11 @@ class TBOPlayer:
 
         # initialise options class and do initial reading/creation of options
         self.options=Options()
+
+        if self.options.debug:
+            log.setLevel(logger.DEBUG)
+            log.setLogFile(self.options.log_file)
+            log.debug('started logging to file "%s"' % (self.options.log_file,))
 
         #initialise the play state machine
         self.init_play_state_machine()
@@ -1180,7 +1202,9 @@ class TBOPlayer:
         try:
             self.omx.stop()
             exit()
-        except:
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             exit()
 
 
@@ -1215,7 +1239,8 @@ class TBOPlayer:
                    +"Contributors:\n    heniotierra\n    krugg\n    popiazaza")
 
     def monitor(self,text):
-        if self.options.debug: print text
+        if self.options.debug:
+            log.debug(text)
 
 # Key Press callbacks
 
@@ -1299,7 +1324,9 @@ class TBOPlayer:
     def set_progress_bar(self):
         try:
             self.progress_bar_step_rate = self.omx.timenf['duration']/self.progress_bar_total_steps
-        except:
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             return False
         
 
@@ -1317,14 +1344,18 @@ class TBOPlayer:
         new_track_position = self.progress_bar_step_rate * ((event.x * self.progress_bar_total_steps)/event.widget.winfo_width())
         try:
             self.omx.set_position(new_track_position)
-        except:
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             self.monitor("Failed to set track position")
         self.focus_root()
 
     def set_progress_bar_step(self):
         try:
             self.progress_bar_var.set(int((self.omx.position * self.progress_bar_total_steps)/self.omx.timenf['duration']))
-        except:
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             self.monitor('Error trying to set progress bar step')
 
 
@@ -1412,7 +1443,9 @@ class TBOPlayer:
             h = self.vprogress_bar_window.winfo_height() + deltay
             try:
                 self.vprogress_bar_window.geometry("%sx%s" % (w, h))
-            except:
+            except Exception:
+                log.exc_plus()
+                sys.exc_clear()
                 self.options.full_screen = 1
                 self.toggle_full_screen()
 
@@ -1503,7 +1536,9 @@ class TBOPlayer:
                 self.save_video_window_coordinates()
             self.vprogress_bar_window.destroy()
             self.vprogress_bar_window = None
-        except:
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             self.monitor("Failed trying to destroy video window: video window nonexistent.") 
     
     def get_screen_res(self):
@@ -1512,7 +1547,9 @@ class TBOPlayer:
     def media_is_video(self):
         try:
             return bool(len(self.omx.video))
-        except:
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             return 0;
 
     def focus_root(self, *event):
@@ -1551,7 +1588,9 @@ class TBOPlayer:
         if not self.dbus_connected: return
         try:
             self.omx.volume(self.mB2vol(self.get_mB()))
-        except:
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             return False
 
     def get_mB(self): 
@@ -1648,7 +1687,9 @@ class TBOPlayer:
                     self.file_pieces = self.file.split("/")
                     self.playlist.append([self.file, self.file_pieces[-1],'',''])
                     self.track_titles_display.insert(END, self.file_pieces[-1])
-            except:
+            except Exception:
+                log.exc_plus()
+                sys.exc_clear()
                 return
 
 
@@ -1864,7 +1905,9 @@ class TBOPlayer:
         try:
             tkMessageBox.showinfo("Track Information", self.playlist.selected_track()[PlayList.LOCATION]  +"\n\n"+ 
                                             "Video: " + str(self.omx.video) + "\nAudio: " + str(self.omx.audio) + "\nTime: " + str(self.omx.timenf))
-        except:
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             return
 
 
@@ -1895,6 +1938,7 @@ class Options:
         # create an options file if necessary
         confdir = os.path.expanduser("~") + '/.tboplayer'
         self.options_file = confdir + '/tboplayer.cfg'
+        self.log_file = confdir + '/tboplayer.log'
 
         if os.path.exists(self.options_file):
             self.read(self.options_file)
@@ -1940,7 +1984,9 @@ class Options:
                 self.omx_subtitles_option = "-t on"
             else:
                 self.omx_subtitles_option = ""
-        except:
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
             self.create(self.options_file)
             self.read(self.options_file)
          
@@ -2411,9 +2457,12 @@ class YtresultCell(Frame):
         self.video_link = tk.StringVar()
         self.video_link.set("https://www.youtube.com" + link)
         self.add_url = add_url_function
-        try: self.video_name.set(title)
-        except Exception, e: print e
-            
+        try: 
+            self.video_name.set(title)
+        except Exception:
+            log.exc_plus()
+            sys.exc_clear()
+
         self.create_widgets()
 
     def create_widgets(self):
@@ -2487,5 +2536,7 @@ class VerticalScrolledFrame(Frame):
 
 if __name__ == "__main__":
     datestring=" 03 Jan 2017"
+    log = logger.Logger(__file__)
+    logger.setExceptionHook(log)
     bplayer = TBOPlayer()
 
