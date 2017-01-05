@@ -1431,7 +1431,8 @@ class TBOPlayer:
         self.vprogress_bar_window.y = None
 
     def vwindow_motion(self, event):
-        if self.options.full_screen == 1: return
+        if self.options.full_screen == 1 or not hasattr(event, 'x'):
+            return
         deltax = (event.x - self.vprogress_bar_window.x)/2
         deltay = (event.y - self.vprogress_bar_window.y)/2
         if not self.vprogress_bar_window.resizing:
