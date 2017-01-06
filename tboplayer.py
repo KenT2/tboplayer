@@ -1527,15 +1527,9 @@ class TBOPlayer:
         if self.options.full_screen == 1: 
             self.options.full_screen = 0
             width, height = (480, 360)
-<<<<<<< HEAD
             vsize_m = self.RE_RESOLUTION.match(self.options.windowed_mode_resolution)
             if vsize_m:
                 width, height = [int(i) for i in vsize_m.groups()]
-=======
-            vsize_m = self.RE_RESOLUTION(self.options.windowed_mode_resolution)
-            if vsize_m:
-                width, height = vsize_m.groups()
->>>>>>> e21d561d3fa05c9af4f5dc17e0a67f57df963fba
             coords = self.options.windowed_mode_coords
             coords_m = self.RE_COORDS.match(coords)
             if coords_m is None or int(coords_m.group(1))>screenres[0] or int(coords_m.group(2))>screenres[1]:
