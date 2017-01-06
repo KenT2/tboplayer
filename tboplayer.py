@@ -75,6 +75,9 @@ from threading import Thread
 from time import sleep
 from dbus import glib
 
+# global logger
+log = logger.Logger(__file__)
+
 
 class OMXPlayer(object):
 
@@ -228,6 +231,9 @@ class OMXPlayer(object):
             sys.exc_clear()
             return False
         return True
+
+    def kill(self):
+        self._process.kill(1)
 
 # ******* KenT added basic command sending function
     def send_command(self,command):
@@ -431,6 +437,8 @@ class Ytdl:
                 elif index == 0:
                     updated = True
                     break
+            except pexpect.EOF, e:
+                log.warning("youtube-dl update error: %s" % e.message)
             except Exception:
                 log.exc_plus()
                 sys.exc_clear()
@@ -465,6 +473,10 @@ import ConfigParser
 
 class TBOPlayer:
 
+
+    # real expression patterns
+    RE_RESOLUTION = re.compile("([0-9]+)x([0-9]+)")
+    RE_COORDS = re.compile("([\+|-][0-9]+)([\+|-][0-9]+)")
 
 
 # ***************************************
@@ -899,6 +911,17 @@ class TBOPlayer:
         track= "'"+ track.replace("'","'\\''") + "'"
         opts= (self.options.omx_user_options + " " + self.options.omx_audio_option + " " +
                                                         self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
+        if not self.options.full_screen and '--win' not in opts:
+            mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
+            mg = self.RE_RESOLUTION.match(self.options.windowed_mode_resolution)
+            if mc and mg:
+                w, h, x, y = [int(v) for v in mg.groups()+mc.groups()]
+                opts += ' --win %d,%d,%d,%d' % (x, y, x+w, y+h)
+
+        if not '--aspect-mode' in opts:
+            opts += ' --aspect-mode letterbox'
+
+        log.debug('starting omxplayer with args: "%s"' % (opts,))
         self.omx = OMXPlayer(track, args=opts, start_playback=True)
 
         self.monitor("            >Play: " + track + " with " + opts)
@@ -1200,7 +1223,9 @@ class TBOPlayer:
         self.options.geometry = self.root.geometry()
         self.options.save_state()
         try:
-            self.omx.stop()
+            if self.omx is not None:
+                self.omx.stop()
+                self.omx.kill()
             exit()
         except Exception:
             log.exc_plus()
@@ -1375,17 +1400,17 @@ class TBOPlayer:
         self.vprogress_bar_window.video_height = screenres[1]
         self.vprogress_bar_window.video_width = int(vsize[0] * (screenres[1] / float(vsize[1])))
         self.vprogress_bar_window.resizing = 0
-        self.vprogress_bar_window.coords_re = re.compile("([\+|-][0-9]+)([\+|-][0-9]+)")
         
         
         if self.vprogress_bar_window.video_width > screenres[0] + 20:
             self.vprogress_bar_window.video_width = screenres[0]
             self.vprogress_bar_window.video_height = int(vsize[1] * (screenres[0] / float(vsize[0])))
 
-        geometry = "%dx%d-%d-0" % ( self.vprogress_bar_window.video_width,
-                                    self.vprogress_bar_window.video_height,
-                                    (screenres[0] - self.vprogress_bar_window.video_width)/2,
-                                    )
+        if self.options.full_screen:
+            geometry = "%dx%d-0-0" % screenres
+        else:
+            geometry = self.options.windowed_mode_resolution + self.options.windowed_mode_coords
+
         self.vprogress_bar_window.geometry(geometry)
         self.vprogress_bar_window.overrideredirect(1)
 
@@ -1394,11 +1419,9 @@ class TBOPlayer:
                                                                         maximum=self.progress_bar_total_steps, variable=self.progress_bar_var,
                                                                         style="progressbar.Horizontal.TProgressbar")
 
-        if self.options.full_screen == 0:
-            self.options.full_screen = 1
-            self.toggle_full_screen()
-        
         self.vprogress_bar.pack(fill=BOTH,side=BOTTOM)
+        self.root.update()
+
         self.vprogress_bar.bind("<ButtonRelease-1>", self.set_track_position)
         self.vprogress_bar.bind("<Enter>", self.enter_vprogress_bar)
         self.vprogress_bar.bind("<Leave>", self.leave_vprogress_bar)
@@ -1417,7 +1440,6 @@ class TBOPlayer:
         grip.bind("<B1-Motion>", self.vwindow_motion)
 
         self.vprogress_bar_window.protocol ("WM_TAKE_FOCUS", self.focus_root)
-        
 
         
     def vwindow_start_move(self, event):
@@ -1429,12 +1451,18 @@ class TBOPlayer:
         if self.options.full_screen == 1: return
         self.vprogress_bar_window.x = None
         self.vprogress_bar_window.y = None
+        self.save_video_window_coordinates()
 
     def vwindow_motion(self, event):
-        if self.options.full_screen == 1 or not hasattr(event, 'x'):
+        if self.options.full_screen == 1:
             return
-        deltax = (event.x - self.vprogress_bar_window.x)/2
-        deltay = (event.y - self.vprogress_bar_window.y)/2
+        try:
+            deltax = (event.x - self.vprogress_bar_window.x)/2
+            deltay = (event.y - self.vprogress_bar_window.y)/2
+        except (TypeError, AttributeError):
+            log.exc_plus()
+            sys.exc_clear()
+            return
         if not self.vprogress_bar_window.resizing:
             x = self.vprogress_bar_window.winfo_x() + deltax
             y = self.vprogress_bar_window.winfo_y() + deltay
@@ -1463,6 +1491,7 @@ class TBOPlayer:
           not self.vprogress_bar_window): 
             return
         self.vprogress_bar_window.resizing = 0
+        self.save_video_window_coordinates()
 
     def enter_vprogress_bar(self,*event):
         if not self.dbus_connected or self.options.full_screen == 0: return
@@ -1497,13 +1526,15 @@ class TBOPlayer:
         screenres = self.get_screen_res()
         if self.options.full_screen == 1: 
             self.options.full_screen = 0
-            vsize = self.omx.video['dimensions']
-            coords_m = self.vprogress_bar_window.coords_re.match(self.options.windowed_mode_coords)
-            if int(coords_m.group(1))>screenres[0] or int(coords_m.group(2))>screenres[1]:
+            width, height = (480, 360)
+            vsize_m = self.RE_RESOLUTION.match(self.options.windowed_mode_resolution)
+            if vsize_m:
+                width, height = [int(i) for i in vsize_m.groups()]
+            coords = self.options.windowed_mode_coords
+            coords_m = self.RE_COORDS.match(coords)
+            if coords_m is None or int(coords_m.group(1))>screenres[0] or int(coords_m.group(2))>screenres[1]:
                 coords = "+200+200"
-            else:
-                coords = self.options.windowed_mode_coords
-            geometry = "%dx%d%s" % (vsize[0], vsize[1] + self.vprogress_bar.winfo_height(), coords)
+            geometry = "%dx%d%s" % (width, height + self.vprogress_bar.winfo_height(), coords)
             self.vprogress_bar_window.geometry(geometry)
         else:
             self.options.full_screen = 1
@@ -1560,8 +1591,11 @@ class TBOPlayer:
     def save_video_window_coordinates(self):
         x = self.vprogress_bar_window.winfo_x()
         y = self.vprogress_bar_window.winfo_y()
-        self.options.windowed_mode_coords = ("+" if x>0 else "")+str(x)+("+" if y>0 else "")+str(y)
-
+        h = self.vprogress_bar_window.winfo_height() - self.vprogress_bar.winfo_height()
+        w = self.vprogress_bar_window.winfo_width()
+        self.options.windowed_mode_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
+        self.options.windowed_mode_resolution = "%dx%d" % (w, h)
+        log.debug('Saving windowed geometry: "%s%s"' % (self.options.windowed_mode_resolution,self.options.windowed_mode_coords))
 
 # ***************************************
 # VOLUME BAR CALLBACKS
@@ -1972,6 +2006,7 @@ class Options:
             self.geometry = config.get('config','geometry',0)
             self.full_screen = int(config.get('config','full_screen',0))
             self.windowed_mode_coords = config.get('config','windowed_mode_coords',0)
+            self.windowed_mode_resolution = config.get('config','windowed_mode_resolution',0)
             self.forbid_windowed_mode = int(config.get('config','forbid_windowed_mode',0))
             self.cue_track_mode = int(config.get('config','cue_track_mode',0))
             self.autoplay = int(config.get('config','autoplay',0))
@@ -2010,6 +2045,7 @@ class Options:
         config.set('config','geometry','408x340+350+250')
         config.set('config','full_screen','1')
         config.set('config','windowed_mode_coords','+200+200')
+        config.set('config','windowed_mode_resolution','480x360')
         config.set('config','forbid_windowed_mode','0')
         config.set('config','cue_track_mode','0')
         config.set('config','autoplay','1')
@@ -2035,6 +2071,7 @@ class Options:
         config.set('config','geometry',self.geometry)
         config.set('config','full_screen',self.full_screen)
         config.set('config','windowed_mode_coords',self.windowed_mode_coords)
+        config.set('config','windowed_mode_resolution',self.windowed_mode_resolution)
         config.set('config','forbid_windowed_mode',self.forbid_windowed_mode)
         config.set('config','cue_track_mode',self.cue_track_mode)
         config.set('config','autoplay',self.autoplay)
@@ -2063,6 +2100,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.geometry_var = config.get('config','geometry',0)
         self.full_screen_var = config.get('config','full_screen',0)
         self.windowed_mode_coords_var = config.get('config','windowed_mode_coords',0)
+        self.windowed_mode_resolution_var = config.get('config','windowed_mode_resolution',0)
 
         Label(master, text="Audio Output:").grid(row=0, sticky=W)
         self.audio_var=StringVar()
@@ -2207,6 +2245,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','geometry',self.geometry_var)
         config.set('config','full_screen',self.full_screen_var)
         config.set('config','windowed_mode_coords',self.windowed_mode_coords_var)
+        config.set('config','windowed_mode_resolution',self.windowed_mode_resolution_var)
         config.set('config','forbid_windowed_mode',self.forbid_windowed_mode_var.get())
         config.set('config','cue_track_mode',self.cue_track_mode_var.get())
         config.set('config','autoplay',self.autoplay_var.get())
@@ -2528,6 +2567,32 @@ class VerticalScrolledFrame(Frame):
         # also updating the scrollbar    
 
 
+class ExceptionCatcher:
+    '''
+    Exception handler for Tkinter
+    when set to Tkinter.CallWrapper, catches unhandled exceptions thrown by window elements,
+    logs the exception and signals quit to the erroring window.
+    Exiting tboplayer is preferable when errors occure rather than possibly having
+    uncontrollable omxplayer running in fullscreen.
+    '''
+    def __init__(self, func, subst, widget):
+        self.func = func
+        self.subst = subst
+        self.widget = widget
+
+    def __call__(self, *args):
+        try:
+            if self.subst:
+                args = apply(self.subst, args)
+            return apply(self.func, args)
+        except SystemExit, msg:
+            raise SystemExit, msg
+        except Exception:
+            log.exc_plus()
+            log.critical("fatal error, quitting and raising exception.")
+            self.widget.quit()
+            raise
+
 
 
 # ***************************************
@@ -2537,7 +2602,6 @@ class VerticalScrolledFrame(Frame):
 
 if __name__ == "__main__":
     datestring=" 03 Jan 2017"
-    log = logger.Logger(__file__)
-    logger.setExceptionHook(log)
+    tk.CallWrapper = ExceptionCatcher
     bplayer = TBOPlayer()
 
