@@ -80,6 +80,10 @@ Buttons
 
 * `- VOL +` - Minus/plus volume control
 
+* `Progress bar` - Show/Seek position
+
+* `Resize video` - At the right side of the video progress bar, allows resizing video
+
 Menus
 -----
 * `Track` - add tracks (for selecting multiple tracks, hold ctrl when clicking) or directories, edit or remove tracks (or URLs) from the current playlist
@@ -90,7 +94,7 @@ Menus
  
 * `Options` -
 
-    * Audio Output - play sound to hdmi or local output, auto does not send an audio option to omxplayer.
+    * Audio Output - play sound to hdmi, local, auto or ALSA device.
 	
     * Mode - play the Single selected track, Repeat the single track, rotate around the Playlist starting from the selected track, randomly play a track from the Playlist.
 	
@@ -156,8 +160,10 @@ Contributors:
 
 KenT2 - Original idea and implementation
 
-popiazaza - GUI enhancements
+eysispeisi - GUI enhancements
 
-heniotierra - GUI enhancements and youtube-dl integration
+heniotierra - GUI enhancements, youtube-dl integration, and setup
 
 krugg - GUI enhancements
+
+popiazaza - GUI enhancements
