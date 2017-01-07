@@ -564,7 +564,8 @@ class TBOPlayer:
                     self.create_vprogress_bar()
                 if self.options.cue_track_mode:
                     self.toggle_pause()
-                self.omx.set_aspect_mode(OMXPlayer.AM_LETTERBOX)
+                if self.dbus_connected:
+                    self.omx.set_aspect_mode(OMXPlayer.AM_LETTERBOX)
             else:
                 self.monitor("      OMXPlayer did not start yet.")
             self.root.after(350, self.play_state_machine)
@@ -1262,7 +1263,7 @@ class TBOPlayer:
     def about (self):
         tkMessageBox.showinfo("About","GUI for omxplayer using jbaiter's pyomxplayer wrapper\n"
                    +"Version dated: " + datestring + "\nAuthor:\n    Ken Thompson  - KenT2\n"
-                   +"Contributors:\n    heniotierra\n    krugg\n    popiazaza")
+                   +"Contributors:\n    eysispeisi\n    heniotierra\n    krugg\n    popiazaza")
 
     def monitor(self,text):
         if self.options.debug:
@@ -2653,7 +2654,7 @@ class ExceptionCatcher:
 
 
 if __name__ == "__main__":
-    datestring=" 03 Jan 2017"
+    datestring=" 06 Jan 2017"
     tk.CallWrapper = ExceptionCatcher
     bplayer = TBOPlayer()
 
