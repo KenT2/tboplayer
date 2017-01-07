@@ -915,6 +915,9 @@ class TBOPlayer:
 
         if not '--aspect-mode' in opts:
             opts += ' --aspect-mode letterbox'
+            
+        if not '--no-osd' in opts:
+            opts += ' --no-osd'
 
         log.debug('starting omxplayer with args: "%s"' % (opts,))
         self.omx = OMXPlayer(track, args=opts, start_playback=True)
@@ -1136,7 +1139,7 @@ class TBOPlayer:
         Label(self.root, font=('Comic Sans', 10),
                               fg = 'black', wraplength = 400, height = 2,
                               textvariable=self.display_selected_track_title,
-                              background="grey").grid(row=2, column=1, columnspan=6)#, sticky=N+W+E)
+                              background="grey").grid(row=2, column=1, columnspan=6, sticky=N+W+E)
 
         # define time/status display for selected track
         Label(self.root, font=('Comic Sans', 9),
