@@ -62,8 +62,6 @@ I think I might have fixed this but two tracks may play at the same time if you 
 # ********************************
 # PYOMXPLAYER
 # ********************************
-import logger
-
 import pexpect
 import re
 import string
@@ -74,9 +72,6 @@ import sys
 from threading import Thread
 from time import sleep
 from dbus import glib
-
-# global logger
-log = logger.Logger(__file__)
 
 
 class OMXPlayer(object):
@@ -155,7 +150,7 @@ class OMXPlayer(object):
                 else:
                     self.position = float(self._process.match.group(1))/1000000
             except Exception:
-                log.exc_plus()
+                log.logException()
                 sys.exc_clear()
                 break
             sleep(0.05)
@@ -169,7 +164,7 @@ class OMXPlayer(object):
         try:
             index = self._process.expect([self._PROPS_REXP, self._DONE_REXP, pexpect.TIMEOUT])
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             if self.is_running(): self.stop()
             self.failed_play_signal = True
@@ -227,7 +222,7 @@ class OMXPlayer(object):
             self.dbusif_player = dbus.Interface(remote_object, 'org.mpris.MediaPlayer2.Player')
             self.dbusif_props = dbus.Interface(remote_object, 'org.freedesktop.DBus.Properties')
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             return False
         return True
@@ -370,7 +365,7 @@ class Ytdl:
                     self._response()
                     self.end_signal = True
             except Exception:
-                log.exc_plus()
+                log.logException()
                 sys.exc_clear()
                 break
             sleep(0.15)
@@ -414,7 +409,7 @@ class Ytdl:
             versionsurl = "http://rg3.github.io/youtube-dl/update/versions.json"
             versions = loads(requests.get(versionsurl).text)
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             return
         current_version_hash = sha256(open(self._YTLOCATION, 'rb').read()).hexdigest()
@@ -440,7 +435,7 @@ class Ytdl:
             except pexpect.EOF, e:
                 log.warning("youtube-dl update error: %s" % e.message)
             except Exception:
-                log.exc_plus()
+                log.logException()
                 sys.exc_clear()
                 break
             sleep(0.15)
@@ -820,7 +815,7 @@ class TBOPlayer:
             try:
                 result = loads(self.ytdl.result[1])
             except Exception:
-                log.exc_plus()
+                log.logException()
                 sys.exc_clear()
                 self.display_selected_track_title.set(self.ytdl.MSGS[2])
                 self.remove_waiting_track()
@@ -945,7 +940,7 @@ class TBOPlayer:
                 try:
                     self.set_volume_bar_step(int(self.vol2dB(self.omx.volume())+self.volume_normal_step))
                 except Exception:
-                    log.exc_plus()
+                    log.logException()
                     sys.exc_clear()
                     self.monitor("Failed to set volume bar step")
             return True
@@ -979,9 +974,11 @@ class TBOPlayer:
         self.options=Options()
 
         if self.options.debug:
-            log.setLevel(logger.DEBUG)
             log.setLogFile(self.options.log_file)
+            log.setLevelDebug()
             log.debug('started logging to file "%s"' % (self.options.log_file,))
+        else:
+            log.disableLogging()
 
         #initialise the play state machine
         self.init_play_state_machine()
@@ -1229,7 +1226,7 @@ class TBOPlayer:
                 self.omx.kill()
             exit()
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             exit()
 
@@ -1351,7 +1348,7 @@ class TBOPlayer:
         try:
             self.progress_bar_step_rate = self.omx.timenf['duration']/self.progress_bar_total_steps
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             return False
         
@@ -1371,7 +1368,7 @@ class TBOPlayer:
         try:
             self.omx.set_position(new_track_position)
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             self.monitor("Failed to set track position")
         self.focus_root()
@@ -1380,7 +1377,7 @@ class TBOPlayer:
         try:
             self.progress_bar_var.set(int((self.omx.position * self.progress_bar_total_steps)/self.omx.timenf['duration']))
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             self.monitor('Error trying to set progress bar step')
 
@@ -1461,7 +1458,7 @@ class TBOPlayer:
             deltax = (event.x - self.vprogress_bar_window.x)/2
             deltay = (event.y - self.vprogress_bar_window.y)/2
         except (TypeError, AttributeError):
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             return
         if not self.vprogress_bar_window.resizing:
@@ -1474,7 +1471,7 @@ class TBOPlayer:
             try:
                 self.vprogress_bar_window.geometry("%sx%s" % (w, h))
             except Exception:
-                log.exc_plus()
+                log.logException()
                 sys.exc_clear()
                 self.options.full_screen = 1
                 self.toggle_full_screen()
@@ -1570,7 +1567,7 @@ class TBOPlayer:
             self.vprogress_bar_window.destroy()
             self.vprogress_bar_window = None
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             self.monitor("Failed trying to destroy video window: video window nonexistent.") 
     
@@ -1581,7 +1578,7 @@ class TBOPlayer:
         try:
             return bool(len(self.omx.video))
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             return 0;
 
@@ -1625,7 +1622,7 @@ class TBOPlayer:
         try:
             self.omx.volume(self.mB2vol(self.get_mB()))
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             return False
 
@@ -1724,7 +1721,7 @@ class TBOPlayer:
                     self.playlist.append([self.file, self.file_pieces[-1],'',''])
                     self.track_titles_display.insert(END, self.file_pieces[-1])
             except Exception:
-                log.exc_plus()
+                log.logException()
                 sys.exc_clear()
                 return
 
@@ -1959,7 +1956,7 @@ class TBOPlayer:
             tkMessageBox.showinfo("Track Information", self.playlist.selected_track()[PlayList.LOCATION]  +"\n\n"+ 
                                             "Video: " + str(self.omx.video) + "\nAudio: " + str(self.omx.audio) + "\nTime: " + str(self.omx.timenf))
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             return
 
@@ -2039,7 +2036,7 @@ class Options:
             else:
                 self.omx_subtitles_option = ""
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
             self.create(self.options_file)
             self.read(self.options_file)
@@ -2518,7 +2515,7 @@ class YtresultCell(Frame):
         try: 
             self.video_name.set(title)
         except Exception:
-            log.exc_plus()
+            log.logException()
             sys.exc_clear()
 
         self.create_widgets()
@@ -2585,6 +2582,40 @@ class VerticalScrolledFrame(Frame):
         # also updating the scrollbar    
 
 
+import logging
+import cStringIO
+import traceback
+class Logger(logging.Logger):
+    log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    def __init__(self, name, level=logging.INFO, logFile=None):
+        logging.Logger.__init__(self, name, level=logging.INFO)
+        if logFile is not None:
+            self.setLogFile(logFile)
+        log_sh = logging.StreamHandler()
+        log_sh.setLevel(logging.NOTSET)
+        log_sh.setFormatter(self.log_formatter)
+        self.addHandler(log_sh)
+
+    def setLevelDebug(self):
+        self.setLevel(logging.DEBUG)
+
+    def disableLogging(self):
+        self.setLevel(logging.CRITICAL)
+
+    def logException(self):
+        s = cStringIO.StringIO()
+        traceback.print_exc(file=s)
+        self.error(s.getvalue())
+
+    def setLogFile(self, filePath):
+        log_fh = logging.FileHandler(filePath)
+        log_fh.setFormatter(self.log_formatter)
+        self.addHandler(log_fh)
+# global logger
+log = Logger(__file__)
+
+
 class ExceptionCatcher:
     '''
     Exception handler for Tkinter
@@ -2606,7 +2637,7 @@ class ExceptionCatcher:
         except SystemExit, msg:
             raise SystemExit, msg
         except Exception:
-            log.exc_plus()
+            log.logException()
             log.critical("fatal error, quitting and raising exception.")
             self.widget.quit()
             raise
