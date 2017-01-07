@@ -1139,7 +1139,7 @@ class TBOPlayer:
         Label(self.root, font=('Comic Sans', 10),
                               fg = 'black', wraplength = 400, height = 2,
                               textvariable=self.display_selected_track_title,
-                              background="grey").grid(row=2, column=1, columnspan=6, sticky=N+W+E)
+                              background="grey").grid(row=2, column=1, columnspan=6)#, sticky=N+W+E)
 
         # define time/status display for selected track
         Label(self.root, font=('Comic Sans', 9),
@@ -1154,6 +1154,7 @@ class TBOPlayer:
         self.track_titles_display.bind("<ButtonRelease-1>", self.select_track)
         self.track_titles_display.bind("<Delete>", self.remove_track)
         self.track_titles_display.bind("<Return>", self.key_return)
+        self.track_titles_display.bind("<Double-1>", self.select_and_play)
 
 # scrollbar for displaylist
         scrollbar = Scrollbar(self.root, command=self.track_titles_display.yview, orient=tk.VERTICAL)
@@ -1186,13 +1187,13 @@ class TBOPlayer:
         self.root.grid_columnconfigure(4, weight=1)
         self.root.grid_columnconfigure(5, weight=1)
         self.root.grid_columnconfigure(6, weight=1)
-        self.root.grid_rowconfigure(1, weight=1)
-        self.root.grid_rowconfigure(2, weight=1)
+        self.root.grid_rowconfigure(1, weight=0)
+        self.root.grid_rowconfigure(2, weight=0)
         self.root.grid_rowconfigure(3, weight=1, minsize=40)
-        self.root.grid_rowconfigure(4, weight=1)
-        self.root.grid_rowconfigure(5, weight=1)
-        self.root.grid_rowconfigure(6, weight=1)
-        self.root.grid_rowconfigure(7, weight=1)
+        self.root.grid_rowconfigure(4, weight=0)
+        self.root.grid_rowconfigure(5, weight=0)
+        self.root.grid_rowconfigure(6, weight=0)
+        self.root.grid_rowconfigure(7, weight=0)
 
   
 # if files were passed in the command line, add them to the playlist
@@ -1591,7 +1592,7 @@ class TBOPlayer:
     def save_video_window_coordinates(self):
         x = self.vprogress_bar_window.winfo_x()
         y = self.vprogress_bar_window.winfo_y()
-        h = self.vprogress_bar_window.winfo_height() - self.vprogress_bar.winfo_height()
+        h = self.vprogress_bar_window.winfo_height()
         w = self.vprogress_bar_window.winfo_width()
         self.options.windowed_mode_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
         self.options.windowed_mode_resolution = "%dx%d" % (w, h)
@@ -1826,9 +1827,26 @@ class TBOPlayer:
         """
         # needs forgiving int for possible tkinter upgrade
         if self.playlist.length()>0:
-            index=int(event.widget.curselection()[0]) if event else 0
+            index = 0
+            if event:
+                sel = event.widget.curselection()
+                if sel:
+                    index=int(sel[0]) if event else 0
             self.playlist.select(index)
             self.display_selected_track(index)
+
+
+    def select_and_play(self, event=None):
+        if not hasattr(self, 'select_and_play_pending'):
+            self.select_and_play_pending = False
+        if self.play_state == self._OMX_CLOSED:
+            self.select_and_play_pending = False
+            self.play_track()
+        elif not self.select_and_play_pending:
+            self.select_and_play_pending = True
+            self.stop_track()
+        if self.select_and_play_pending:
+            self.root.after(100, self.select_and_play)
 
     	
     def select_next_track(self):
