@@ -62,12 +62,12 @@ I think I might have fixed this but two tracks may play at the same time if you 
 # ********************************
 # PYOMXPLAYER
 # ********************************
-
 import pexpect
 import re
 import string
 import dbus
 import gobject
+import sys
 
 from threading import Thread
 from time import sleep
@@ -150,6 +150,8 @@ class OMXPlayer(object):
                 else:
                     self.position = float(self._process.match.group(1))/1000000
             except Exception:
+                log.logException()
+                sys.exc_clear()
                 break
             sleep(0.05)
 
@@ -161,7 +163,9 @@ class OMXPlayer(object):
 
         try:
             index = self._process.expect([self._PROPS_REXP, self._DONE_REXP, pexpect.TIMEOUT])
-        except:
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             if self.is_running(): self.stop()
             self.failed_play_signal = True
         finally:
@@ -217,10 +221,14 @@ class OMXPlayer(object):
             remote_object = bus.get_object("org.mpris.MediaPlayer2.omxplayer", "/org/mpris/MediaPlayer2", introspect=False)
             self.dbusif_player = dbus.Interface(remote_object, 'org.mpris.MediaPlayer2.Player')
             self.dbusif_props = dbus.Interface(remote_object, 'org.freedesktop.DBus.Properties')
-        except Exception, e:
-            print  e
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             return False
         return True
+
+    def kill(self):
+        self._process.kill(1)
 
 # ******* KenT added basic command sending function
     def send_command(self,command):
@@ -356,7 +364,9 @@ class Ytdl:
                 else:
                     self._response()
                     self.end_signal = True
-            except:
+            except Exception:
+                log.logException()
+                sys.exc_clear()
                 break
             sleep(0.15)
 
@@ -398,7 +408,9 @@ class Ytdl:
         try:
             versionsurl = "http://rg3.github.io/youtube-dl/update/versions.json"
             versions = loads(requests.get(versionsurl).text)
-        except:
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             return
         current_version_hash = sha256(open(self._YTLOCATION, 'rb').read()).hexdigest()
         latest_version_hash = versions['versions'][versions['latest']]['bin'][1]
@@ -420,7 +432,11 @@ class Ytdl:
                 elif index == 0:
                     updated = True
                     break
-            except:
+            except pexpect.EOF, e:
+                log.warning("youtube-dl update error: %s" % e.message)
+            except Exception:
+                log.logException()
+                sys.exc_clear()
                 break
             sleep(0.15)
         
@@ -452,6 +468,10 @@ import ConfigParser
 
 class TBOPlayer:
 
+
+    # real expression patterns
+    RE_RESOLUTION = re.compile("([0-9]+)x([0-9]+)")
+    RE_COORDS = re.compile("([\+|-][0-9]+)([\+|-][0-9]+)")
 
 
 # ***************************************
@@ -795,7 +815,9 @@ class TBOPlayer:
         if self.ytdl.result[0] == 1:
             try:
                 result = loads(self.ytdl.result[1])
-            except:
+            except Exception:
+                log.logException()
+                sys.exc_clear()
                 self.display_selected_track_title.set(self.ytdl.MSGS[2])
                 self.remove_waiting_track()
                 if self.play_state==self._OMX_STARTING:
@@ -885,6 +907,20 @@ class TBOPlayer:
         track= "'"+ track.replace("'","'\\''") + "'"
         opts= (self.options.omx_user_options + " " + self.options.omx_audio_option + " " +
                                                         self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
+        if not self.options.full_screen and '--win' not in opts:
+            mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
+            mg = self.RE_RESOLUTION.match(self.options.windowed_mode_resolution)
+            if mc and mg:
+                w, h, x, y = [int(v) for v in mg.groups()+mc.groups()]
+                opts += ' --win %d,%d,%d,%d' % (x, y, x+w, y+h)
+
+        if not '--aspect-mode' in opts:
+            opts += ' --aspect-mode letterbox'
+            
+        if not '--no-osd' in opts:
+            opts += ' --no-osd'
+
+        log.debug('starting omxplayer with args: "%s"' % (opts,))
         self.omx = OMXPlayer(track, args=opts, start_playback=True)
 
         self.monitor("            >Play: " + track + " with " + opts)
@@ -907,7 +943,9 @@ class TBOPlayer:
                 sleep(0.1)
                 try:
                     self.set_volume_bar_step(int(self.vol2dB(self.omx.volume())+self.volume_normal_step))
-                except:
+                except Exception:
+                    log.logException()
+                    sys.exc_clear()
                     self.monitor("Failed to set volume bar step")
             return True
         else:
@@ -938,6 +976,13 @@ class TBOPlayer:
 
         # initialise options class and do initial reading/creation of options
         self.options=Options()
+
+        if self.options.debug:
+            log.setLogFile(self.options.log_file)
+            log.setLevelDebug()
+            log.debug('started logging to file "%s"' % (self.options.log_file,))
+        else:
+            log.disableLogging()
 
         #initialise the play state machine
         self.init_play_state_machine()
@@ -1110,6 +1155,7 @@ class TBOPlayer:
         self.track_titles_display.bind("<ButtonRelease-1>", self.select_track)
         self.track_titles_display.bind("<Delete>", self.remove_track)
         self.track_titles_display.bind("<Return>", self.key_return)
+        self.track_titles_display.bind("<Double-1>", self.select_and_play)
 
 # scrollbar for displaylist
         scrollbar = Scrollbar(self.root, command=self.track_titles_display.yview, orient=tk.VERTICAL)
@@ -1142,13 +1188,13 @@ class TBOPlayer:
         self.root.grid_columnconfigure(4, weight=1)
         self.root.grid_columnconfigure(5, weight=1)
         self.root.grid_columnconfigure(6, weight=1)
-        self.root.grid_rowconfigure(1, weight=1)
-        self.root.grid_rowconfigure(2, weight=1)
+        self.root.grid_rowconfigure(1, weight=0)
+        self.root.grid_rowconfigure(2, weight=0)
         self.root.grid_rowconfigure(3, weight=1, minsize=40)
-        self.root.grid_rowconfigure(4, weight=1)
-        self.root.grid_rowconfigure(5, weight=1)
-        self.root.grid_rowconfigure(6, weight=1)
-        self.root.grid_rowconfigure(7, weight=1)
+        self.root.grid_rowconfigure(4, weight=0)
+        self.root.grid_rowconfigure(5, weight=0)
+        self.root.grid_rowconfigure(6, weight=0)
+        self.root.grid_rowconfigure(7, weight=0)
 
   
 # if files were passed in the command line, add them to the playlist
@@ -1179,9 +1225,13 @@ class TBOPlayer:
         self.options.geometry = self.root.geometry()
         self.options.save_state()
         try:
-            self.omx.stop()
+            if self.omx is not None:
+                self.omx.stop()
+                self.omx.kill()
             exit()
-        except:
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             exit()
 
 
@@ -1216,7 +1266,8 @@ class TBOPlayer:
                    +"Contributors:\n    eysispeisi\n    heniotierra\n    krugg\n    popiazaza")
 
     def monitor(self,text):
-        if self.options.debug: print text
+        if self.options.debug:
+            log.debug(text)
 
 # Key Press callbacks
 
@@ -1300,7 +1351,9 @@ class TBOPlayer:
     def set_progress_bar(self):
         try:
             self.progress_bar_step_rate = self.omx.timenf['duration']/self.progress_bar_total_steps
-        except:
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             return False
         
 
@@ -1318,14 +1371,18 @@ class TBOPlayer:
         new_track_position = self.progress_bar_step_rate * ((event.x * self.progress_bar_total_steps)/event.widget.winfo_width())
         try:
             self.omx.set_position(new_track_position)
-        except:
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             self.monitor("Failed to set track position")
         self.focus_root()
 
     def set_progress_bar_step(self):
         try:
             self.progress_bar_var.set(int((self.omx.position * self.progress_bar_total_steps)/self.omx.timenf['duration']))
-        except:
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             self.monitor('Error trying to set progress bar step')
 
 
@@ -1344,30 +1401,29 @@ class TBOPlayer:
         
         self.vprogress_bar_window.video_height = screenres[1]
         self.vprogress_bar_window.video_width = int(vsize[0] * (screenres[1] / float(vsize[1])))
-        self.vprogress_bar_window.bar_height = 15
         self.vprogress_bar_window.resizing = 0
-        self.vprogress_bar_window.coords_re = re.compile("([\+|-][0-9]+)([\+|-][0-9]+)")
+        
         
         if self.vprogress_bar_window.video_width > screenres[0] + 20:
             self.vprogress_bar_window.video_width = screenres[0]
             self.vprogress_bar_window.video_height = int(vsize[1] * (screenres[0] / float(vsize[0])))
 
-        geometry = "%dx%d-%d-0" % ( self.vprogress_bar_window.video_width - 1,
-                                    self.vprogress_bar_window.bar_height,
-                                    (screenres[0] - self.vprogress_bar_window.video_width)/2,
-                                    )
+        if self.options.full_screen:
+            geometry = "%dx%d-0-0" % screenres
+        else:
+            geometry = self.options.windowed_mode_resolution + self.options.windowed_mode_coords
+
         self.vprogress_bar_window.geometry(geometry)
         self.vprogress_bar_window.overrideredirect(1)
-
-        if self.options.full_screen == 0:
-            self.options.full_screen = 1
-            self.toggle_full_screen()
 
         self.vprogress_bar_window.resizable(True,True)
         self.vprogress_bar = Progressbar(self.vprogress_bar_window, orient=HORIZONTAL, length=self.progress_bar_total_steps, mode='determinate', 
                                                                         maximum=self.progress_bar_total_steps, variable=self.progress_bar_var,
                                                                         style="progressbar.Horizontal.TProgressbar")
+
         self.vprogress_bar.pack(fill=BOTH,side=BOTTOM)
+        self.root.update()
+
         self.vprogress_bar.bind("<ButtonRelease-1>", self.set_track_position)
         self.vprogress_bar.bind("<Enter>", self.enter_vprogress_bar)
         self.vprogress_bar.bind("<Leave>", self.leave_vprogress_bar)
@@ -1397,11 +1453,18 @@ class TBOPlayer:
         if self.options.full_screen == 1: return
         self.vprogress_bar_window.x = None
         self.vprogress_bar_window.y = None
+        self.save_video_window_coordinates()
 
     def vwindow_motion(self, event):
-        if self.options.full_screen == 1: return
-        deltax = (event.x - self.vprogress_bar_window.x)/2
-        deltay = (event.y - self.vprogress_bar_window.y)/2
+        if self.options.full_screen == 1:
+            return
+        try:
+            deltax = (event.x - self.vprogress_bar_window.x)/2
+            deltay = (event.y - self.vprogress_bar_window.y)/2
+        except (TypeError, AttributeError):
+            log.logException()
+            sys.exc_clear()
+            return
         if not self.vprogress_bar_window.resizing:
             x = self.vprogress_bar_window.winfo_x() + deltax
             y = self.vprogress_bar_window.winfo_y() + deltay
@@ -1411,7 +1474,9 @@ class TBOPlayer:
             h = self.vprogress_bar_window.winfo_height() + deltay
             try:
                 self.vprogress_bar_window.geometry("%sx%s" % (w, h))
-            except:
+            except Exception:
+                log.logException()
+                sys.exc_clear()
                 self.options.full_screen = 1
                 self.toggle_full_screen()
 
@@ -1428,13 +1493,13 @@ class TBOPlayer:
           not self.vprogress_bar_window): 
             return
         self.vprogress_bar_window.resizing = 0
+        self.save_video_window_coordinates()
 
     def enter_vprogress_bar(self,*event):
         if not self.dbus_connected or self.options.full_screen == 0: return
         screenres = self.get_screen_res()
-        bar_height = self.vprogress_bar_window.bar_height
         try:
-            self.omx.set_video_geometry(0, 0, screenres[0], screenres[1]-bar_height)
+            self.omx.set_video_geometry(0, 0, screenres[0], screenres[1]-self.vprogress_bar.winfo_height())
         except Exception, e:
             self.monitor('      [!] enter_vprogress_bar failed')
             self.monitor(e)
@@ -1463,13 +1528,15 @@ class TBOPlayer:
         screenres = self.get_screen_res()
         if self.options.full_screen == 1: 
             self.options.full_screen = 0
-            vsize = self.omx.video['dimensions']
-            coords_m = self.vprogress_bar_window.coords_re.match(self.options.windowed_mode_coords)
-            if int(coords_m.group(1))>screenres[0] or int(coords_m.group(2))>screenres[1]:
+            width, height = (480, 360)
+            vsize_m = self.RE_RESOLUTION.match(self.options.windowed_mode_resolution)
+            if vsize_m:
+                width, height = [int(i) for i in vsize_m.groups()]
+            coords = self.options.windowed_mode_coords
+            coords_m = self.RE_COORDS.match(coords)
+            if coords_m is None or int(coords_m.group(1))>screenres[0] or int(coords_m.group(2))>screenres[1]:
                 coords = "+200+200"
-            else:
-                coords = self.options.windowed_mode_coords
-            geometry = str(vsize[0]) + "x" + str(vsize[1] + self.vprogress_bar_window.bar_height) + coords
+            geometry = "%dx%d%s" % (width, height + self.vprogress_bar.winfo_height(), coords)
             self.vprogress_bar_window.geometry(geometry)
         else:
             self.options.full_screen = 1
@@ -1490,7 +1557,7 @@ class TBOPlayer:
                     vwindow_x,
                     vwindow_y,
                     vwindow_x + vwindow_width,
-                    vwindow_y + vwindow_height - self.vprogress_bar_window.bar_height,
+                    vwindow_y + vwindow_height - self.vprogress_bar.winfo_height(),
                     )
         except Exception, e:
                 self.monitor('      [!] move_video failed')
@@ -1503,7 +1570,9 @@ class TBOPlayer:
                 self.save_video_window_coordinates()
             self.vprogress_bar_window.destroy()
             self.vprogress_bar_window = None
-        except:
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             self.monitor("Failed trying to destroy video window: video window nonexistent.") 
     
     def get_screen_res(self):
@@ -1512,7 +1581,9 @@ class TBOPlayer:
     def media_is_video(self):
         try:
             return bool(len(self.omx.video))
-        except:
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             return 0;
 
     def focus_root(self, *event):
@@ -1522,8 +1593,11 @@ class TBOPlayer:
     def save_video_window_coordinates(self):
         x = self.vprogress_bar_window.winfo_x()
         y = self.vprogress_bar_window.winfo_y()
-        self.options.windowed_mode_coords = ("+" if x>0 else "")+str(x)+("+" if y>0 else "")+str(y)
-
+        h = self.vprogress_bar_window.winfo_height()
+        w = self.vprogress_bar_window.winfo_width()
+        self.options.windowed_mode_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
+        self.options.windowed_mode_resolution = "%dx%d" % (w, h)
+        log.debug('Saving windowed geometry: "%s%s"' % (self.options.windowed_mode_resolution,self.options.windowed_mode_coords))
 
 # ***************************************
 # VOLUME BAR CALLBACKS
@@ -1551,7 +1625,9 @@ class TBOPlayer:
         if not self.dbus_connected: return
         try:
             self.omx.volume(self.mB2vol(self.get_mB()))
-        except:
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             return False
 
     def get_mB(self): 
@@ -1648,7 +1724,9 @@ class TBOPlayer:
                     self.file_pieces = self.file.split("/")
                     self.playlist.append([self.file, self.file_pieces[-1],'',''])
                     self.track_titles_display.insert(END, self.file_pieces[-1])
-            except:
+            except Exception:
+                log.logException()
+                sys.exc_clear()
                 return
 
 
@@ -1750,9 +1828,26 @@ class TBOPlayer:
         """
         # needs forgiving int for possible tkinter upgrade
         if self.playlist.length()>0:
-            index=int(event.widget.curselection()[0]) if event else 0
+            index = 0
+            if event:
+                sel = event.widget.curselection()
+                if sel:
+                    index=int(sel[0]) if event else 0
             self.playlist.select(index)
             self.display_selected_track(index)
+
+
+    def select_and_play(self, event=None):
+        if not hasattr(self, 'select_and_play_pending'):
+            self.select_and_play_pending = False
+        if self.play_state == self._OMX_CLOSED:
+            self.select_and_play_pending = False
+            self.play_track()
+        elif not self.select_and_play_pending:
+            self.select_and_play_pending = True
+            self.stop_track()
+        if self.select_and_play_pending:
+            self.root.after(100, self.select_and_play)
 
     	
     def select_next_track(self):
@@ -1864,7 +1959,9 @@ class TBOPlayer:
         try:
             tkMessageBox.showinfo("Track Information", self.playlist.selected_track()[PlayList.LOCATION]  +"\n\n"+ 
                                             "Video: " + str(self.omx.video) + "\nAudio: " + str(self.omx.audio) + "\nTime: " + str(self.omx.timenf))
-        except:
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             return
 
 
@@ -1895,6 +1992,7 @@ class Options:
         # create an options file if necessary
         confdir = os.path.expanduser("~") + '/.tboplayer'
         self.options_file = confdir + '/tboplayer.cfg'
+        self.log_file = confdir + '/tboplayer.log'
 
         if os.path.exists(self.options_file):
             self.read(self.options_file)
@@ -1927,6 +2025,7 @@ class Options:
             self.geometry = config.get('config','geometry',0)
             self.full_screen = int(config.get('config','full_screen',0))
             self.windowed_mode_coords = config.get('config','windowed_mode_coords',0)
+            self.windowed_mode_resolution = config.get('config','windowed_mode_resolution',0)
             self.forbid_windowed_mode = int(config.get('config','forbid_windowed_mode',0))
             self.cue_track_mode = int(config.get('config','cue_track_mode',0))
             self.autoplay = int(config.get('config','autoplay',0))
@@ -1940,7 +2039,9 @@ class Options:
                 self.omx_subtitles_option = "-t on"
             else:
                 self.omx_subtitles_option = ""
-        except:
+        except Exception:
+            log.logException()
+            sys.exc_clear()
             self.create(self.options_file)
             self.read(self.options_file)
          
@@ -1963,6 +2064,7 @@ class Options:
         config.set('config','geometry','408x340+350+250')
         config.set('config','full_screen','1')
         config.set('config','windowed_mode_coords','+200+200')
+        config.set('config','windowed_mode_resolution','480x360')
         config.set('config','forbid_windowed_mode','0')
         config.set('config','cue_track_mode','0')
         config.set('config','autoplay','1')
@@ -1988,6 +2090,7 @@ class Options:
         config.set('config','geometry',self.geometry)
         config.set('config','full_screen',self.full_screen)
         config.set('config','windowed_mode_coords',self.windowed_mode_coords)
+        config.set('config','windowed_mode_resolution',self.windowed_mode_resolution)
         config.set('config','forbid_windowed_mode',self.forbid_windowed_mode)
         config.set('config','cue_track_mode',self.cue_track_mode)
         config.set('config','autoplay',self.autoplay)
@@ -2016,6 +2119,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.geometry_var = config.get('config','geometry',0)
         self.full_screen_var = config.get('config','full_screen',0)
         self.windowed_mode_coords_var = config.get('config','windowed_mode_coords',0)
+        self.windowed_mode_resolution_var = config.get('config','windowed_mode_resolution',0)
 
         Label(master, text="Audio Output:").grid(row=0, sticky=W)
         self.audio_var=StringVar()
@@ -2160,6 +2264,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','geometry',self.geometry_var)
         config.set('config','full_screen',self.full_screen_var)
         config.set('config','windowed_mode_coords',self.windowed_mode_coords_var)
+        config.set('config','windowed_mode_resolution',self.windowed_mode_resolution_var)
         config.set('config','forbid_windowed_mode',self.forbid_windowed_mode_var.get())
         config.set('config','cue_track_mode',self.cue_track_mode_var.get())
         config.set('config','autoplay',self.autoplay_var.get())
@@ -2411,9 +2516,12 @@ class YtresultCell(Frame):
         self.video_link = tk.StringVar()
         self.video_link.set("https://www.youtube.com" + link)
         self.add_url = add_url_function
-        try: self.video_name.set(title)
-        except Exception, e: print e
-            
+        try: 
+            self.video_name.set(title)
+        except Exception:
+            log.logException()
+            sys.exc_clear()
+
         self.create_widgets()
 
     def create_widgets(self):
@@ -2478,6 +2586,66 @@ class VerticalScrolledFrame(Frame):
         # also updating the scrollbar    
 
 
+import logging
+import cStringIO
+import traceback
+class Logger(logging.Logger):
+    log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    def __init__(self, name, level=logging.INFO, logFile=None):
+        logging.Logger.__init__(self, name, level=logging.INFO)
+        if logFile is not None:
+            self.setLogFile(logFile)
+        log_sh = logging.StreamHandler()
+        log_sh.setLevel(logging.NOTSET)
+        log_sh.setFormatter(self.log_formatter)
+        self.addHandler(log_sh)
+
+    def setLevelDebug(self):
+        self.setLevel(logging.DEBUG)
+
+    def disableLogging(self):
+        self.setLevel(logging.CRITICAL)
+
+    def logException(self):
+        s = cStringIO.StringIO()
+        traceback.print_exc(file=s)
+        self.error(s.getvalue())
+
+    def setLogFile(self, filePath):
+        log_fh = logging.FileHandler(filePath)
+        log_fh.setFormatter(self.log_formatter)
+        self.addHandler(log_fh)
+# global logger
+log = Logger(__file__)
+
+
+class ExceptionCatcher:
+    '''
+    Exception handler for Tkinter
+    when set to Tkinter.CallWrapper, catches unhandled exceptions thrown by window elements,
+    logs the exception and signals quit to the erroring window.
+    Exiting tboplayer is preferable when errors occure rather than possibly having
+    uncontrollable omxplayer running in fullscreen.
+    '''
+    def __init__(self, func, subst, widget):
+        self.func = func
+        self.subst = subst
+        self.widget = widget
+
+    def __call__(self, *args):
+        try:
+            if self.subst:
+                args = apply(self.subst, args)
+            return apply(self.func, args)
+        except SystemExit, msg:
+            raise SystemExit, msg
+        except Exception:
+            log.logException()
+            log.critical("fatal error, quitting and raising exception.")
+            self.widget.quit()
+            raise
+
 
 
 # ***************************************
@@ -2487,4 +2655,6 @@ class VerticalScrolledFrame(Frame):
 
 if __name__ == "__main__":
     datestring=" 06 Jan 2017"
+    tk.CallWrapper = ExceptionCatcher
     bplayer = TBOPlayer()
+
