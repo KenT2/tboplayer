@@ -1536,7 +1536,7 @@ class TBOPlayer:
             coords_m = self.RE_COORDS.match(coords)
             if coords_m is None or int(coords_m.group(1))>screenres[0] or int(coords_m.group(2))>screenres[1]:
                 coords = "+200+200"
-            geometry = "%dx%d%s" % (width, height + self.vprogress_bar.winfo_height(), coords)
+            geometry = "%dx%d%s" % (width, height, coords)
             self.vprogress_bar_window.geometry(geometry)
         else:
             self.options.full_screen = 1
