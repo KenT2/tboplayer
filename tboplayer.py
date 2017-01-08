@@ -2642,8 +2642,6 @@ class ExceptionCatcher:
             raise SystemExit, msg
         except Exception:
             log.logException()
-            log.critical("fatal error, quitting and raising exception.")
-            self.widget.quit()
             raise
 
 
@@ -2654,7 +2652,7 @@ class ExceptionCatcher:
 
 
 if __name__ == "__main__":
-    datestring=" 06 Jan 2017"
+    datestring=" 08 Jan 2017"
     tk.CallWrapper = ExceptionCatcher
     bplayer = TBOPlayer()
 
