@@ -1843,11 +1843,13 @@ class TBOPlayer:
         if self.play_state == self._OMX_CLOSED:
             self.select_and_play_pending = False
             self.play_track()
+            self.track_titles_display.bind("<Double-1>", self.select_and_play)
         elif not self.select_and_play_pending:
+            self.track_titles_display.unbind("<Double-1>")
             self.select_and_play_pending = True
             self.stop_track()
         if self.select_and_play_pending:
-            self.root.after(100, self.select_and_play)
+            self.root.after(200, self.select_and_play)
 
     	
     def select_next_track(self):
