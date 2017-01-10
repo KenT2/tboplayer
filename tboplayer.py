@@ -1745,9 +1745,10 @@ class TBOPlayer:
 
 
     def add_url(self):
+        cb = self.root.clipboard_get()
         d = EditTrackDialog(self.root,"Add URL",
                                 "Title", "",
-                                "Location", self.root.clipboard_get())
+                                "Location", "" if cb == "" else cb)
         if d.result == None:
             return
         if d.result[0] == '':
