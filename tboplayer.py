@@ -2528,7 +2528,7 @@ class YtresultCell(Frame):
         if "list=" in self.video_link.get():
             self.video_name.set("(playlist) " + self.video_name.get())
         Label(self, font=('Comic Sans', 10),
-                              fg = 'black', wraplength = 300, height = 2,
+                              foreground='black', wraplength = 300, height = 2,
                               textvariable=self.video_name,
                               background="grey").grid(row = 0, column=0, columnspan=2, sticky=W)
         Button(self, width = 5, height = 1, text='Add',
@@ -2638,6 +2638,8 @@ class ExceptionCatcher:
             if self.subst:
                 args = apply(self.subst, args)
             return apply(self.func, args)
+        except dbus.DBusException, msg:
+            raise dbus.DBusException, msg
         except SystemExit, msg:
             raise SystemExit, msg
         except Exception:
@@ -2654,7 +2656,7 @@ class ExceptionCatcher:
 
 
 if __name__ == "__main__":
-    datestring=" 06 Jan 2017"
+    datestring=" 10 Jan 2017"
     tk.CallWrapper = ExceptionCatcher
     bplayer = TBOPlayer()
 
