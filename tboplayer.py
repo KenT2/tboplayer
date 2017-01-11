@@ -2640,7 +2640,7 @@ class ExceptionCatcher:
                 args = apply(self.subst, args)
             return apply(self.func, args)
         except dbus.DBusException, msg:
-            raise dbus.DBusException, msg
+            return
         except SystemExit, msg:
             raise SystemExit, msg
         except Exception:
