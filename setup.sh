@@ -104,6 +104,7 @@ addToAptInstall "dbus" "python-dbus" true
 addToAptInstall "tk" "python-tk" true
 addToAptInstall "gtk" "python-gtk2" true
 addToAptInstall "avconv" "libav-tools" false
+addToAptInstall "tkdnd" "tkdnd" false
 
 echo "* Installing dependencies: "$toaptinstall"..."
 
