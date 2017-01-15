@@ -718,11 +718,11 @@ class TBOPlayer:
             self.monitor("What next, skip to next track")
             self.play_next_track_signal=False
             if self.options.mode=='shuffle':
-            	self.random_next_track()
-            	self.play()
+                self.random_next_track()
+                self.play()
             else:
-            	self.select_next_track()
-            	self.play()
+                self.select_next_track()
+                self.play()
             return
         elif self.play_previous_track_signal ==True:
             self.monitor("What next, skip to previous track")
@@ -1216,6 +1216,9 @@ class TBOPlayer:
             self.select_track(False)
             self.play_track()
 
+        self.dnd = DnD(self.root)
+        self.dnd.bindtarget(self.root, 'text/uri-list', '<Drop>', self.add_drag_drop)
+
         # then start Tkinter event loop
         self.root.mainloop()
 
@@ -1536,7 +1539,7 @@ class TBOPlayer:
             coords_m = self.RE_COORDS.match(coords)
             if coords_m is None or int(coords_m.group(1))>screenres[0] or int(coords_m.group(2))>screenres[1]:
                 coords = "+200+200"
-            geometry = "%dx%d%s" % (width, height + self.vprogress_bar.winfo_height(), coords)
+            geometry = "%dx%d%s" % (width, height, coords)
             self.vprogress_bar_window.geometry(geometry)
         else:
             self.options.full_screen = 1
@@ -1668,14 +1671,23 @@ class TBOPlayer:
     def is_file_supported(self, f):
         return from_file(f, mime=True) in self._SUPPORTED_MIME_TYPES
 
+    def add_drag_drop(self, action, actions, type, win, X, Y, x, y, data):
+        data = self.dnd.tcl_list_to_python_list(data)
+        for item in data:
+            if item.startswith('http'):
+                self._add_url(item)
+            elif os.path.isfile(item):
+                self._add_files([item,])
 
-    def add_track(self):                                
+    def add_track(self, path=None):
         """
         Opens a dialog box to open files,
         then stores the tracks in the playlist.
         """
         # get the filez
-        if self.options.initial_track_dir=='':
+        if path:
+            filez = path
+        elif self.options.initial_track_dir=='':
             filez = tkFileDialog.askopenfilenames(parent=self.root,title='Choose the file(s)')
         else:
             filez = tkFileDialog.askopenfilenames(initialdir=self.options.initial_track_dir,parent=self.root,title='Choose the file(s)')
@@ -1687,6 +1699,10 @@ class TBOPlayer:
         else: 
             return
 
+        self._add_files(filez)
+
+
+    def _add_files(self, filez):
         for f in filez:
             if not os.path.isfile(f) or not self.is_file_supported(f):
                 continue
@@ -1695,14 +1711,14 @@ class TBOPlayer:
             self.playlist.append([self.file, self.file_pieces[-1],'',''])
             self.track_titles_display.insert(END, self.file_pieces[-1])
 
-	# and set the selected track
-	if len(filez)>1:
-	    index = self.playlist.length() - len(filez)
-	else:
-	    index = self.playlist.length() - 1
-	self.playlist.select(index)
-	self.display_selected_track(self.playlist.selected_track_index())
-	
+        # and set the selected track
+        if len(filez)>1:
+            index = self.playlist.length() - len(filez)
+        else:
+            index = self.playlist.length() - 1
+        self.playlist.select(index)
+        self.display_selected_track(self.playlist.selected_track_index())
+
 
     def get_dir(self):
         if self.options.initial_track_dir:
@@ -1751,24 +1767,28 @@ class TBOPlayer:
                                 "Location", "" if cb == "" else cb)
         if d.result == None:
             return
-        if d.result[0] == '':
-            d.result = [d.result[1],d.result[1]]
-        else:
-            d.result = [d.result[1],d.result[0]]
-        if d.result[0] != '':
-            if self.options.download_media_url_upon == "add" and self.ytdl.whether_to_use_youtube_dl(d.result[0]):
-                if self.ytdl_state != self._YTDL_CLOSED or self.ytdl.is_running():
-                    return
-                self.go_ytdl(d.result[0])
-                d.result[1] = self.ytdl.WAIT_TAG + d.result[1]
+        name = d.result[0]
+        url = d.result[1]
+        self._add_url(url, name)
 
-            # append it to the playlist
-            self.playlist.append(d.result)
-            # add title to playlist display
-            self.track_titles_display.insert(END, d.result[1])  
-            # and set it as the selected track
-            self.playlist.select(self.playlist.length()-1)
-            self.display_selected_track(self.playlist.selected_track_index())
+    def _add_url(self, url, name=''):
+        if not url:
+            return
+        if not name:
+            name = url
+        if self.options.download_media_url_upon == "add" and self.ytdl.whether_to_use_youtube_dl(url):
+            if self.ytdl_state != self._YTDL_CLOSED or self.ytdl.is_running():
+                return
+            self.go_ytdl(url)
+            name = self.ytdl.WAIT_TAG + name
+
+        # append it to the playlist
+        self.playlist.append([url, name])
+        # add title to playlist display
+        self.track_titles_display.insert(END, name)
+        # and set it as the selected track
+        self.playlist.select(self.playlist.length()-1)
+        self.display_selected_track(self.playlist.selected_track_index())
 
 
     def youtube_search(self):
@@ -1844,13 +1864,15 @@ class TBOPlayer:
         if self.play_state == self._OMX_CLOSED:
             self.select_and_play_pending = False
             self.play_track()
+            self.track_titles_display.bind("<Double-1>", self.select_and_play)
         elif not self.select_and_play_pending:
+            self.track_titles_display.unbind("<Double-1>")
             self.select_and_play_pending = True
             self.stop_track()
         if self.select_and_play_pending:
-            self.root.after(100, self.select_and_play)
+            self.root.after(200, self.select_and_play)
 
-    	
+
     def select_next_track(self):
         if self.playlist.length()>0:
             if self.start_track_index == None: 
@@ -1862,14 +1884,14 @@ class TBOPlayer:
             self.playlist.select(index)
             self.display_selected_track(index)
 
-    	
+
     def random_next_track(self):
         if self.playlist.length()>0:
             index = self.start_track_index = randint(0,self.playlist.length()-1)
             self.playlist.select(index)
             self.display_selected_track(index)
 
-    	
+
     def select_previous_track(self):
         if self.playlist.length()>0:
             if self.start_track_index == None: 
@@ -2650,6 +2672,54 @@ class ExceptionCatcher:
             raise
 
 
+class DnD:
+    '''
+    Python wrapper for the tkDnD tk extension.
+    source: https://mail.python.org/pipermail/tkinter-discuss/2005-July/000476.html
+    '''
+    _subst_format = ('%A', '%a', '%T', '%W', '%X', '%Y', '%x', '%y','%D')
+    _subst_format_str = " ".join(_subst_format)
+
+    def __init__(self, tkroot):
+        self._tkroot = tkroot
+        tkroot.tk.eval('package require tkdnd')
+
+    def bindtarget(self, widget, type=None, sequence=None, command=None, priority=50):
+        command = self._generate_callback(command, self._subst_format)
+        tkcmd = self._generate_tkcommand('bindtarget', widget, type, sequence, command, priority)
+        res = self._tkroot.tk.eval(tkcmd)
+        if type == None:
+            res = res.split()
+        return res
+
+    def cleartarget(self, widget):
+        '''Unregister widget as drop target.'''
+        self._tkroot.tk.call('dnd', 'cleartarget', widget)
+
+    def _generate_callback(self, command, arguments):
+        '''Register command as tk callback with an optional list of arguments.'''
+        cmd = None
+        if command:
+            cmd = self._tkroot._register(command)
+            if arguments:
+                cmd = '{%s %s}' % (cmd, ' '.join(arguments))
+        return cmd
+
+    def _generate_tkcommand(self, base, widget, *opts):
+        '''Create the command string that will be passed to tk.'''
+        tkcmd = 'dnd %s %s' % (base, widget)
+        for i in opts:
+            if i is not None:
+                tkcmd += ' %s' % i
+        return tkcmd
+
+    def tcl_list_to_python_list(self, lst):
+        tk_inst = self._tkroot.tk.eval
+        tcl_list_len = int(tk_inst("set lst {%s}; llength $lst" % lst))
+        result = []
+        for i in range(tcl_list_len):
+            result.append(tk_inst("lindex $lst %d" % i))
+        return result
 
 # ***************************************
 # MAIN
