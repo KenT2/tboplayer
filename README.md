@@ -29,8 +29,8 @@ Install dependencies
 
 Type this into the terminal to install TBOPlayer's dependencies:
 
-        # install pip, gobject, dbus, tk, gtk, requests, avconv, ffmpeg
-        sudo apt-get install -y python-pip python-gobject-2 python-dbus python-tk python-gtk2 python-requests libav-tools
+        # install pip, gobject, dbus, tk, gtk, requests, avconv, ffmpeg, tkdnd
+        sudo apt-get install -y python-pip python-gobject-2 python-dbus python-tk python-gtk2 python-requests libav-tools tkdnd
         # install pexpect, ptyprocess, magic
         yes | pip install --user pexpect ptyprocess python-magic
         # install youtube-dl
@@ -83,6 +83,8 @@ Buttons
 * `Progress bar` - Show/Seek position
 
 * `Resize video` - At the right side of the video progress bar, allows resizing video
+
+* `Playlist` - Can be clicked over to play a track, and can be used to add tracks by 'drag and dropping' files over
 
 Menus
 -----
