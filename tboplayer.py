@@ -2727,7 +2727,7 @@ class DnD:
 
 
 if __name__ == "__main__":
-    datestring=" 10 Jan 2017"
+    datestring=" 14 Jan 2017"
     tk.CallWrapper = ExceptionCatcher
     bplayer = TBOPlayer()
 
