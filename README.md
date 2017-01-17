@@ -80,11 +80,11 @@ Buttons
 
 * `- VOL +` - Minus/plus volume control
 
+* `Playlist` - Can be clicked over to play a track, and can be used to add tracks by 'drag and dropping' files over
+
 * `Progress bar` - Show/Seek position
 
 * `Resize video` - At the right side of the video progress bar, allows resizing video
-
-* `Playlist` - Can be clicked over to play a track, and can be used to add tracks by 'drag and dropping' files over
 
 Menus
 -----
