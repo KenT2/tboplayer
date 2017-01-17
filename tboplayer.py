@@ -907,20 +907,22 @@ class TBOPlayer:
         track= "'"+ track.replace("'","'\\''") + "'"
         opts= (self.options.omx_user_options + " " + self.options.omx_audio_option + " " +
                                                         self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
-        if not self.options.full_screen and '--win' not in opts:
-            mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
+
+        if not self.options.forbid_windowed_mode and not self.options.full_screen and '--win' not in opts:
+	    mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
             mg = self.RE_RESOLUTION.match(self.options.windowed_mode_resolution)
             if mc and mg:
                 w, h, x, y = [int(v) for v in mg.groups()+mc.groups()]
                 opts += ' --win %d,%d,%d,%d' % (x, y, x+w, y+h)
 
-        if not '--aspect-mode' in opts:
+        if not self.options.forbid_windowed_mode or not '--aspect-mode' in opts:
             opts += ' --aspect-mode letterbox'
             
         if not '--no-osd' in opts:
             opts += ' --no-osd'
 
         log.debug('starting omxplayer with args: "%s"' % (opts,))
+	
         self.omx = OMXPlayer(track, args=opts, start_playback=True)
 
         self.monitor("            >Play: " + track + " with " + opts)
@@ -1016,7 +1018,7 @@ class TBOPlayer:
                 "video/3gpp2", "video/x-f4v", "application/ogg", "audio/mpeg3", "audio/x-mpeg-3", 
                 "audio/x-mpeg", "audio/mod", "audio/x-mod", "video/x-ms-asf", "audio/x-pn-realaudio",
                 "audio/x-realaudio", "video/vnd.rn-realvideo", "video/fli", "video/x-fli", "audio/x-ms-wmv"
-                "video/avi", "video/msvideo", "audio/x-wav", "video/m4v", "audio/x-ms-wma")
+                "video/avi", "video/msvideo", "video/m4v", "audio/x-ms-wma")
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -2727,7 +2729,7 @@ class DnD:
 
 
 if __name__ == "__main__":
-    datestring=" 14 Jan 2017"
+    datestring=" 17 Jan 2017"
     tk.CallWrapper = ExceptionCatcher
     bplayer = TBOPlayer()
 
