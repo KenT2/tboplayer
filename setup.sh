@@ -15,7 +15,7 @@ SUPPORTED_TYPES=('video/x-msvideo' 'video/quicktime' 'video/mp4'
                 'audio/x-mod' 'video/x-ms-asf' 'audio/x-pn-realaudio' 
                 'audio/x-realaudio' 'video/vnd.rn-realvideo' 'video/fli' 
                 'video/x-fli' 'audio/x-ms-wmv' 'video/avi' 'video/msvideo' 
-                'audio/x-wav' 'video/m4v' 'audio/x-ms-wma' 'video/x-f4v')
+                'video/m4v' 'audio/x-ms-wma' 'video/x-f4v')
 DESKTOP_ENTRIES=($DESKTOP_PATH/tboplayer.desktop 
 		/usr/share/applications/tboplayer.desktop)
 
@@ -39,7 +39,7 @@ if [ "$1" == "uninstall" ]; then
             echo ""
             echo "* Removing TBOPlayer dependencies..."
             yes | pip uninstall pexpect ptyprocess python-magic >/dev/null 2>&1
-            sudo apt-get -y remove python-gobject-2 python-dbus python-tk python-gtk2 python-requests >/dev/null 2>&1
+            sudo apt-get -y remove python-gobject-2 python-dbus python-tk python-gtk2 python-requests tkdnd >/dev/null 2>&1
             sudo rm -f /usr/local/bin/youtube-dl >/dev/null 2>&1
         fi
         echo ""
