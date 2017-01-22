@@ -915,7 +915,7 @@ class TBOPlayer:
                 w, h, x, y = [int(v) for v in mg.groups()+mc.groups()]
                 opts += ' --win %d,%d,%d,%d' % (x, y, x+w, y+h)
 
-        if not self.options.forbid_windowed_mode or not '--aspect-mode' in opts:
+        if not not '--aspect-mode' in opts:
             opts += ' --aspect-mode letterbox'
             
         if not '--no-osd' in opts:
