@@ -562,10 +562,10 @@ class TBOPlayer:
                 self.set_progress_bar()
                 if self.media_is_video() and not self.options.forbid_windowed_mode:
                     self.create_vprogress_bar()
+                    if self.dbus_connected:
+                        self.omx.set_aspect_mode(OMXPlayer.AM_LETTERBOX)
                 if self.options.cue_track_mode:
                     self.toggle_pause()
-                if self.dbus_connected:
-                    self.omx.set_aspect_mode(OMXPlayer.AM_LETTERBOX)
             else:
                 self.monitor("      OMXPlayer did not start yet.")
             self.root.after(350, self.play_state_machine)
@@ -907,23 +907,23 @@ class TBOPlayer:
         track= "'"+ track.replace("'","'\\''") + "'"
         opts= (self.options.omx_user_options + " " + self.options.omx_audio_option + " " +
                                                         self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
+        if self.media_is_video():
+            if not self.options.forbid_windowed_mode and not self.options.full_screen and '--win' not in opts:
+	        mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
+                mg = self.RE_RESOLUTION.match(self.options.windowed_mode_resolution)
+                if mc and mg:
+                    w, h, x, y = [int(v) for v in mg.groups()+mc.groups()]
+                    opts += ' --win %d,%d,%d,%d' % (x, y, x+w, y+h)
 
-        if not self.options.forbid_windowed_mode and not self.options.full_screen and '--win' not in opts:
-	    mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
-            mg = self.RE_RESOLUTION.match(self.options.windowed_mode_resolution)
-            if mc and mg:
-                w, h, x, y = [int(v) for v in mg.groups()+mc.groups()]
-                opts += ' --win %d,%d,%d,%d' % (x, y, x+w, y+h)
-
-        if not not '--aspect-mode' in opts:
-            opts += ' --aspect-mode letterbox'
+            if not not '--aspect-mode' in opts:
+                opts += ' --aspect-mode letterbox'
             
-        if not '--no-osd' in opts:
-            opts += ' --no-osd'
+            if not '--no-osd' in opts:
+                opts += ' --no-osd'
 
-        log.debug('starting omxplayer with args: "%s"' % (opts,))
-	
-        self.omx = OMXPlayer(track, args=opts, start_playback=True)
+            log.debug('starting omxplayer with args: "%s"' % (opts,))
+
+	self.omx = OMXPlayer(track, args=opts, start_playback=True)
 
         self.monitor("            >Play: " + track + " with " + opts)
 
@@ -1584,13 +1584,8 @@ class TBOPlayer:
         return (screen_width(), screen_height())
 
     def media_is_video(self):
-        try:
-            return bool(len(self.omx.video))
-        except Exception:
-            log.logException()
-            sys.exc_clear()
-            return 0;
-
+        return hasattr(self,"omx") and hasattr(self.omx, "video") and len(self.omx.video) > 0
+        
     def focus_root(self, *event):
         self.root.focus()
         return
@@ -2729,7 +2724,6 @@ class DnD:
 
 
 if __name__ == "__main__":
-    datestring=" 17 Jan 2017"
+    datestring=" 23 Jan 2017"
     tk.CallWrapper = ExceptionCatcher
     bplayer = TBOPlayer()
-
