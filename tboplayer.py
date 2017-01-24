@@ -1399,7 +1399,9 @@ class TBOPlayer:
         screenres = self.get_screen_res()
         vsize = self.omx.video['dimensions']
 
-        self.vprogress_bar_window = Toplevel(master=self.root, bg="black")
+        self.vprogress_bar_window = Toplevel(master=self.root)
+        self.vprogress_bar_frame = Frame(self.vprogress_bar_window, bg="black")
+        self.vprogress_bar_frame.pack(fill=BOTH,side=TOP, expand=True)
         
         #defne response to main window closing
         self.vprogress_bar_window.protocol ("WM_DELETE_WINDOW", self.app_exit) 
@@ -1426,25 +1428,26 @@ class TBOPlayer:
                                                                         maximum=self.progress_bar_total_steps, variable=self.progress_bar_var,
                                                                         style="progressbar.Horizontal.TProgressbar")
 
-        self.vprogress_bar.pack(fill=BOTH,side=BOTTOM)
+        self.vprogress_bar.pack(in_=self.vprogress_bar_frame, fill=BOTH,side=BOTTOM)
+        self.vprogress_bar.lower(self.vprogress_bar_frame)
         self.root.update()
 
         self.vprogress_bar.bind("<ButtonRelease-1>", self.set_track_position)
-        self.vprogress_bar.bind("<Enter>", self.enter_vprogress_bar)
-        self.vprogress_bar.bind("<Leave>", self.leave_vprogress_bar)
         self.vprogress_bar_window.bind("<Configure>", self.move_video)
         self.vprogress_bar_window.bind("<ButtonPress-1>", self.vwindow_start_move)
         self.vprogress_bar_window.bind("<ButtonRelease-1>", self.vwindow_stop_move)
         self.vprogress_bar_window.bind("<B1-Motion>", self.vwindow_motion)
         self.vprogress_bar_window.bind("<Double-Button-1>", self.toggle_full_screen)
+        self.vprogress_bar_window.bind("<Motion>", self.vwindow_show_and_hide)
         
         # Resize widget, placed in the lower right corner over the progress bar, not ideal.
-        grip = Sizegrip(self.vprogress_bar_window)
-        grip.place(relx=1.0, rely=1.0, anchor="se")
-        grip.lift(self.vprogress_bar)
-        grip.bind("<ButtonPress-1>", self.vwindow_start_resize)
-        grip.bind("<ButtonRelease-1>", self.vwindow_stop_resize)
-        grip.bind("<B1-Motion>", self.vwindow_motion)
+        self.vprogress_grip = Sizegrip(self.vprogress_bar_window)
+        self.vprogress_grip.place(relx=1.0, rely=1.0, anchor="se")
+        self.vprogress_grip.lower(self.vprogress_bar_frame)
+        self.vprogress_grip.bind("<ButtonPress-1>", self.vwindow_start_resize)
+        self.vprogress_grip.bind("<ButtonRelease-1>", self.vwindow_stop_resize)
+        self.vprogress_grip.bind("<B1-Motion>", self.vwindow_motion)
+
 
         self.vprogress_bar_window.protocol ("WM_TAKE_FOCUS", self.focus_root)
 
@@ -1500,24 +1503,33 @@ class TBOPlayer:
         self.vprogress_bar_window.resizing = 0
         self.save_video_window_coordinates()
 
-    def enter_vprogress_bar(self,*event):
-        if not self.dbus_connected or self.options.full_screen == 0: return
-        screenres = self.get_screen_res()
-        try:
-            self.omx.set_video_geometry(0, 0, screenres[0], screenres[1]-self.vprogress_bar.winfo_height())
-        except Exception, e:
-            self.monitor('      [!] enter_vprogress_bar failed')
-            self.monitor(e)
+    def vwindow_show_and_hide(self, event):
+        self.vprogress_bar.lift(self.vprogress_bar_frame)
+        if not self.options.full_screen:
+            self.vprogress_grip.lift(self.vprogress_bar)
+        self.move_video(pbar=True)
+        if not hasattr(self, '_vwindow_show_and_hide_flag'):
+            self._vwindow_show_and_hide_flag = None
+        if self._vwindow_show_and_hide_flag is None:
+            self._vwindow_show_and_hide_flag = self.root.after(3000, self.vwindow_hide)
+        else:
+            # refresh timer
+            self.root.after_cancel(self._vwindow_show_and_hide_flag)
+            self._vwindow_show_and_hide_flag = self.root.after(3000, self.vwindow_hide)
 
-    def leave_vprogress_bar(self,*event):
-        if self.options.full_screen == 0: return
-        self.set_full_screen()
+    def vwindow_hide(self):
+        if self.play_state == self._OMX_PLAYING:
+            self._vwindow_show_and_hide_flag = None
+            self.vprogress_bar.lower(self.vprogress_bar_frame)
+            self.vprogress_grip.lower(self.vprogress_bar_frame)
+            self.move_video(pbar=False)
 
     def set_full_screen(self,*event):
         if not self.dbus_connected: return
         screenres = self.get_screen_res()
         try:
             self.omx.set_video_geometry(0, 0, screenres[0], screenres[1])
+            self.vprogress_grip.lower(self.vprogress_bar_frame)
         except Exception, e:
             self.monitor('      [!] set_full_screen failed')
             self.monitor(e)
@@ -1549,21 +1561,26 @@ class TBOPlayer:
             geometry = "%dx%d+%d+%d" % ( screenres[0], screenres[1], 0, 0)
             self.vprogress_bar_window.geometry(geometry)
             self.set_full_screen()
+            self.vprogress_grip.lower(self.vprogress_bar_frame)
         self.focus_root()
 
-    def move_video(self,*event):
-        if not self.dbus_connected or self.options.full_screen == 1: return
-        vwindow_width = self.vprogress_bar_window.winfo_width()
-        vwindow_height = self.vprogress_bar_window.winfo_height()
-        vwindow_x = self.vprogress_bar_window.winfo_x()
-        vwindow_y = self.vprogress_bar_window.winfo_y()
+    def move_video(self,event=None, pbar=True):
+        if not self.dbus_connected:
+            return
+        if not self.options.full_screen:
+            w = self.vprogress_bar_window.winfo_width()
+            h = self.vprogress_bar_window.winfo_height()
+            x1 = self.vprogress_bar_window.winfo_x()
+            y1 = self.vprogress_bar_window.winfo_y()
+        else:
+            w, h= self.get_screen_res()
+            x1 = y1 = 0
+        x2 = w+x1
+        y2 = h+y1
+        if pbar:
+            y2 -= self.vprogress_bar.winfo_height()
         try:
-            self.omx.set_video_geometry(
-                    vwindow_x,
-                    vwindow_y,
-                    vwindow_x + vwindow_width,
-                    vwindow_y + vwindow_height - self.vprogress_bar.winfo_height(),
-                    )
+            self.omx.set_video_geometry(x1, y1, x2, y2)
         except Exception, e:
                 self.monitor('      [!] move_video failed')
                 self.monitor(e)
@@ -2664,9 +2681,7 @@ class ExceptionCatcher:
             raise SystemExit, msg
         except Exception:
             log.logException()
-            log.critical("fatal error, quitting and raising exception.")
-            self.widget.quit()
-            raise
+            sys.exc_clear()
 
 
 class DnD:
