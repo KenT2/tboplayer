@@ -1429,7 +1429,6 @@ class TBOPlayer:
                                                                         style="progressbar.Horizontal.TProgressbar")
 
         self.vprogress_bar.pack(in_=self.vprogress_bar_frame, fill=BOTH,side=BOTTOM)
-        self.vprogress_bar.lower(self.vprogress_bar_frame)
         self.root.update()
 
         self.vprogress_bar.bind("<ButtonRelease-1>", self.set_track_position)
@@ -1443,14 +1442,12 @@ class TBOPlayer:
         # Resize widget, placed in the lower right corner over the progress bar, not ideal.
         self.vprogress_grip = Sizegrip(self.vprogress_bar_window)
         self.vprogress_grip.place(relx=1.0, rely=1.0, anchor="se")
-        self.vprogress_grip.lower(self.vprogress_bar_frame)
         self.vprogress_grip.bind("<ButtonPress-1>", self.vwindow_start_resize)
         self.vprogress_grip.bind("<ButtonRelease-1>", self.vwindow_stop_resize)
         self.vprogress_grip.bind("<B1-Motion>", self.vwindow_motion)
 
-
         self.vprogress_bar_window.protocol ("WM_TAKE_FOCUS", self.focus_root)
-
+        self.vwindow_show_and_hide()
         
     def vwindow_start_move(self, event):
         if self.options.full_screen == 1: return
@@ -1503,7 +1500,7 @@ class TBOPlayer:
         self.vprogress_bar_window.resizing = 0
         self.save_video_window_coordinates()
 
-    def vwindow_show_and_hide(self, event):
+    def vwindow_show_and_hide(self, *event):
         self.vprogress_bar.lift(self.vprogress_bar_frame)
         if not self.options.full_screen:
             self.vprogress_grip.lift(self.vprogress_bar)
@@ -2739,6 +2736,6 @@ class DnD:
 
 
 if __name__ == "__main__":
-    datestring=" 23 Jan 2017"
+    datestring=" 25 Jan 2017"
     tk.CallWrapper = ExceptionCatcher
     bplayer = TBOPlayer()
