@@ -2504,10 +2504,12 @@ class YoutubeSearchDialog(tkSimpleDialog.Dialog):
         return self.field1
 
     def search(self, page = 0):
+        fvalue = self.field1.get()
+        if fvalue == "": return
         self.clear_search()
         self.page_var.set(self.page_lbl + str(page + 1))
         pages = [ "SAD", "SBT", "SCj" ]
-        terms = self.field1.get().decode('latin1').encode('utf8')
+        terms = fvalue.decode('latin1').encode('utf8')
         searchurl = ("https://www.youtube.com/results?search_query=" + quote_plus(terms) + 
                               "&sp=" + pages[page] + "qAwA%253D")
         pagesrc = requests.get(searchurl).text
@@ -2527,7 +2529,8 @@ class YoutubeSearchDialog(tkSimpleDialog.Dialog):
 
     def show_result(self, result):
         for r in result:
-            self.result_cells.append(YtresultCell(self.frame.interior,self.add_url,r[0],r[1]))
+            if r[0] != "" and r[1] != "":
+                self.result_cells.append(YtresultCell(self.frame.interior,self.add_url,r[0],r[1]))
         return
 
     def clear_search(self):
