@@ -2485,12 +2485,13 @@ class YoutubeSearchDialog(tkSimpleDialog.Dialog):
                               foreground='black', command = self.clear_search, 
                               background='light grey').grid(row=1, column=1)
 
-        page_var = tk.StringVar()
-        page_var.set("Page:")
+        self.page_lbl = "Page: "
+        self.page_var = tk.StringVar()
+        self.page_var.set(self.page_lbl)
 
         Label(master, font=('Comic Sans', 9),
                               fg = 'black', wraplength = 100,
-                              textvariable=page_var,
+                              textvariable=self.page_var,
                               background="light grey").grid(row=0, column=2)
         page_btn = Button(master, width = 5, height = 1, text = '1 | 2 | 3',
                               foreground='black',background='light grey')
@@ -2504,6 +2505,7 @@ class YoutubeSearchDialog(tkSimpleDialog.Dialog):
 
     def search(self, page = 0):
         self.clear_search()
+        self.page_var.set(self.page_lbl + str(page + 1))
         pages = [ "SAD", "SBT", "SCj" ]
         terms = self.field1.get().decode('latin1').encode('utf8')
         searchurl = ("https://www.youtube.com/results?search_query=" + quote_plus(terms) + 
