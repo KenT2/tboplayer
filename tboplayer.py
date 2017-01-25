@@ -2474,7 +2474,7 @@ class YoutubeSearchDialog(tkSimpleDialog.Dialog):
         tkSimpleDialog.Dialog.__init__(self, parent, "Youtube search")
 
     def body(self, master):
-        self.geometry("450x350")
+        self.geometry("450x370")
         self.field1 = Entry(master)
         self.field1.grid(row=0, column=0)
 
@@ -2483,21 +2483,45 @@ class YoutubeSearchDialog(tkSimpleDialog.Dialog):
                               background='light grey').grid(row=0, column=1)
         Button(master, width = 5, height = 1, text = 'Clear',
                               foreground='black', command = self.clear_search, 
-                              background='light grey').grid(row=0, column=2)
+                              background='light grey').grid(row=1, column=1)
 
+        page_var = tk.StringVar()
+        page_var.set("Page:")
+
+        Label(master, font=('Comic Sans', 9),
+                              fg = 'black', wraplength = 100,
+                              textvariable=page_var,
+                              background="light grey").grid(row=0, column=2)
+        page_btn = Button(master, width = 5, height = 1, text = '1 | 2 | 3',
+                              foreground='black',background='light grey')
+        page_btn.grid(row=1, column=2)
+        page_btn.bind("<ButtonRelease-1>", self.searchPage)
         self.frame = VerticalScrolledFrame(master)
-        self.frame.grid(row=1,column=0,columnspan=3,rowspan=6)
+        self.frame.grid(row=2,column=0,columnspan=3,rowspan=6)
         self.frame.configure_scrolling()
+
         return self.field1
 
-    def search(self):
+    def search(self, page = 0):
         self.clear_search()
+        pages = [ "SAD", "SBT", "SCj" ]
         terms = self.field1.get().decode('latin1').encode('utf8')
-        searchurl = "https://www.youtube.com/results?search_query=" + quote_plus(terms)
+        searchurl = ("https://www.youtube.com/results?search_query=" + quote_plus(terms) + 
+                              "&sp=" + pages[page] + "qAwA%253D")
         pagesrc = requests.get(searchurl).text
         parser = YtsearchParser()
         parser.feed(pagesrc)
         self.show_result(parser.result)
+
+    def searchPage(self, event):
+        wwidth = event.widget.winfo_width()
+        if event.x < wwidth/3:
+            page = 0
+        elif event.x < 2*(wwidth/3):
+            page = 1
+        else:
+            page = 2
+        self.search(page)
 
     def show_result(self, result):
         for r in result:
