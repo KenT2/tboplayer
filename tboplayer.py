@@ -920,7 +920,7 @@ class TBOPlayer:
                                                         self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
         if self.media_is_video():
             if not self.options.forbid_windowed_mode and not self.options.full_screen and '--win' not in opts:
-	        mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
+                mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
                 mg = self.RE_RESOLUTION.match(self.options.windowed_mode_resolution)
                 if mc and mg:
                     w, h, x, y = [int(v) for v in mg.groups()+mc.groups()]
@@ -1001,8 +1001,11 @@ class TBOPlayer:
         self.init_play_state_machine()
 
         # start and configure ytdl object
+        def ytdl_not_found():
+            tkMessageBox.showinfo("",("youtube-dl cannot be found in the path configured "
+                              + "in the options, please check your configuration"))
         f = open(os.path.dirname(os.path.realpath(sys.argv[0])) + "/yt-dl_supported_sites", "r")
-        self.ytdl = Ytdl(self.options, loads(f.read()), self.ytdl_not_found)
+        self.ytdl = Ytdl(self.options, loads(f.read()), ytdl_not_found)
         f.close()
 
         #create the internal playlist
@@ -1028,7 +1031,7 @@ class TBOPlayer:
                 "application/mp4", "audio/ogg", "video/ogg", "audio/x-wav", "audio/flac", "video/h261", 
                 "video/3gpp2", "video/x-f4v", "application/ogg", "audio/mpeg3", "audio/x-mpeg-3", 
                 "audio/x-mpeg", "audio/mod", "audio/x-mod", "video/x-ms-asf", "audio/x-pn-realaudio",
-                "audio/x-realaudio", "video/vnd.rn-realvideo", "video/fli", "video/x-fli", "audio/x-ms-wmv"
+                "audio/x-realaudio", "video/vnd.rn-realvideo", "video/fli", "video/x-fli", "audio/x-ms-wmv",
                 "video/avi", "video/msvideo", "video/m4v", "audio/x-ms-wma")
 
         # bind some display fields
@@ -1818,9 +1821,6 @@ class TBOPlayer:
         self.playlist.select(self.playlist.length()-1)
         self.display_selected_track(self.playlist.selected_track_index())
 
-    def ytdl_not_found(self):
-        tkMessageBox.showinfo("","youtube-dl cannot be fonud in the path configured in the options, please check your configuration")
-
     def youtube_search(self):
         def add_url_from_search(link):
             if self.ytdl_state != self._YTDL_CLOSED: return
@@ -2115,7 +2115,7 @@ class Options:
         config.set('config','download_media_url_upon','add')
         config.set('config','youtube_video_quality','medium')
         config.set('config','geometry','408x340+350+250')
-        config.set('config','full_screen','1')
+        config.set('config','full_screen','0')
         config.set('config','windowed_mode_coords','+200+200')
         config.set('config','windowed_mode_resolution','480x360')
         config.set('config','forbid_windowed_mode','0')
