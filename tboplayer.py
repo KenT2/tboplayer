@@ -183,6 +183,10 @@ class OMXPlayer(object):
                 self.timenf['duration'] = int(duration[0]) * 3600 + int(duration[1]) * 60 + float(duration[2])
                 self.timenf['start'] = time_props[1]
                 self.timenf['bitrate'] = time_props[2]
+            else:
+                self.timenf['duration'] = -1
+                self.timenf['start'] = -1
+                self.timenf['bitrate'] = -1
 
             # Get file properties
             file_props = self._FILEPROP_REXP.search(output)
@@ -921,7 +925,7 @@ class TBOPlayer:
             if not '--no-osd' in opts:
                 opts += ' --no-osd'
 
-            log.debug('starting omxplayer with args: "%s"' % (opts,))
+            self.monitor('starting omxplayer with args: "%s"' % (opts,))
 
 	self.omx = OMXPlayer(track, args=opts, start_playback=True)
 
@@ -981,8 +985,8 @@ class TBOPlayer:
 
         if self.options.debug:
             log.setLogFile(self.options.log_file)
-            log.setLevelDebug()
-            log.debug('started logging to file "%s"' % (self.options.log_file,))
+            log.enableLogging()
+            self.monitor('started logging to file "%s"' % (self.options.log_file,))
         else:
             log.disableLogging()
 
@@ -1611,7 +1615,7 @@ class TBOPlayer:
         w = self.vprogress_bar_window.winfo_width()
         self.options.windowed_mode_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
         self.options.windowed_mode_resolution = "%dx%d" % (w, h)
-        log.debug('Saving windowed geometry: "%s%s"' % (self.options.windowed_mode_resolution,self.options.windowed_mode_coords))
+        self.monitor('Saving windowed geometry: "%s%s"' % (self.options.windowed_mode_resolution,self.options.windowed_mode_coords))
 
 # ***************************************
 # VOLUME BAR CALLBACKS
@@ -1688,7 +1692,12 @@ class TBOPlayer:
             if item.startswith('http'):
                 self._add_url(item)
             elif os.path.isfile(item):
-                self._add_files([item,])
+                if item.endswith('.csv'):
+                    self.open_list(item)
+                else:
+                    self._add_files([item,])
+            elif os.path.isdir(item):
+                self.ajoute(item, False)
 
     def add_track(self, path=None):
         """
@@ -2276,6 +2285,10 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         return None    # no initial focus
 
     def apply(self):
+        if self.debug_var.get():
+            log.setLevel(logging.DEBUG)
+        else:
+            log.disableLogging()
         self.save_options()
         return True
 
@@ -2664,11 +2677,11 @@ class Logger(logging.Logger):
         log_sh.setFormatter(self.log_formatter)
         self.addHandler(log_sh)
 
-    def setLevelDebug(self):
+    def enableLogging(self):
         self.setLevel(logging.DEBUG)
 
     def disableLogging(self):
-        self.setLevel(logging.CRITICAL)
+        self.setLevel(logging.ERROR)
 
     def logException(self):
         s = cStringIO.StringIO()
@@ -2677,6 +2690,7 @@ class Logger(logging.Logger):
 
     def setLogFile(self, filePath):
         log_fh = logging.FileHandler(filePath)
+        log_fh.setLevel(logging.ERROR)
         log_fh.setFormatter(self.log_formatter)
         self.addHandler(log_fh)
 # global logger
