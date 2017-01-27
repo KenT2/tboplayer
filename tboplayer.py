@@ -327,8 +327,9 @@ class Ytdl:
     start_signal = False
     end_signal = False
     
-    def __init__(self, options, supported_services):
+    def __init__(self, options, supported_services, yt_not_found_callback):
         self.set_options(options)
+        self.yt_not_found_callback = yt_not_found_callback
         self._background_thread = Thread(target=self._compile_regexps,args=supported_services)
         self._background_thread.start()
 
@@ -392,8 +393,12 @@ class Ytdl:
         self._process = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
         self._spawn_thread()
  
-    def whether_to_use_youtube_dl(self,url): 
-        return url[:4] == "http" and any(regxp.match(url) for regxp in self._SERVICES_REGEXPS)
+    def whether_to_use_youtube_dl(self, url): 
+        to_use = url[:4] == "http" and any(regxp.match(url) for regxp in self._SERVICES_REGEXPS)
+        if to_use and not os.path.isfile(self._YTLOCATION):
+            self.yt_not_found_callback();
+            return False
+        return to_use
 
     def is_running(self):
         return self._process is not None and self._process.isalive()
@@ -409,6 +414,8 @@ class Ytdl:
         self._process.terminate(force=True)
     
     def check_for_update(self, callback):
+        if not os.path.isfile(self._YTLOCATION):
+            return False;
         try:
             versionsurl = "http://rg3.github.io/youtube-dl/update/versions.json"
             versions = loads(requests.get(versionsurl).text)
@@ -995,7 +1002,7 @@ class TBOPlayer:
 
         # start and configure ytdl object
         f = open(os.path.dirname(os.path.realpath(sys.argv[0])) + "/yt-dl_supported_sites", "r")
-        self.ytdl = Ytdl(self.options, loads(f.read()))
+        self.ytdl = Ytdl(self.options, loads(f.read()), self.ytdl_not_found)
         f.close()
 
         #create the internal playlist
@@ -1796,6 +1803,7 @@ class TBOPlayer:
             return
         if not name:
             name = url
+
         if self.options.download_media_url_upon == "add" and self.ytdl.whether_to_use_youtube_dl(url):
             if self.ytdl_state != self._YTDL_CLOSED or self.ytdl.is_running():
                 return
@@ -1810,6 +1818,8 @@ class TBOPlayer:
         self.playlist.select(self.playlist.length()-1)
         self.display_selected_track(self.playlist.selected_track_index())
 
+    def ytdl_not_found(self):
+        tkMessageBox.showinfo("","youtube-dl cannot be fonud in the path configured in the options, please check your configuration")
 
     def youtube_search(self):
         def add_url_from_search(link):
@@ -2779,6 +2789,6 @@ class DnD:
 
 
 if __name__ == "__main__":
-    datestring=" 25 Jan 2017"
+    datestring=" 27 Jan 2017"
     tk.CallWrapper = ExceptionCatcher
     bplayer = TBOPlayer()
