@@ -1424,7 +1424,6 @@ class TBOPlayer:
         self.vprogress_bar_window.video_width = int(vsize[0] * (screenres[1] / float(vsize[1])))
         self.vprogress_bar_window.resizing = 0
         
-        
         if self.vprogress_bar_window.video_width > screenres[0] + 20:
             self.vprogress_bar_window.video_width = screenres[0]
             self.vprogress_bar_window.video_height = int(vsize[1] * (screenres[0] / float(vsize[0])))
@@ -1432,7 +1431,11 @@ class TBOPlayer:
         if self.options.full_screen:
             geometry = "%dx%d-0-0" % screenres
         else:
-            geometry = self.options.windowed_mode_resolution + self.options.windowed_mode_coords
+            coords = self.options.windowed_mode_coords
+            coords_m = self.RE_COORDS.match(coords)
+            if coords_m is None or int(coords_m.group(1))>screenres[0] or int(coords_m.group(2))>screenres[1]:
+                coords = "+200+200"
+            geometry = self.options.windowed_mode_resolution + coords
 
         self.vprogress_bar_window.geometry(geometry)
         self.vprogress_bar_window.overrideredirect(1)
@@ -1498,6 +1501,7 @@ class TBOPlayer:
                 sys.exc_clear()
                 self.options.full_screen = 1
                 self.toggle_full_screen()
+        self.vwindow_show_and_hide()
 
     def vwindow_start_resize(self,event):
         if (not self.media_is_video() or 
@@ -1573,6 +1577,7 @@ class TBOPlayer:
             self.vprogress_bar_window.geometry(geometry)
             self.set_full_screen()
             self.vprogress_grip.lower(self.vprogress_bar_frame)
+        self.vwindow_show_and_hide()
         self.focus_root()
 
     def move_video(self,event=None, pbar=True):
@@ -1626,6 +1631,7 @@ class TBOPlayer:
         self.options.windowed_mode_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
         self.options.windowed_mode_resolution = "%dx%d" % (w, h)
         self.monitor('Saving windowed geometry: "%s%s"' % (self.options.windowed_mode_resolution,self.options.windowed_mode_coords))
+
 
 # ***************************************
 # VOLUME BAR CALLBACKS
@@ -2789,6 +2795,6 @@ class DnD:
 
 
 if __name__ == "__main__":
-    datestring=" 27 Jan 2017"
+    datestring=" 11 Fev 2017"
     tk.CallWrapper = ExceptionCatcher
     bplayer = TBOPlayer()
