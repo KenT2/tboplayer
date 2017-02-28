@@ -1020,9 +1020,6 @@ class TBOPlayer:
         self.root.geometry(self.options.geometry)
         self.root.resizable(True,True)
 
-        #defne response to main window closing
-        self.root.protocol ("WM_DELETE_WINDOW", self.app_exit)
-
         OMXPlayer.set_omx_location(self.options.omx_location)
 
         self._SUPPORTED_MIME_TYPES = ("video/x-msvideo", "video/quicktime", "video/mp4", "video/x-flv", 
@@ -1047,6 +1044,7 @@ class TBOPlayer:
         self.volume_normal_step = 40
         self.volume_critical_step = 49
 
+        self.root.bind("<Configure>", self.save_geometry)
         #Keys
         self.root.bind("<Left>", self.key_left)
         self.root.bind("<Right>", self.key_right)
@@ -1235,24 +1233,15 @@ class TBOPlayer:
         self.dnd = DnD(self.root)
         self.dnd.bindtarget(self.root, 'text/uri-list', '<Drop>', self.add_drag_drop)
 
-        # then start Tkinter event loop
-        self.root.mainloop()
 
-
-    #exit
-    def app_exit(self):
+    def save_geometry(self, *sec):
         self.options.geometry = self.root.geometry()
         self.options.save_state()
-        try:
-            if self.omx is not None:
-                self.omx.stop()
-                self.omx.kill()
-            exit()
-        except Exception:
-            log.logException()
-            sys.exc_clear()
-            exit()
 
+    def quit_omx(self):
+        if self.omx is not None:
+            self.omx.stop()
+            self.omx.kill()
 
 
 # ***************************************
@@ -2709,9 +2698,10 @@ class Logger(logging.Logger):
         log_fh.setLevel(logging.ERROR)
         log_fh.setFormatter(self.log_formatter)
         self.addHandler(log_fh)
+
+
 # global logger
 log = Logger(__file__)
-
 
 class ExceptionCatcher:
     '''
@@ -2731,8 +2721,8 @@ class ExceptionCatcher:
             if self.subst:
                 args = apply(self.subst, args)
             return apply(self.func, args)
-        except dbus.DBusException, msg:
-            return
+        except dbus.DBusException:
+            pass
         except SystemExit, msg:
             raise SystemExit, msg
         except Exception:
@@ -2789,12 +2779,56 @@ class DnD:
             result.append(tk_inst("lindex $lst %d" % i))
         return result
 
+
+from dbus.service import Object
+from dbus.mainloop.glib import DBusGMainLoop
+
+class TBOPlayerDBusInterface (Object):
+    tboplayer_instance = None
+
+    def __init__(self, tboplayer_instance):
+        self.tboplayer_instance = tboplayer_instance
+        dbus_loop = DBusGMainLoop()
+        bus_name = dbus.service.BusName("org.tboplayer.TBOPlayer", bus = dbus.SessionBus(mainloop = dbus_loop))
+        Object.__init__(self, bus_name, "/org/tboplayer/TBOPlayer")
+
+    @dbus.service.method('org.tboplayer.TBOPlayer', in_signature = 'as')
+    def openFiles(self, files):
+        self.tboplayer_instance._add_files(files)
+
+
 # ***************************************
 # MAIN
 # ***************************************
 
-
 if __name__ == "__main__":
-    datestring=" 11 Fev 2017"
-    tk.CallWrapper = ExceptionCatcher
-    bplayer = TBOPlayer()
+    datestring=" 28 Fev 2017"
+
+    dbusif_tboplayer = None
+    try:
+        bus = dbus.SessionBus()
+        bus_object = bus.get_object("org.tboplayer.TBOPlayer", "/org/tboplayer/TBOPlayer", introspect = False)
+        dbusif_tboplayer = dbus.Interface(bus_object, "org.tboplayer.TBOPlayer")
+    except Exception: pass
+
+    if dbusif_tboplayer is None:
+        tk.CallWrapper = ExceptionCatcher
+        bplayer = TBOPlayer()
+        TBOPlayerDBusInterface(bplayer)
+        gobject_loop = gobject.MainLoop()
+        def refresh_player():
+            try:
+                bplayer.root.update()
+                gobject.timeout_add(66, refresh_player)
+            except Exception, e:
+                bplayer.quit_omx()
+                gobject_loop.quit()
+        def start_gobject():
+            gobject_loop.run()
+        gobject.timeout_add(66, refresh_player)
+        bplayer.root.after(65, start_gobject)
+        bplayer.root.mainloop()
+    else:
+        if len(sys.argv[1:]) > 0:
+            dbusif_tboplayer.openFiles(sys.argv[1:])
+        exit()
