@@ -1407,7 +1407,7 @@ class TBOPlayer:
         self.vprogress_bar_frame.pack(fill=BOTH,side=TOP, expand=True)
         
         #defne response to main window closing
-        self.vprogress_bar_window.protocol ("WM_DELETE_WINDOW", self.app_exit) 
+        self.vprogress_bar_window.protocol ("WM_DELETE_WINDOW", self.vprogress_bar_window.destroy) 
         
         self.vprogress_bar_window.video_height = screenres[1]
         self.vprogress_bar_window.video_width = int(vsize[0] * (screenres[1] / float(vsize[1])))
