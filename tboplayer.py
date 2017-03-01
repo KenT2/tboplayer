@@ -1029,7 +1029,7 @@ class TBOPlayer:
                 "video/3gpp2", "video/x-f4v", "application/ogg", "audio/mpeg3", "audio/x-mpeg-3", 
                 "audio/x-mpeg", "audio/mod", "audio/x-mod", "video/x-ms-asf", "audio/x-pn-realaudio",
                 "audio/x-realaudio", "video/vnd.rn-realvideo", "video/fli", "video/x-fli", "audio/x-ms-wmv",
-                "video/avi", "video/msvideo", "video/m4v", "audio/x-ms-wma")
+                "video/avi", "video/msvideo", "video/m4v", "audio/x-ms-wma",  "application/octet-stream")
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -2792,7 +2792,7 @@ if __name__ == "__main__":
         bus = dbus.SessionBus()
         bus_object = bus.get_object("org.tboplayer.TBOPlayer", "/org/tboplayer/TBOPlayer", introspect = False)
         dbusif_tboplayer = dbus.Interface(bus_object, "org.tboplayer.TBOPlayer")
-    except Exception: pass
+    except: pass
 
     if dbusif_tboplayer is None:
         tk.CallWrapper = ExceptionCatcher
@@ -2803,7 +2803,7 @@ if __name__ == "__main__":
             try:
                 bplayer.root.update()
                 gobject.timeout_add(66, refresh_player)
-            except Exception, e:
+            except: 
                 gobject_loop.quit()
                 bplayer.quit_omx()
         def start_gobject():
@@ -2814,4 +2814,4 @@ if __name__ == "__main__":
     else:
         if len(sys.argv[1:]) > 0:
             dbusif_tboplayer.openFiles(sys.argv[1:])
-        exit()
+    exit()

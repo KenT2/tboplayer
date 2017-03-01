@@ -15,7 +15,7 @@ SUPPORTED_TYPES=('video/x-msvideo' 'video/quicktime' 'video/mp4'
                 'audio/x-mod' 'video/x-ms-asf' 'audio/x-pn-realaudio' 
                 'audio/x-realaudio' 'video/vnd.rn-realvideo' 'video/fli' 
                 'video/x-fli' 'audio/x-ms-wmv' 'video/avi' 'video/msvideo' 
-                'video/m4v' 'audio/x-ms-wma' 'video/x-f4v')
+                'video/m4v' 'audio/x-ms-wma' 'video/x-f4v' 'application/octet-stream')
 DESKTOP_ENTRIES=($DESKTOP_PATH/tboplayer.desktop 
 		/usr/share/applications/tboplayer.desktop)
 
