@@ -1054,7 +1054,7 @@ class TBOPlayer:
         self.root.bind("<Shift-Left>", self.key_shiftleft)  #back 600
         self.root.bind("<Control-Right>", self.key_ctrlright)  #next track      
         self.root.bind("<Control-Left>", self.key_ctrlleft)  #previous track
-        self.root.bind("<Control-v>", self.key_paste)
+        self.root.bind("<Control-v>", self.add_url)
         self.root.bind("<Escape>", self.key_escape)
         self.root.bind("<F11>", self.toggle_full_screen)
         self.root.bind("<Control_L>", self.vwindow_start_resize)
@@ -1301,25 +1301,6 @@ class TBOPlayer:
 
     def key_ctrlleft(self,event):
         self.skip_to_previous_track()
-
-    def key_paste(self,event):
-        d = EditTrackDialog(self.root,"Add URL",
-                                "Title", "",
-                                "Location", self.root.clipboard_get())
-        if d.result == None:
-            return
-        if d.result[0] == '':
-            d.result = (d.result[1],d.result[1])
-        else:
-            d.result = (d.result[1],d.result[0])
-        if d.result[1] != '':
-            # append it to the playlist
-            self.playlist.append(d.result)
-            # add title to playlist display
-            self.track_titles_display.insert(END, d.result[1])  
-            # and set it as the selected track
-            self.playlist.select(self.playlist.length()-1)
-            self.display_selected_track(self.playlist.selected_track_index())
 
     def key_up(self,event):
         self.select_previous_track()
@@ -1785,11 +1766,14 @@ class TBOPlayer:
             self.ajoute(dirname,True)
 
 
-    def add_url(self):
-        cb = self.root.clipboard_get()
+    def add_url(self, *event):
+        cb = ""
+        try:
+             cb = self.root.clipboard_get()
+        except: pass
         d = EditTrackDialog(self.root,"Add URL",
                                 "Title", "",
-                                "Location", "" if cb == "" else cb)
+                                "Location", "" if cb == "" or not cb.beginswith("http") else cb)
         if d.result == None:
             return
         name = d.result[0]
