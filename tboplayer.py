@@ -2466,19 +2466,22 @@ class PlayList():
 from urllib import quote_plus
 import requests
 
-class YoutubeSearchDialog(tkSimpleDialog.Dialog):
+class YoutubeSearchDialog(Toplevel):
 
     def __init__(self, parent, add_url_function):
         # store subclass attributes
         self.result_cells = []
         self.add_url = add_url_function
         # init the super class
-        tkSimpleDialog.Dialog.__init__(self, parent, "Youtube search")
-
-    def body(self, master):
-        self.geometry("450x370")
+        Toplevel.__init__(self, parent)
+        self.transient(parent)
+        self.title("Youtube search")
+        self.geometry("390x322")
+        self.resizable(False,False)
+        master = self
         self.field1 = Entry(master)
         self.field1.grid(row=0, column=0)
+        self.field1.focus_set()
 
         Button(master, width = 5, height = 1, text = 'Search!',
                               foreground='black', command = self.search, 
@@ -2502,8 +2505,6 @@ class YoutubeSearchDialog(tkSimpleDialog.Dialog):
         self.frame = VerticalScrolledFrame(master)
         self.frame.grid(row=2,column=0,columnspan=3,rowspan=6)
         self.frame.configure_scrolling()
-
-        return self.field1
 
     def search(self, page = 0):
         fvalue = self.field1.get()
@@ -2583,9 +2584,7 @@ class YtresultCell(Frame):
         self.add_url = add_url_function
         try: 
             self.video_name.set(title)
-        except Exception:
-            log.logException()
-            sys.exc_clear()
+        except: pass
 
         self.create_widgets()
 
@@ -2786,7 +2785,7 @@ class TBOPlayerDBusInterface (Object):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 28 Fev 2017"
+    datestring=" 1 Mar 2017"
 
     dbusif_tboplayer = None
     try:
@@ -2805,8 +2804,8 @@ if __name__ == "__main__":
                 bplayer.root.update()
                 gobject.timeout_add(66, refresh_player)
             except Exception, e:
-                bplayer.quit_omx()
                 gobject_loop.quit()
+                bplayer.quit_omx()
         def start_gobject():
             gobject_loop.run()
         gobject.timeout_add(66, refresh_player)
