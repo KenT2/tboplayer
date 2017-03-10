@@ -1023,13 +1023,18 @@ class TBOPlayer:
         OMXPlayer.set_omx_location(self.options.omx_location)
 
         self._SUPPORTED_MIME_TYPES = ("video/x-msvideo", "video/quicktime", "video/mp4", "video/x-flv", 
-                "video/x-matroska", "video/3gpp", "audio/x-aac", "video/h264", "video/h263", 
-                "video/x-m4v", "audio/midi", "video/mj2", "audio/mpeg", "video/mpeg", "audio/mp4", 
-                "application/mp4", "audio/ogg", "video/ogg", "audio/x-wav", "audio/flac", "video/h261", 
-                "video/3gpp2", "video/x-f4v", "application/ogg", "audio/mpeg3", "audio/x-mpeg-3", 
+                "video/x-matroska", "audio/x-matroska", "video/3gpp", "audio/x-aac", "video/h264", "video/h263", 
+                "video/x-m4v", "audio/midi", "audio/x-midi", "audio/mid", "x-music/x-midi",  "audio/vnd.qcelp",
+                "audio/mpeg", "video/mpeg", "audio/mp4", "video/mj2", "audio/x-tta", "audio/tta", 
+                "application/mp4", "audio/ogg", "video/ogg", "audio/wav", "audio/wave", "audio/x-pn-aiff",
+                "audio/x-pn-wav", "audio/x-wav", "audio/flac", "audio/x-flac", "video/h261", "application/adrift", 
+                "video/3gpp2", "video/x-f4v", "application/ogg", "audio/mpeg3", "audio/x-mpeg-3","audio/x-gsm", 
                 "audio/x-mpeg", "audio/mod", "audio/x-mod", "video/x-ms-asf", "audio/x-pn-realaudio",
                 "audio/x-realaudio", "video/vnd.rn-realvideo", "video/fli", "video/x-fli", "audio/x-ms-wmv",
-                "video/avi", "video/msvideo", "video/m4v", "audio/x-ms-wma",  "application/octet-stream")
+                "video/avi", "video/msvideo", "video/m4v", "audio/x-ms-wma",  "application/octet-stream",
+                "application/x-url", "text/url", "text/x-url", "application/vnd.rn-realmedia", "audio/vnd.rn-realaudio", 
+                "audio/x-pn-realaudio", "audio/x-realaudio", "audio/aiff", "audio/x-aiff", "sound/aiff", 
+                "audio/rmf", "audio/x-rmf")
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -2762,20 +2767,23 @@ class DnD:
             result.append(tk_inst("lindex $lst %d" % i))
         return result
 
-
 from dbus.service import Object
 from dbus.mainloop.glib import DBusGMainLoop
+
+TBOPLAYER_DBUS_OBJECT = "org.tboplayer.TBOPlayer"
+TBOPLAYER_DBUS_PATH = "/org/tboplayer/TBOPlayer"
+TBOPLAYER_DBUS_INTERFACE = "org.tboplayer.TBOPlayer"
 
 class TBOPlayerDBusInterface (Object):
     tboplayer_instance = None
 
     def __init__(self, tboplayer_instance):
         self.tboplayer_instance = tboplayer_instance
-        dbus_loop = DBusGMainLoop()
-        bus_name = dbus.service.BusName("org.tboplayer.TBOPlayer", bus = dbus.SessionBus(mainloop = dbus_loop))
-        Object.__init__(self, bus_name, "/org/tboplayer/TBOPlayer")
+        dbus_loop = DBusGMainLoop(set_as_default=True)
+        bus_name = dbus.service.BusName(TBOPLAYER_DBUS_OBJECT, bus = dbus.SessionBus(mainloop = dbus_loop))
+        Object.__init__(self, bus_name, TBOPLAYER_DBUS_PATH)
 
-    @dbus.service.method('org.tboplayer.TBOPlayer', in_signature = 'as')
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature = 'as')
     def openFiles(self, files):
         self.tboplayer_instance._add_files(files)
 
@@ -2785,13 +2793,13 @@ class TBOPlayerDBusInterface (Object):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 1 Mar 2017"
+    datestring=" 9 Mar 2017"
 
     dbusif_tboplayer = None
     try:
         bus = dbus.SessionBus()
-        bus_object = bus.get_object("org.tboplayer.TBOPlayer", "/org/tboplayer/TBOPlayer", introspect = False)
-        dbusif_tboplayer = dbus.Interface(bus_object, "org.tboplayer.TBOPlayer")
+        bus_object = bus.get_object(TBOPLAYER_DBUS_OBJECT, TBOPLAYER_DBUS_PATH, introspect = False)
+        dbusif_tboplayer = dbus.Interface(bus_object, TBOPLAYER_DBUS_INTERFACE)
     except: pass
 
     if dbusif_tboplayer is None:
@@ -2811,7 +2819,7 @@ if __name__ == "__main__":
         gobject.timeout_add(66, refresh_player)
         bplayer.root.after(65, start_gobject)
         bplayer.root.mainloop()
-    else:
-        if len(sys.argv[1:]) > 0:
-            dbusif_tboplayer.openFiles(sys.argv[1:])
+    elif len(sys.argv[1:]) > 0:
+        dbusif_tboplayer.openFiles(sys.argv[1:])
     exit()
+
