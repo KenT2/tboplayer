@@ -1778,7 +1778,7 @@ class TBOPlayer:
         except: pass
         d = EditTrackDialog(self.root,"Add URL",
                                 "Title", "",
-                                "Location", "" if cb == "" or not cb.beginswith("http") else cb)
+                                "Location", "" if cb == "" or not cb.startswith("http") else cb)
         if d.result == None:
             return
         name = d.result[0]
