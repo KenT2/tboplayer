@@ -5,18 +5,17 @@ SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BIN_PATH=/usr/local/bin
 DESKTOP_PATH=$HOME/Desktop
 FAKE_BIN=$BIN_PATH/tboplayer
-SUPPORTED_TYPES=('video/x-msvideo', 'video/quicktime', 'video/mp4', 'video/x-flv', 'video/x-matroska', 'audio/x-matroska',
-          'video/3gpp', 'audio/x-aac', 'video/h264', 'video/h263', 'video/x-m4v', 'audio/midi', 
-          'audio/x-midi', 'audio/mid', 'x-music/x-midi', 'audio/vnd.qcelp', 'audio/mpeg', 'video/mpeg', 
-          'audio/mp4', 'video/mj2', 'audio/x-tta', 'audio/tta', 'application/mp4', 'audio/ogg', 
-          'video/ogg', 'audio/wav', 'audio/wave', 'audio/x-pn-aiff', 'audio/x-pn-wav', 'audio/x-wav', 
-          'audio/flac', 'audio/x-flac', 'video/h261', 'application/adrift', 'video/3gpp2', 'video/x-f4v', 
-          'application/ogg', 'audio/mpeg3', 'audio/x-mpeg-3', 'audio/x-gsm', 'audio/x-mpeg', 'audio/mod', 
-          'audio/x-mod', 'video/x-ms-asf', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'video/vnd.rn-realvideo', 'video/fli',
-          'video/x-fli', 'audio/x-ms-wmv', 'video/avi', 'video/msvideo', 'video/m4v', 'audio/x-ms-wma', 
-          'application/octet-stream', 'application/x-url', 'text/url', 'text/x-url', 'application/vnd.rn-realmedia', 
-          'audio/vnd.rn-realaudio', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'audio/aiff', 'audio/x-aiff', 'sound/aiff', 
-          'audio/rmf', 'audio/x-rmf')
+SUPPORTED_TYPES=('video/x-msvideo' 'video/quicktime' 'video/mp4' 'video/x-flv' 'video/x-matroska' 'audio/x-matroska'
+          'video/3gpp' 'audio/x-aac' 'video/h264' 'video/h263' 'video/x-m4v' 'audio/midi' 
+          'audio/mid' 'audio/vnd.qcelp' 'audio/mpeg' 'video/mpeg' 'audio/rmf' 'audio/x-rmf'
+          'audio/mp4' 'video/mj2' 'audio/x-tta' 'audio/tta' 'application/mp4' 'audio/ogg'
+          'video/ogg' 'audio/wav' 'audio/wave' 'audio/x-pn-aiff' 'audio/x-pn-wav' 'audio/x-wav'
+          'audio/flac' 'audio/x-flac' 'video/h261' 'application/adrift' 'video/3gpp2' 'video/x-f4v'
+          'application/ogg' 'audio/mpeg3' 'audio/x-mpeg-3' 'audio/x-gsm' 'audio/x-mpeg' 'audio/mod'
+          'audio/x-mod' 'video/x-ms-asf' 'audio/x-pn-realaudio' 'audio/x-realaudio' 'video/vnd.rn-realvideo' 'video/fli'
+          'video/x-fli' 'audio/x-ms-wmv' 'video/avi' 'video/msvideo' 'video/m4v' 'audio/x-ms-wma'
+          'application/octet-stream' 'application/x-url' 'text/url' 'text/x-url' 'application/vnd.rn-realmedia'
+          'audio/vnd.rn-realaudio' 'audio/x-pn-realaudio' 'audio/x-realaudio' 'audio/aiff' 'audio/x-aiff')
 DESKTOP_ENTRIES=($DESKTOP_PATH/tboplayer.desktop 
 		/usr/share/applications/tboplayer.desktop)
 
