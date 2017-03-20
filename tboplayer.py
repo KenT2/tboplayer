@@ -302,7 +302,7 @@ class OMXPlayer(object):
 
 
 from hashlib import sha256
-from json import loads
+import json
 
 
 # ***************************************
@@ -431,7 +431,7 @@ class Ytdl:
             return False;
         try:
             versionsurl = "http://rg3.github.io/youtube-dl/update/versions.json"
-            versions = loads(requests.get(versionsurl).text)
+            versions = json.loads(requests.get(versionsurl).text)
         except Exception:
             log.logException()
             sys.exc_clear()
@@ -845,7 +845,7 @@ class TBOPlayer:
     def treat_ytdl_result(self):
         if self.ytdl.result[0] == 1:
             try:
-                result = loads(self.ytdl.result[1])
+                result = json.loads(self.ytdl.result[1])
             except Exception:
                 log.logException()
                 sys.exc_clear()
@@ -1036,7 +1036,7 @@ class TBOPlayer:
             tkMessageBox.showinfo("",("youtube-dl cannot be found in the path configured "
                               + "in the options, please check your configuration"))
         f = open(os.path.dirname(os.path.realpath(sys.argv[0])) + "/yt-dl_supported_sites", "r")
-        self.ytdl = Ytdl(self.options, loads(f.read()), ytdl_not_found)
+        self.ytdl = Ytdl(self.options, json.loads(f.read()), ytdl_not_found)
         f.close()
 
         #create the internal playlist
@@ -2838,7 +2838,7 @@ class TBOPlayerDBusInterface (Object):
 
 
 class AutoLyricsDialog(Toplevel):
-    _ARTIST_TITLE_REXP = re.compile(r"([\w\d ]*)[-:|/]([\w\d ]*)")
+    _ARTIST_TITLE_REXP = re.compile(r"([\w\d ]*)[-:|/]([\w\d ]*)", re.UNICODE)
 
     def __init__(self, parent, track_title, track_is_file=False):
         Toplevel.__init__(self, parent, background="#d9d9d9")
@@ -2866,7 +2866,6 @@ class AutoLyricsDialog(Toplevel):
         title_data = search_result.groups()
         artist = title_data[0].strip(' ')
         title = title_data[1].strip(' ')
-            
         self.get_lyrics(artist, title)
 
     def get_lyrics(self, artist, title):
@@ -2876,7 +2875,7 @@ class AutoLyricsDialog(Toplevel):
     def _get_lyrics(self, artist, title):
         try:
             api_url = 'http://lyrics.wikia.com/api.php'
-            api_response = requests.get(api_url, params={
+            api_response =  requests.get(api_url, params={
                 'fmt': 'realjson',
                 'func': 'getSong',
                 'artist': artist,
