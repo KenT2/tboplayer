@@ -80,8 +80,8 @@ class OMXPlayer(object):
     _TIMEPROP_REXP = re.compile(r".*Duration: (\d{2}:\d{2}:\d{2}.\d{2}), start: (\d.\d+), bitrate: (\d+).*")
     _FILEPROP_REXP = re.compile(r".*audio streams (\d+) video streams (\d+) chapters (\d+) subtitles (\d+).*")
     _VIDEOPROP_REXP = re.compile(r".*Video codec ([\w-]+) width (\d+) height (\d+) profile ([-]{0,1}\d+) fps ([\d.]+).*")
-    _TITLE_REXP = re.compile(r"(title|TITLE)\s*:\s([\w|\d| ]+){0,1}.*")
-    _ARTIST_REXP = re.compile(r"(artist|ARTIST)\s*:\s([\w|\d| ]+){0,1}.*")
+    _TITLEPROP_REXP = re.compile(r"(title|TITLE)\s*:\s([\w|\d| ]+){0,1}.*")
+    _ARTISTPROP_REXP = re.compile(r"(artist|ARTIST)\s*:\s([\w|\d| ]+){0,1}.*")
     _AUDIOPROP_REXP = re.compile(r".*Audio codec (\w+) channels (\d+) samplerate (\d+) bitspersample (\d+).*")
     _STATUS_REXP = re.compile(r"M:\s*([\d.]+).*")
     _DONE_REXP = re.compile(r"have a nice day.*")
@@ -219,11 +219,11 @@ class OMXPlayer(object):
                 self.current_audio_stream = 1
                 self.current_volume = 0.0
 
-            title_prop = self._TITLE_REXP.search(output)
+            title_prop = self._TITLEPROP_REXP.search(output)
             if title_prop:
                 title_prop = title_prop.groups()
                 self.misc['title'] = title_prop[1]
-            artist_prop = self._ARTIST_REXP.search(output)
+            artist_prop = self._ARTISTPROP_REXP.search(output)
             if artist_prop:
                 artist_prop = artist_prop.groups()
                 self.misc['artist'] = artist_prop[1]
@@ -2843,15 +2843,12 @@ class AutoLyricsDialog(Toplevel):
     def __init__(self, parent, track_title, track_is_file=False):
         Toplevel.__init__(self, parent, background="#d9d9d9")
         self.transient(parent)
-        
-        title_data = self._ARTIST_TITLE_REXP.search(track_title).groups()
-        artist = title_data[0].strip(' ')
-        title = title_data[1].strip(' ')
 
         self.title("Lyrics Finder")
         self.resizable(False,False)
 
         self.lyrics_var = tk.StringVar()
+
         self.lyrics_var.set("Trying to grab lyrics from the web...")
 
         frame = VerticalScrolledFrame(self)
@@ -2863,6 +2860,13 @@ class AutoLyricsDialog(Toplevel):
                               textvariable=self.lyrics_var,
                               background="#d9d9d9").grid(column=0, row=0, columnspan=3, sticky=E+W+N+S)
 
+        search_result = self._ARTIST_TITLE_REXP.search(track_title)
+        if not search_result:
+            self.nope()
+        title_data = search_result.groups()
+        artist = title_data[0].strip(' ')
+        title = title_data[1].strip(' ')
+            
         self.get_lyrics(artist, title)
 
     def get_lyrics(self, artist, title):
@@ -2880,8 +2884,7 @@ class AutoLyricsDialog(Toplevel):
                 'no_pager': True
             }).json()
             if not api_response['page_id']:
-                self.lyrics_var.set("Unable to retrieve lyrics for this track.")
-                self.die()
+                self.nope()
                 return
             pagesrc = requests.get(api_response['url']).text
             parser = LyricWikiParser()
@@ -2890,10 +2893,10 @@ class AutoLyricsDialog(Toplevel):
             lyrics = lyrics + parser.result
             self.lyrics_var.set(lyrics)
         except:
-            self.lyrics_var.set("Unable to retrieve lyrics for this track.")
-            self.die()
+            self.nope()
 
-    def die(self):
+    def nope(self):
+        self.lyrics_var.set("Unable to retrieve lyrics for this track.")
         self.after(3000, lambda: self.destroy())
 
 
