@@ -2838,36 +2838,15 @@ class TBOPlayerDBusInterface (Object):
 
 
 class AutoLyricsDialog(Toplevel):
+    _ARTIST_TITLE_REXP = re.compile(r"([\w\d ]*)[-:|/]([\w\d ]*)")
 
     def __init__(self, parent, track_title, track_is_file=False):
         Toplevel.__init__(self, parent, background="#d9d9d9")
         self.transient(parent)
-
-        if '-' in track_title:
-            track_title = track_title.split('-')
-        elif ':' in track_title:
-            track_title = track_title.split(':')
-        elif '  ' in track_title:
-            track_title = track_title.split('  ')
-        else:
-            track_title = [track_title]
-
-        artist = track_title[0].strip(' ')
-        title = ""
-
-        if track_is_file and len(track_title) > 1:
-            title = track_title[1][:track_title[1].rfind('.') - 1]
-        if len(track_title) > 1:
-            title = track_title[1]
-        if '[' in title:
-            title = title[:title.rfind('[') - 1]
-        if '{' in title:
-            title = title[:title.rfind('{') - 1]
-        if '(' in title:
-            title = title[:title.rfind('(') - 1]
-        if '#' in title:
-            title = title[:title.rfind('#') - 1]
-        title = title.strip(' ')
+        
+        title_data = self._ARTIST_TITLE_REXP.search(track_title).groups()
+        artist = title_data[0].strip(' ')
+        title = title_data[1].strip(' ')
 
         self.title("Lyrics Finder")
         self.resizable(False,False)
@@ -2910,8 +2889,8 @@ class AutoLyricsDialog(Toplevel):
             lyrics = artist +": " + title + "\n-- -- -- -- -- --\n\n"
             lyrics = lyrics + parser.result
             self.lyrics_var.set(lyrics)
-        except Exception, e:
-            self.lyrics_var.set("Unable to reach LyricWikia.")
+        except:
+            self.lyrics_var.set("Unable to retrieve lyrics for this track.")
             self.die()
 
     def die(self):
