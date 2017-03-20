@@ -80,6 +80,8 @@ class OMXPlayer(object):
     _TIMEPROP_REXP = re.compile(r".*Duration: (\d{2}:\d{2}:\d{2}.\d{2}), start: (\d.\d+), bitrate: (\d+).*")
     _FILEPROP_REXP = re.compile(r".*audio streams (\d+) video streams (\d+) chapters (\d+) subtitles (\d+).*")
     _VIDEOPROP_REXP = re.compile(r".*Video codec ([\w-]+) width (\d+) height (\d+) profile ([-]{0,1}\d+) fps ([\d.]+).*")
+    _TITLE_REXP = re.compile(r"(title|TITLE)\s*:\s([\w|\d| ]+){0,1}.*")
+    _ARTIST_REXP = re.compile(r"(artist|ARTIST)\s*:\s([\w|\d| ]+){0,1}.*")
     _AUDIOPROP_REXP = re.compile(r".*Audio codec (\w+) channels (\d+) samplerate (\d+) bitspersample (\d+).*")
     _STATUS_REXP = re.compile(r"M:\s*([\d.]+).*")
     _DONE_REXP = re.compile(r"have a nice day.*")
@@ -159,6 +161,7 @@ class OMXPlayer(object):
         self.timenf = dict()
         self.video = dict()
         self.audio = dict()
+        self.misc = dict()
         index = -1
 
         try:
@@ -215,6 +218,16 @@ class OMXPlayer(object):
             if 'streams' in self.audio and self.audio['streams'] > 0:
                 self.current_audio_stream = 1
                 self.current_volume = 0.0
+
+            title_prop = self._TITLE_REXP.search(output)
+            if title_prop:
+                title_prop = title_prop.groups()
+                self.misc['title'] = title_prop[1]
+            artist_prop = self._ARTIST_REXP.search(output)
+            if artist_prop:
+                artist_prop = artist_prop.groups()
+                self.misc['artist'] = artist_prop[1]
+
 
     def init_dbus_link(self):
         try:
@@ -530,6 +543,7 @@ class TBOPlayer:
         self.start_track_index = None
 
         self.omx = None
+        self.autolyrics = None
 
 
     # kick off the state machine by playing a track
@@ -577,6 +591,8 @@ class TBOPlayer:
                         self.omx.set_aspect_mode(OMXPlayer.AM_LETTERBOX)
                 if self.options.cue_track_mode:
                     self.toggle_pause()
+                if self.options.find_lyrics:
+                    self.grab_lyrics()
             else:
                 self.monitor("      OMXPlayer did not start yet.")
             self.root.after(350, self.play_state_machine)
@@ -613,6 +629,9 @@ class TBOPlayer:
                 self.play_state = self._OMX_CLOSED
             self.dbus_connected = False
             self.do_ending()
+            if self.autolyrics:
+                self.autolyrics.destroy()
+                self.autolyrics = None
             self.root.after(350, self.play_state_machine)
 
     # do things in each state
@@ -724,8 +743,16 @@ class TBOPlayer:
 
 
     def what_next(self):
+
+        if self.break_required_signal==True:
+            self.hide_progress_bar()
+            self.monitor("What next, break_required so exit")
+            self.break_required_signal=False
+            self.set_play_button_state(0)
+            # fall out of the state machine
+            return
+        elif self.play_next_track_signal ==True:
         # called when state machine is in the omx_closed state in order to decide what to do next.
-        if self.play_next_track_signal ==True:
             self.monitor("What next, skip to next track")
             self.play_next_track_signal=False
             if self.options.mode=='shuffle':
@@ -740,13 +767,6 @@ class TBOPlayer:
             self.select_previous_track()
             self.play_previous_track_signal=False
             self.play()
-            return
-        elif self.break_required_signal==True:
-            self.hide_progress_bar()
-            self.monitor("What next, break_required so exit")
-            self.break_required_signal=False
-            self.set_play_button_state(0)
-            # fall out of the state machine
             return
         elif self.options.mode=='single':
             self.hide_progress_bar()
@@ -892,6 +912,22 @@ class TBOPlayer:
                         media_url = format['url']
         return media_url
 
+    def grab_lyrics(self):
+        track = self.playlist.selected_track()
+        trac = track[0]
+        track_title = ""
+        if ('title' in self.omx.misc and 
+                    self.omx.misc['title'] and 
+                    'artist' in self.omx.misc and 
+                    self.omx.misc['artist']):
+            track_title = self.omx.misc['artist'] + '-' + self.omx.misc['title']
+        elif trac.startswith("http"):
+            track_title = track[1]
+        else:
+            track_title = trac[trac.rfind('/')+1:]
+
+        self.autolyrics = AutoLyricsDialog(self.root, track_title, os.path.isfile(track[0]))
+
     def remove_waiting_track(self):
         waiting_track = self.playlist.waiting_track()
         if waiting_track:
@@ -915,6 +951,7 @@ class TBOPlayer:
             self.display_selected_track(index)
             self.refresh_playlist_display()
             return
+        trac = track
         track= "'"+ track.replace("'","'\\''") + "'"
         opts= (self.options.omx_user_options + " " + self.options.omx_audio_option + " " +
                                                         self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
@@ -2066,6 +2103,7 @@ class Options:
             self.forbid_windowed_mode = int(config.get('config','forbid_windowed_mode',0))
             self.cue_track_mode = int(config.get('config','cue_track_mode',0))
             self.autoplay = int(config.get('config','autoplay',0))
+            self.find_lyrics = int(config.get('config','find_lyrics',0))
 
             if config.get('config','debug',0) == 'on':
                 self.debug = True
@@ -2105,6 +2143,7 @@ class Options:
         config.set('config','forbid_windowed_mode','0')
         config.set('config','cue_track_mode','0')
         config.set('config','autoplay','1')
+        config.set('config','find_lyrics','0')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
             configfile.close()
@@ -2131,6 +2170,7 @@ class Options:
         config.set('config','forbid_windowed_mode',self.forbid_windowed_mode)
         config.set('config','cue_track_mode',self.cue_track_mode)
         config.set('config','autoplay',self.autoplay)
+        config.set('config','find_lyrics',self.find_lyrics)
         with open(self.options_file, 'w+') as configfile:
             config.write(configfile)
             configfile.close()
@@ -2276,6 +2316,14 @@ class OptionsDialog(tkSimpleDialog.Dialog):
             self.cb_debug.select()
         else:
             self.cb_debug.deselect()
+
+        self.find_lyrics_var = IntVar()
+        self.cb_find_lyrics = Checkbutton(master,text="Find lyrics",variable=self.find_lyrics_var, onvalue=1,offvalue=0)
+        self.cb_find_lyrics.grid(row=61,column=0, sticky = W)
+        if int(config.get('config','find_lyrics',0)) == 1:
+            self.cb_find_lyrics.select()
+        else:
+            self.cb_find_lyrics.deselect()	    
         return None    # no initial focus
 
     def apply(self):
@@ -2309,6 +2357,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','forbid_windowed_mode',self.forbid_windowed_mode_var.get())
         config.set('config','cue_track_mode',self.cue_track_mode_var.get())
         config.set('config','autoplay',self.autoplay_var.get())
+        config.set('config','find_lyrics',self.find_lyrics_var.get())
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
             optionsfile.close()
@@ -2638,7 +2687,7 @@ class VerticalScrolledFrame(Frame):
         vscrollbar.grid(row=0,column=1,sticky=N+S+W)
         self.canvas = Canvas(self, bd=0, highlightthickness=0,
                         yscrollcommand=vscrollbar.set)
-        self.canvas.grid(row=0,column=0,sticky=N+S+E)
+        self.canvas.grid(row=0,column=0,sticky=N+S+E+W)
         vscrollbar.config(command=self.canvas.yview)
 
         # reset the view
@@ -2647,7 +2696,7 @@ class VerticalScrolledFrame(Frame):
 
         # create a frame inside the canvas which will be scrolled with it
         self.interior = interior = Frame(self.canvas)
-        self.interior.grid(row=0,column=0,sticky=N+S+E)
+        self.interior.grid(row=0,column=0,sticky=N+S+E+W)
         self.interior_id = self.canvas.create_window(0, 0, window=interior,
                                            anchor=NW)
 
@@ -2767,6 +2816,7 @@ class DnD:
             result.append(tk_inst("lindex $lst %d" % i))
         return result
 
+
 from dbus.service import Object
 from dbus.mainloop.glib import DBusGMainLoop
 
@@ -2788,12 +2838,125 @@ class TBOPlayerDBusInterface (Object):
         self.tboplayer_instance._add_files(files)
 
 
+class AutoLyricsDialog(Toplevel):
+
+    def __init__(self, parent, track_title, track_is_file=False):
+        Toplevel.__init__(self, parent, background="#d9d9d9")
+        self.transient(parent)
+
+        if '-' in track_title:
+            track_title = track_title.split('-')
+        elif ':' in track_title:
+            track_title = track_title.split(':')
+        elif '  ' in track_title:
+            track_title = track_title.split('  ')
+        else:
+            track_title = [track_title]
+
+        artist = track_title[0].strip(' ')
+        title = ""
+
+        if track_is_file and len(track_title) > 1:
+            title = track_title[1][:track_title[1].rfind('.') - 1]
+        if len(track_title) > 1:
+            title = track_title[1]
+        if '[' in title:
+            title = title[:title.rfind('[') - 1]
+        if '{' in title:
+            title = title[:title.rfind('{') - 1]
+        if '(' in title:
+            title = title[:title.rfind('(') - 1]
+        if '#' in title:
+            title = title[:title.rfind('#') - 1]
+        title = title.strip(' ')
+
+        self.title("Lyrics Finder")
+        self.resizable(False,False)
+
+        self.lyrics_var = tk.StringVar()
+        self.lyrics_var.set("Trying to grab lyrics from the web...")
+
+        frame = VerticalScrolledFrame(self)
+        frame.grid()
+        frame.configure_scrolling()
+
+        Label(frame.interior, font=('Comic Sans', 11),
+                              foreground = 'black', wraplength = 378,
+                              textvariable=self.lyrics_var,
+                              background="#d9d9d9").grid(column=0, row=0, columnspan=2, sticky=E+W+N+S)
+
+        self.get_lyrics(artist, title)
+
+    def get_lyrics(self, artist, title):
+        self._background_thread = Thread(target=self._get_lyrics, args=[artist, title])
+        self._background_thread.start()
+
+    def _get_lyrics(self, artist, title):
+        try:
+            api_url = 'http://lyrics.wikia.com/api.php'
+            api_response = requests.get(api_url, params={
+                'fmt': 'realjson',
+                'func': 'getSong',
+                'artist': artist,
+                'title': title,
+                'no_pager': True
+            }).json()
+            if not api_response['page_id']:
+                self.lyrics_var.set("Unable to retrieve lyrics for this track.")
+                self.die()
+                return
+            pagesrc = requests.get(api_response['url']).text
+            parser = LyricWikiParser()
+            parser.feed(pagesrc)
+            lyrics = artist +": " + title + "\n-- -- -- -- -- --\n\n"
+            lyrics = lyrics + parser.result
+            self.lyrics_var.set(lyrics)
+        except Exception, e:
+            self.lyrics_var.set("Unable to reach LyricWikia.")
+            self.die()
+
+    def die(self):
+        self.after(3000, lambda: self.destroy())
+
+
+class LyricWikiParser(HTMLParser):
+
+    result = ""
+    grab = False
+
+    def __init__(self):
+        HTMLParser.__init__(self)
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'div' : 
+            for t in attrs:
+                if "lyricbox" in t[1]: 
+                    self.grab = True
+                    break
+
+    def handle_startendtag(self, tag, attrs):
+        if self.grab and tag == "br":
+            self.result += "\n"
+
+    def handle_endtag(self, tag):
+        if self.grab and tag == "div":
+            self.grab = False
+
+    def handle_charref(self, name):
+        if self.grab:
+            if name.startswith('x'):
+                c = unichr(int(name[1:], 16))
+            else:
+                c = unichr(int(name))
+            self.result += c
+
+
 # ***************************************
 # MAIN
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 9 Mar 2017"
+    datestring=" 20 Mar 2017"
 
     dbusif_tboplayer = None
     try:

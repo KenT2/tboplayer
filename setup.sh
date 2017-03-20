@@ -105,12 +105,12 @@ addToAptInstall "tk" "python-tk" true
 addToAptInstall "gtk" "python-gtk2" true
 addToAptInstall "avconv" "libav-tools" false
 addToAptInstall "tkdnd" "tkdnd" false
+addToAptInstall "easy_install" "python-setuptools" false
 
 echo "* Installing dependencies: "$toaptinstall"..."
 
-addToAptInstall "pip" "python-pip" false
-
 sudo apt-get -y install $toaptinstall 2>&1 >/dev/null
+sudo easy_install pip 2>&1 >/dev/null
 
 python -c 'import pexpect' >/dev/null 2>&1
 PEXPECT_INSTALLED=$?
@@ -142,7 +142,7 @@ fi
 # install fake tboplayer executable in /home/<user>/bin
 command -v $FAKE_BIN >/dev/null 2>&1
 if [ $? -eq 0 ]; then 
-	sudo rm $FAKE_BIN
+    sudo rm $FAKE_BIN
 fi
 
 TMP_BIN=$HOME/tmp.tboplayer
@@ -159,7 +159,7 @@ echo "* Creating shortcuts and file associations..."
 DESKTOP_ENTRY="${DESKTOP_ENTRIES[0]}"
 $DESKTOP_ENTRY >/dev/null 2>&1
 if [ $? -eq 126 ]; then 
-	rm $DESKTOP_ENTRY
+    rm $DESKTOP_ENTRY
 fi
 
 MIMETS=''

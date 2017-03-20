@@ -1,4 +1,4 @@
-A GUI interface using jbaiter's pyomxplayer wrapper to control omxplayer
+A GUI interface using jbaiter's pyomxplayer wrapper to control omxplayer, with youtube-dl integration and ability to find lyrics
 
 INSTALLATION
 ============
@@ -120,11 +120,13 @@ Menus
     
     * Start/End track paused - Pauses the track both in the beginning and in the end of the track
     
-    * Autoplay at start up - If TBOPlayer has just been opened and has some file in the playlist, automatically satrt playing the first file in the list
+    * Autoplay at start up - If TBOPlayer has just been opened and has some file in the playlist, automatically start playing the first file in the list
     
-    * Forbid windowed mode - if enabled will make videos always show in full screen, disabling the video window mode and video progress bar - useful if you're using tboplayer through a remote desktop
+    * Forbid windowed mode - if enabled will make videos always show in full screen, disabling the video window mode and video progress bar - may be useful if you're using tboplayer through a remote desktop
+    
+    * Find lyrics - if enabled, TBOPlayer will try to fetch lyrics for playing track - defaults to off - more details below 
 	
-    * Debug - prints some debug text to the command line
+    * Debug - prints some debug text to the command line/log file (requires you to close and restart tboplayer)
 
 If you used the automatic installer, you should be able to open files with double-click, or with the right mouse click menu in your file manager.
 
@@ -138,7 +140,9 @@ Again during playing of a track, a slightly modified set of omxplayer commands c
 
 While playing videos, you can hit the F11 key for toggling full screen mode. In windowed mode, to move the video window, click and hold the first mouse button over the video area and then move the mouse; and to resize the video, hold left Control, click and hold the first mouse button over the video area and then move the mouse.
 
-For a list of streaming services supported by youtube-dl, see this link: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/OMXplayer)
+For a list of streaming services supported by youtube-dl, see this link: https://rg3.github.io/youtube-dl/supportedsites.html (not all of them were tested with TBOPlayer/OMXplayer).
+
+If the option 'Find lyrics' is enabled, TBOPlayer will look for the metatags 'artist' and 'title' in the media file, and if such tags are not found, it will try to find this info in a pattern in the file name (or in the track title for web links), something along the forms 'Artist Name - Song Title' or 'Artist Name : Song Title', in order to grab the lyrics from [LyricWikia](http://lyrics.wikia.com/wiki/Lyrics_Wiki) webservice.
 
 TROUBLESHOOTING
 =========
@@ -149,7 +153,7 @@ If the progress bar, volume bar, or windowed video mode don't work for you, it m
 
 In Raspbian, youtube-dl should always be up-to-date, but if you use another OS and keep getting a lot of "Content may be copyrighted or the link invalid" when trying to play videos from streaming services supported by youtube-dl, you can try to update youtube-dl by typing in a terminal: `sudo youtube-dl -U`
 
-If the videos appear displaced by any amount of pixels, you must be having overscan problems. To disable overscan go to Menu>Preferences>Raspberry Pi Configuration and then set Overscan to Disabled.
+If the videos appear displaced by an amount of pixels, you must be having overscan problems. To disable overscan go to Menu>Preferences>Raspberry Pi Configuration and then set Overscan to Disabled.
 
 UNINSTALLING
 ==========
