@@ -80,8 +80,8 @@ class OMXPlayer(object):
     _TIMEPROP_REXP = re.compile(r".*Duration: (\d{2}:\d{2}:\d{2}.\d{2}), start: (\d.\d+), bitrate: (\d+).*")
     _FILEPROP_REXP = re.compile(r".*audio streams (\d+) video streams (\d+) chapters (\d+) subtitles (\d+).*")
     _VIDEOPROP_REXP = re.compile(r".*Video codec ([\w-]+) width (\d+) height (\d+) profile ([-]{0,1}\d+) fps ([\d.]+).*")
-    _TITLEPROP_REXP = re.compile(r"(title|TITLE)\s*:\s([\w|\d| ]+){0,1}.*")
-    _ARTISTPROP_REXP = re.compile(r"(artist|ARTIST)\s*:\s([\w|\d| ]+){0,1}.*")
+    _TITLEPROP_REXP = re.compile(r"(title|TITLE)\s*:\s([\w|\d| ]+){0,1}.*", re.UNICODE)
+    _ARTISTPROP_REXP = re.compile(r"(artist|ARTIST)\s*:\s([\w|\d| ]+){0,1}.*", re.UNICODE)
     _AUDIOPROP_REXP = re.compile(r".*Audio codec (\w+) channels (\d+) samplerate (\d+) bitspersample (\d+).*")
     _STATUS_REXP = re.compile(r"M:\s*([\d.]+).*")
     _DONE_REXP = re.compile(r"have a nice day.*")
@@ -572,6 +572,7 @@ class TBOPlayer:
         if self.play_state == self._OMX_CLOSED:
             self.monitor("      State machine: " + self.play_state)
             self.what_next()
+            print "SHOULD CLOSE STATE MACHINE LOOP"
             return 
                 
         elif self.play_state == self._OMX_STARTING:
@@ -747,7 +748,6 @@ class TBOPlayer:
         if self.break_required_signal==True:
             self.hide_progress_bar()
             self.monitor("What next, break_required so exit")
-            self.break_required_signal=False
             self.set_play_button_state(0)
             # fall out of the state machine
             return
@@ -2863,6 +2863,7 @@ class AutoLyricsDialog(Toplevel):
         search_result = self._ARTIST_TITLE_REXP.search(track_title)
         if not search_result:
             self.nope()
+            return
         title_data = search_result.groups()
         artist = title_data[0].strip(' ')
         title = title_data[1].strip(' ')
@@ -2888,7 +2889,7 @@ class AutoLyricsDialog(Toplevel):
             pagesrc = requests.get(api_response['url']).text
             parser = LyricWikiParser()
             parser.feed(pagesrc)
-            lyrics = artist +": " + title + "\n-- -- -- -- -- --\n\n"
+            lyrics = artist +": " + title + "\n-- - -- - -- - -- - --\n\n"
             lyrics = lyrics + parser.result
             self.lyrics_var.set(lyrics)
         except:
