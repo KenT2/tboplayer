@@ -914,17 +914,12 @@ class TBOPlayer:
 
     def grab_lyrics(self):
         track = self.playlist.selected_track()
-        trac = track[0]
-        track_title = ""
+        track_title = track[1]
         if ('title' in self.omx.misc and 
                     self.omx.misc['title'] and 
                     'artist' in self.omx.misc and 
                     self.omx.misc['artist']):
             track_title = self.omx.misc['artist'] + '-' + self.omx.misc['title']
-        elif trac.startswith("http"):
-            track_title = track[1]
-        else:
-            track_title = trac[trac.rfind('/')+1:]
 
         self.autolyrics = AutoLyricsDialog(self.root, track_title, os.path.isfile(track[0]))
 
@@ -951,7 +946,6 @@ class TBOPlayer:
             self.display_selected_track(index)
             self.refresh_playlist_display()
             return
-        trac = track
         track= "'"+ track.replace("'","'\\''") + "'"
         opts= (self.options.omx_user_options + " " + self.options.omx_audio_option + " " +
                                                         self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
@@ -1467,6 +1461,7 @@ class TBOPlayer:
         self.vprogress_bar_window.bind("<B1-Motion>", self.vwindow_motion)
         self.vprogress_bar_window.bind("<Double-Button-1>", self.toggle_full_screen)
         self.vprogress_bar_window.bind("<Motion>", self.vwindow_show_and_hide)
+        self.vprogress_bar_window.bind("<Double-1>", self.restore_window)
         
         # Resize widget, placed in the lower right corner over the progress bar, not ideal.
         self.vprogress_grip = Sizegrip(self.vprogress_bar_window)
@@ -1630,10 +1625,13 @@ class TBOPlayer:
 
     def media_is_video(self):
         return hasattr(self,"omx") and hasattr(self.omx, "video") and len(self.omx.video) > 0
+
+    def restore_window(self, *event):
+        self.root.update()
+        self.root.deiconify()
         
     def focus_root(self, *event):
         self.root.focus()
-        return
 
     def save_video_window_coordinates(self):
         x = self.vprogress_bar_window.winfo_x()
@@ -1912,21 +1910,22 @@ class TBOPlayer:
     def select_and_play(self, event=None):
         if not hasattr(self, 'select_and_play_pending'):
             self.select_and_play_pending = False
+
         if self.play_state == self._OMX_CLOSED:
             self.select_and_play_pending = False
             self.play_track()
             self.track_titles_display.bind("<Double-1>", self.select_and_play)
-        elif not self.select_and_play_pending:
+        elif not self.select_and_play_pending and self.playing_location != self.playlist.selected_track_location:
             self.track_titles_display.unbind("<Double-1>")
             self.select_and_play_pending = True
             self.stop_track()
         if self.select_and_play_pending:
-            self.root.after(200, self.select_and_play)
+            self.root.after(700, self.select_and_play)
 
 
     def select_next_track(self):
         if self.playlist.length()>0:
-            if self.start_track_index == None: 
+            if self.start_track_index == None and self.play_state == self._OMX_CLOSED: 
                 index = self.start_track_index = self.playlist.selected_track_index()
             elif self.start_track_index == self.playlist.length() - 1:
                 index = self.start_track_index = 0
@@ -2883,7 +2882,7 @@ class AutoLyricsDialog(Toplevel):
         Label(frame.interior, font=('Comic Sans', 11),
                               foreground = 'black', wraplength = 378,
                               textvariable=self.lyrics_var,
-                              background="#d9d9d9").grid(column=0, row=0, columnspan=2, sticky=E+W+N+S)
+                              background="#d9d9d9").grid(column=0, row=0, columnspan=3, sticky=E+W+N+S)
 
         self.get_lyrics(artist, title)
 
