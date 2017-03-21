@@ -2940,7 +2940,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 20 Mar 2017"
+    datestring=" 21 Mar 2017"
 
     dbusif_tboplayer = None
     try:
