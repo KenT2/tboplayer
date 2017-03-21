@@ -749,6 +749,9 @@ class TBOPlayer:
             self.hide_progress_bar()
             self.monitor("What next, break_required so exit")
             self.set_play_button_state(0)
+            def break_required_signal_false():
+                self.break_required_signal=False
+            self.root.after(650, break_required_signal_false)
             # fall out of the state machine
             return
         elif self.play_next_track_signal ==True:
