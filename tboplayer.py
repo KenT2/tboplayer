@@ -572,7 +572,7 @@ class TBOPlayer:
         if self.play_state == self._OMX_CLOSED:
             self.monitor("      State machine: " + self.play_state)
             self.what_next()
-            print "SHOULD CLOSE STATE MACHINE LOOP"
+            self.monitor("SHOULD QUIT STATE MACHINE LOOP")
             return 
                 
         elif self.play_state == self._OMX_STARTING:
