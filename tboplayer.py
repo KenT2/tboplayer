@@ -396,12 +396,14 @@ class Ytdl:
 
     def retrieve_media_url(self, url):
         if self.is_running(): return
+        self.result = None
         ytcmd = self._YTLAUNCH_CMD % (self._get_link_media_format(url), url)
         self._process = pexpect.spawn(ytcmd)
         self._spawn_thread()
 
     def retrieve_youtube_playlist(self, playlist_url):
         if self.is_running(): return
+        self.result = None
         ytcmd = self._YTLAUNCH_PLST_CMD % (playlist_url)
         self._process = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
         self._spawn_thread()
@@ -830,7 +832,7 @@ class TBOPlayer:
                     self.monitor("            quit ytdl sent signal received")
                     self.ytdl.quit()
                     self.quit_ytdl_sent_signal = False
-                if self.ytdl.end_signal == True:
+                elif self.ytdl.end_signal == True and self.ytdl.result:
                     self.treat_ytdl_result()
                     self.monitor("            <end ytdl signal received from youtube-dl")
                 self.ytdl_state = self._YTDL_ENDING
@@ -875,12 +877,13 @@ class TBOPlayer:
         if not media_url: 
             media_url = data['url']
         track = self.playlist.waiting_track()
-        self.playlist.replace(track[0],[media_url, data['title']])
-        if self.play_state == self._OMX_STARTING:
-            self.start_omx(media_url,skip_ytdl_check=True)
-        self.refresh_playlist_display()
-        self.playlist.select(track[0])
-        self.display_selected_track(self.playlist.selected_track_index())
+        if track:
+            self.playlist.replace(track[0],[media_url, data['title']])
+            if self.play_state == self._OMX_STARTING:
+                self.start_omx(media_url,skip_ytdl_check=True)
+            self.refresh_playlist_display()
+            self.playlist.select(track[0])
+            self.display_selected_track(self.playlist.selected_track_index())
 
     def treat_youtube_playlist_data(self, data):
         for entry in data['entries']:
@@ -966,7 +969,7 @@ class TBOPlayer:
             if not '--no-osd' in opts:
                 opts += ' --no-osd'
 
-            self.monitor('starting omxplayer with args: "%s"' % (opts,))
+        self.monitor('starting omxplayer with args: "%s"' % (opts,))
 
 	self.omx = OMXPlayer(track, args=opts, start_playback=True)
 
@@ -1865,7 +1868,7 @@ class TBOPlayer:
         if  self.playlist.length()>0 and self.playlist.track_is_selected():
             if self.playlist.selected_track()[1][:6] == self.ytdl.WAIT_TAG and self.ytdl_state==self._YTDL_WORKING:
                 # tell ytdl_state_machine to stop
-                self.quit_ytdl_sent_signal = True  
+                self.quit_ytdl_sent_signal = True
             index= self.playlist.selected_track_index()
             self.track_titles_display.delete(index,index)
             self.playlist.remove(index)
@@ -2940,7 +2943,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 21 Mar 2017"
+    datestring=" 24 Mar 2017"
 
     dbusif_tboplayer = None
     try:
@@ -2969,4 +2972,3 @@ if __name__ == "__main__":
     elif len(sys.argv[1:]) > 0:
         dbusif_tboplayer.openFiles(sys.argv[1:])
     exit()
-
