@@ -330,7 +330,8 @@ class Ytdl:
     _SERVICES_REGEXPS = ()
     _ACCEPTED_LINK_REXP_FORMAT = "(http[s]{0,1}://(?:\w|\.{0,1})+%s\.(?:[a-z]{2,3})(?:\.[a-z]{2,3}){0,1}/)"
     
-    _process = None
+    running_processes = {}
+    _finished_processes = {}
         
     MSGS = ("Problem retreiving content. Do you have up-to-date dependencies?", 
                                      "Problem retreiving content. Content may be copyrighted or the link invalid.",
@@ -350,11 +351,12 @@ class Ytdl:
         for s in supported_services: 
             self._SERVICES_REGEXPS = self._SERVICES_REGEXPS + (re.compile(self._ACCEPTED_LINK_REXP_FORMAT % (s)),)
     
-    def _response(self):
+    def _response(self, url):
+        process = self.running_processes[url][0]
         if self._terminate_sent_signal:
             r = (-2, '')
         else:
-            data = self._process.before
+            data = process.before
             if self._WRN_STATUS in data:
                 # warning message
                 r = (0, self.MSGS[0])
@@ -363,50 +365,49 @@ class Ytdl:
                 r = (-1, self.MSGS[1])
             else: 
                 r = (1, data)
-        self.result = r
+        
+        self._finished_processes[url] = self.running_processes[url]
+        self._finished_processes[url][1] = r
+        del self.running_processes[url]
 
     def _get_link_media_format(self, url):
         return "m4a" if (self._YOUTUBE_MEDIA_TYPE == "m4a" and "youtube." in url) else "mp4"
 
-    def _background_process(self):
-        while self.is_running():
+    def _background_process(self, url):
+        process = self.running_processes[url][0]
+        while self.is_running(url):
             try:
-                index = self._process.expect([self._FINISHED_STATUS,
+                index = process.expect([self._FINISHED_STATUS,
                                                 pexpect.TIMEOUT,
-                                                pexpect.EOF,
-                                                self._FINISHED_STATUS])
+                                                pexpect.EOF])
                 if index == 1: continue
-                elif index in (2, 3):
-                    self.end_signal = True
+                elif index == 2:
                     break
                 else:
-                    self._response()
-                    self.end_signal = True
+                    self._response(url)
             except Exception:
                 log.logException()
                 sys.exc_clear()
                 break
-            sleep(0.15)
+            sleep(500)
 
-    def _spawn_thread(self):
-        self.end_signal = False
+    def _spawn_thread(self, url):
         self._terminate_sent_signal = False
-        self._background_thread = Thread(target=self._background_process)
-        self._background_thread.start()
+        Thread(target=self._background_process, args=[url]).start()
 
     def retrieve_media_url(self, url):
-        if self.is_running(): return
-        self.result = None
+        if self.is_running(url): return
         ytcmd = self._YTLAUNCH_CMD % (self._get_link_media_format(url), url)
-        self._process = pexpect.spawn(ytcmd)
-        self._spawn_thread()
+        process = pexpect.spawn(ytcmd)
+        self.running_processes[url] = [process, ''] # process, result
+        self._spawn_thread(url)
 
-    def retrieve_youtube_playlist(self, playlist_url):
-        if self.is_running(): return
-        self.result = None
-        ytcmd = self._YTLAUNCH_PLST_CMD % (playlist_url)
-        self._process = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
-        self._spawn_thread()
+    def retrieve_youtube_playlist(self, url):
+        if self.is_running(url): return
+        ytcmd = self._YTLAUNCH_PLST_CMD % (url)
+        process = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
+        self.running_processes[url] = [process, '']
+        self._spawn_thread(url)
  
     def whether_to_use_youtube_dl(self, url): 
         to_use = url[:4] == "http" and any(regxp.match(url) for regxp in self._SERVICES_REGEXPS)
@@ -415,8 +416,13 @@ class Ytdl:
             return False
         return to_use
 
-    def is_running(self):
-        return self._process is not None and self._process.isalive()
+    def is_running(self, url = None):
+        if url and not url in self.running_processes: 
+            return False
+        elif not url:
+            return bool(len(self.running_processes))
+        process = self.running_processes[url][0]
+        return process is not None and process.isalive()
 
     def set_options(self, options):
         self._YTLOCATION=options.ytdl_location
@@ -426,7 +432,8 @@ class Ytdl:
 
     def quit(self):
         self._terminate_sent_signal = True
-        self._process.terminate(force=True)
+        for url in self.running_processes:
+            self.running_processes[url][0].terminate(force=True)
     
     def check_for_update(self, callback):
         if not os.path.isfile(self._YTLOCATION):
@@ -442,15 +449,14 @@ class Ytdl:
         latest_version_hash = versions['versions'][versions['latest']]['bin'][1]
         
         if current_version_hash != latest_version_hash:
-            self._process = pexpect.spawn("sudo " + self._YTLOCATION + " -U")
-            self._update_thread = Thread(target=self._update_process,args=[callback])
-            self._update_thread.start()
+            self._update_process = pexpect.spawn("sudo " + self._YTLOCATION + " -U")
+            Thread(target=self._update_process,args=[callback]).start()
 
     def _update_process(self, callback):
         updated = False
-        while self.is_running():
+        while self._update_process.is_alive():
             try:
-                index = self._process.expect([self._UPDATED_STATUS,
+                index = self._update_process.expect([self._UPDATED_STATUS,
                                                 pexpect.TIMEOUT,
                                                 self._ERR_STATUS])
                 if index in (1,2):
@@ -459,15 +465,19 @@ class Ytdl:
                     updated = True
                     break
             except pexpect.EOF, e:
-                log.warning("youtube-dl update error: %s" % e.message)
+                log.warning("      youtube-dl update error: %s" % e.message)
             except Exception:
                 log.logException()
                 sys.exc_clear()
                 break
-            sleep(0.15)
+            sleep(500)
         
         if updated:
             callback()
+
+    def reset_processes(self):
+        self.running_processes = {}
+        self._finished_processes = {}
 
 
 from pprint import ( pformat, pprint )
@@ -795,19 +805,18 @@ class TBOPlayer:
             return
 
 
-    def go_ytdl(self,url,playlist=False):
-        if self.ytdl_state==self._YTDL_CLOSED:
-            #initialise all the state machine variables
-            self.quit_ytdl_sent_signal = False
+    def go_ytdl(self, url, playlist=False):
+        self.quit_ytdl_sent_signal = False
+        if self.ytdl_state in (self._YTDL_CLOSED, self._YTDL_ENDING):
             self.ytdl_state=self._YTDL_STARTING
             self.ytdl.start_signal=True
           
-            if not playlist:
-                self.ytdl.retrieve_media_url(url)
-            else:
-                self.ytdl.retrieve_youtube_playlist(url)
+        if not playlist:
+            self.ytdl.retrieve_media_url(url)
+        else:
+            self.ytdl.retrieve_youtube_playlist(url)
+        if self.ytdl_state==self._YTDL_STARTING:
             self.ytdl_state_machine()
-            self.root.after(500, self.ytdl_state_machine)
 
 
     def ytdl_state_machine(self):
@@ -817,7 +826,6 @@ class TBOPlayer:
                 
         elif self.ytdl_state == self._YTDL_STARTING:
             self.monitor("      Ytdl state machine: " + self.ytdl_state)
-            # if youtube-dl is working change to working state
             if self.ytdl.start_signal==True:
                 self.monitor("            <start play signal received from youtube-dl")
                 self.ytdl.start_signal=False
@@ -826,64 +834,61 @@ class TBOPlayer:
             self.root.after(500, self.ytdl_state_machine)
 
         elif self.ytdl_state == self._YTDL_WORKING:
-            # youtube-dl reports it is terminating or user has removed a waiting track so change to ending state
-            if self.ytdl.end_signal == True or self.quit_ytdl_sent_signal == True:
-                if self.quit_ytdl_sent_signal == True:
-                    self.monitor("            quit ytdl sent signal received")
-                    self.ytdl.quit()
-                    self.quit_ytdl_sent_signal = False
-                elif self.ytdl.end_signal == True and self.ytdl.result:
-                    self.treat_ytdl_result()
-                    self.monitor("            <end ytdl signal received from youtube-dl")
+            if len(self.ytdl._finished_processes):
+                for url  in self.ytdl._finished_processes:
+                    process = self.ytdl._finished_processes[url]
+                    self.treat_ytdl_result(url, process[1])
+                self.ytdl._finished_processes = {}
+            if not self.ytdl.is_running():
                 self.ytdl_state = self._YTDL_ENDING
             self.root.after(500, self.ytdl_state_machine)
 
         elif self.ytdl_state == self._YTDL_ENDING:
+            self.ytdl.reset_processes()
             self.monitor("      Ytdl state machine: " + self.ytdl_state)
-            # if spawned process has closed can change to closed state
             self.monitor("      Ytdl state machine: is process running - "  + str(self.ytdl.is_running()))
-            if self.ytdl.is_running() == False:
-                self.monitor("            <youtube-dl process is dead")
-                self.ytdl_state = self._YTDL_CLOSED
+            self.ytdl_state = self._YTDL_CLOSED
             self.root.after(500, self.ytdl_state_machine)
 
-    def treat_ytdl_result(self):
-        if self.ytdl.result[0] == 1:
+
+    def treat_ytdl_result(self, url, res):
+        if res[0] == 1:
             try:
-                result = json.loads(self.ytdl.result[1])
+                result = json.loads(res[1])
             except Exception:
                 log.logException()
                 sys.exc_clear()
                 self.display_selected_track_title.set(self.ytdl.MSGS[2])
-                self.remove_waiting_track()
-                if self.play_state==self._OMX_STARTING:
-                    self.quit_sent_signal = True
+                self.remove_waiting_track(url)
                 return
             if 'entries' in result:
                 self.treat_youtube_playlist_data(result)
             else:
-                self.treat_video_data(result)
+                self.treat_video_data(url, result)
         else:
-            self.remove_waiting_track()
+            self.remove_waiting_track(url)
             if self.play_state==self._OMX_STARTING:
                 self.quit_sent_signal = True
-            self.display_selected_track_title.set(self.ytdl.result[1])
+            self.display_selected_track_title.set(res[1])
         return
 
-    def treat_video_data(self, data):
+    def treat_video_data(self, url, data):
         media_url = self._treat_video_data(data, data['extractor'])
         if not media_url and self.options.youtube_video_quality == "small":  
             media_url = self._treat_video_data(data, data['extractor'], "medium")
         if not media_url: 
             media_url = data['url']
-        track = self.playlist.waiting_track()
-        if track:
-            self.playlist.replace(track[0],[media_url, data['title']])
-            if self.play_state == self._OMX_STARTING:
-                self.start_omx(media_url,skip_ytdl_check=True)
-            self.refresh_playlist_display()
-            self.playlist.select(track[0])
-            self.display_selected_track(self.playlist.selected_track_index())
+        tracks = self.playlist.waiting_tracks()
+        if tracks:
+            for track in tracks:
+                if track[1][0] == url:
+                    self.playlist.replace(track[0],[media_url, data['title']])
+                    if self.play_state == self._OMX_STARTING:
+                        self.start_omx(media_url,skip_ytdl_check=True)
+                    self.refresh_playlist_display()
+                    self.playlist.select(track[0])
+                    self.display_selected_track(self.playlist.selected_track_index())
+                    break
 
     def treat_youtube_playlist_data(self, data):
         for entry in data['entries']:
@@ -893,9 +898,8 @@ class TBOPlayer:
             if not media_url:
                 media_url = entry['url']
             self.playlist.append([media_url,entry['title'],'',''])
-        self.refresh_playlist_display()
         self.playlist.select(self.playlist.length() - len(data['entries']))
-        self.display_selected_track(self.playlist.selected_track_index())
+        self.refresh_playlist_display()
 
     def _treat_video_data(self, data, extractor, force_quality=False):
         media_url = None
@@ -929,12 +933,14 @@ class TBOPlayer:
 
         self.autolyrics = AutoLyricsDialog(self.root, track_title, os.path.isfile(track[0]))
 
-    def remove_waiting_track(self):
-        waiting_track = self.playlist.waiting_track()
-        if waiting_track:
-            self.track_titles_display.delete(waiting_track[0],waiting_track[0])
-            self.playlist.remove(waiting_track[0])
-            self.blank_selected_track() 
+    def remove_waiting_track(self, url):
+        tracks = self.playlist.waiting_tracks()
+        if tracks:
+            for track in tracks:
+                if track[1][0] == url:
+                    self.track_titles_display.delete(track[0],track[0])
+                    self.playlist.remove(track[0])
+                    self.blank_selected_track() 
 
 # ***************************************
 # WRAPPER FOR JBAITER'S PYOMXPLAYER
@@ -1280,7 +1286,8 @@ class TBOPlayer:
         self.options.geometry = self.root.geometry()
         self.options.save_state()
 
-    def quit_omx(self):
+    def shutdown(self):
+        self.ytdl.quit()
         if self.omx is not None:
             self.omx.stop()
             self.omx.kill()
@@ -1831,10 +1838,10 @@ class TBOPlayer:
             return
         if not name:
             name = url
-
+        if self.ytdl.is_running(url): return
         if self.options.download_media_url_upon == "add" and self.ytdl.whether_to_use_youtube_dl(url):
-            if self.ytdl_state != self._YTDL_CLOSED or self.ytdl.is_running():
-                return
+            #if self.ytdl_state != self._YTDL_CLOSED or self.ytdl.is_running():
+               # return
             self.go_ytdl(url)
             name = self.ytdl.WAIT_TAG + name
 
@@ -1848,7 +1855,7 @@ class TBOPlayer:
 
     def youtube_search(self):
         def add_url_from_search(link):
-            if self.ytdl_state != self._YTDL_CLOSED: return
+            if self.ytdl.is_running(link): return
             if "list=" in link:
                 self.go_ytdl(link,playlist=True)
                 self.display_selected_track_title.set("Wait. Loading playlist content...")
@@ -1858,9 +1865,7 @@ class TBOPlayer:
             self.go_ytdl(link)
             result[1] = self.ytdl.WAIT_TAG + result[0]
             self.playlist.append(result)
-            self.track_titles_display.insert(END, result[1])  
-            self.playlist.select(self.playlist.length()-1)
-            self.display_selected_track(self.playlist.selected_track_index())
+            self.track_titles_display.insert(END, result[1])
         YoutubeSearchDialog(self.root, add_url_from_search)
 
 
@@ -2515,11 +2520,12 @@ class PlayList():
             self.selected_track_location = self._selected_track[PlayList.LOCATION]
             self.selected_track_title = self._selected_track[PlayList.TITLE]
 
-    def waiting_track(self):
+    def waiting_tracks(self):
+        waiting = []
         for i in range(len(self._tracks)):
             if self._tracks[i][1][:6] == Ytdl.WAIT_TAG:
-                return (i, self._tracks[i])
-        return False
+                waiting += [(i, self._tracks[i])]
+        return waiting if len(waiting) else False
 
 
 from urllib import quote_plus
@@ -2560,7 +2566,7 @@ class YoutubeSearchDialog(Toplevel):
         page_btn = Button(master, width = 5, height = 1, text = '1 | 2 | 3',
                               foreground='black',background='light grey')
         page_btn.grid(row=1, column=2)
-        page_btn.bind("<ButtonRelease-1>", self.searchPage)
+        page_btn.bind("<ButtonRelease-1>", self.search_page)
         self.frame = VerticalScrolledFrame(master)
         self.frame.grid(row=2,column=0,columnspan=3,rowspan=6)
         self.frame.configure_scrolling()
@@ -2579,7 +2585,7 @@ class YoutubeSearchDialog(Toplevel):
         parser.feed(pagesrc)
         self.show_result(parser.result)
 
-    def searchPage(self, event):
+    def search_page(self, event):
         wwidth = event.widget.winfo_width()
         if event.x < wwidth/3:
             page = 0
@@ -2943,7 +2949,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 24 Mar 2017"
+    datestring=" 26 Mar 2017"
 
     dbusif_tboplayer = None
     try:
@@ -2962,8 +2968,8 @@ if __name__ == "__main__":
                 bplayer.root.update()
                 gobject.timeout_add(66, refresh_player)
             except: 
+                bplayer.shutdown()
                 gobject_loop.quit()
-                bplayer.quit_omx()
         def start_gobject():
             gobject_loop.run()
         gobject.timeout_add(66, refresh_player)
