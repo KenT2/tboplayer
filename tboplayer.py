@@ -330,8 +330,8 @@ class Ytdl:
     _SERVICES_REGEXPS = ()
     _ACCEPTED_LINK_REXP_FORMAT = "(http[s]{0,1}://(?:\w|\.{0,1})+%s\.(?:[a-z]{2,3})(?:\.[a-z]{2,3}){0,1}/)"
     
-    running_processes = {}
-    _finished_processes = {}
+    _running_processes = {}
+    finished_processes = {}
         
     MSGS = ("Problem retreiving content. Do you have up-to-date dependencies?", 
                                      "Problem retreiving content. Content may be copyrighted or the link invalid.",
@@ -344,15 +344,14 @@ class Ytdl:
     def __init__(self, options, supported_services, yt_not_found_callback):
         self.set_options(options)
         self.yt_not_found_callback = yt_not_found_callback
-        self._background_thread = Thread(target=self._compile_regexps,args=supported_services)
-        self._background_thread.start()
+        Thread(target=self._compile_regexps,args=supported_services).start()
 
     def _compile_regexps(self,*supported_services):
         for s in supported_services: 
             self._SERVICES_REGEXPS = self._SERVICES_REGEXPS + (re.compile(self._ACCEPTED_LINK_REXP_FORMAT % (s)),)
     
     def _response(self, url):
-        process = self.running_processes[url][0]
+        process = self._running_processes[url][0]
         if self._terminate_sent_signal:
             r = (-2, '')
         else:
@@ -366,15 +365,15 @@ class Ytdl:
             else: 
                 r = (1, data)
         
-        self._finished_processes[url] = self.running_processes[url]
-        self._finished_processes[url][1] = r
-        del self.running_processes[url]
+        self.finished_processes[url] = self._running_processes[url]
+        self.finished_processes[url][1] = r
+        del self._running_processes[url]
 
     def _get_link_media_format(self, url):
         return "m4a" if (self._YOUTUBE_MEDIA_TYPE == "m4a" and "youtube." in url) else "mp4"
 
     def _background_process(self, url):
-        process = self.running_processes[url][0]
+        process = self._running_processes[url][0]
         while self.is_running(url):
             try:
                 index = process.expect([self._FINISHED_STATUS,
@@ -382,10 +381,13 @@ class Ytdl:
                                                 pexpect.EOF])
                 if index == 1: continue
                 elif index == 2:
+                    del self._running_processes[url]
                     break
                 else:
                     self._response(url)
+                    break
             except Exception:
+                del self._running_processes[url]
                 log.logException()
                 sys.exc_clear()
                 break
@@ -399,14 +401,14 @@ class Ytdl:
         if self.is_running(url): return
         ytcmd = self._YTLAUNCH_CMD % (self._get_link_media_format(url), url)
         process = pexpect.spawn(ytcmd)
-        self.running_processes[url] = [process, ''] # process, result
+        self._running_processes[url] = [process, ''] # process, result
         self._spawn_thread(url)
 
     def retrieve_youtube_playlist(self, url):
         if self.is_running(url): return
         ytcmd = self._YTLAUNCH_PLST_CMD % (url)
         process = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
-        self.running_processes[url] = [process, '']
+        self._running_processes[url] = [process, '']
         self._spawn_thread(url)
  
     def whether_to_use_youtube_dl(self, url): 
@@ -417,11 +419,12 @@ class Ytdl:
         return to_use
 
     def is_running(self, url = None):
-        if url and not url in self.running_processes: 
+        if url and not url in self._running_processes: 
             return False
         elif not url:
-            return bool(len(self.running_processes))
-        process = self.running_processes[url][0]
+            return (bool(len(self._running_processes)) and 
+                        any([self.is_running(url) for url in self._running_processes]))
+        process = self._running_processes[url][0]
         return process is not None and process.isalive()
 
     def set_options(self, options):
@@ -432,8 +435,8 @@ class Ytdl:
 
     def quit(self):
         self._terminate_sent_signal = True
-        for url in self.running_processes:
-            self.running_processes[url][0].terminate(force=True)
+        for url in self._running_processes:
+            self._running_processes[url][0].terminate(force=True)
     
     def check_for_update(self, callback):
         if not os.path.isfile(self._YTLOCATION):
@@ -476,8 +479,8 @@ class Ytdl:
             callback()
 
     def reset_processes(self):
-        self.running_processes = {}
-        self._finished_processes = {}
+        self._running_processes = {}
+        self.finished_processes = {}
 
 
 from pprint import ( pformat, pprint )
@@ -672,6 +675,7 @@ class TBOPlayer:
     def do_ending(self):
         # we are ending so just write End to the time display
         self.display_time.set("End")
+        self.hide_progress_bar()
 
 
     # respond to asynchrous user input and send signals if necessary
@@ -784,7 +788,6 @@ class TBOPlayer:
             self.play()
             return
         elif self.options.mode=='single':
-            self.hide_progress_bar()
             self.monitor("What next, single track so exit")
             self.set_play_button_state(0)
             # fall out of the state machine
@@ -834,11 +837,11 @@ class TBOPlayer:
             self.root.after(500, self.ytdl_state_machine)
 
         elif self.ytdl_state == self._YTDL_WORKING:
-            if len(self.ytdl._finished_processes):
-                for url  in self.ytdl._finished_processes:
-                    process = self.ytdl._finished_processes[url]
+            if len(self.ytdl.finished_processes):
+                for url  in self.ytdl.finished_processes:
+                    process = self.ytdl.finished_processes[url]
                     self.treat_ytdl_result(url, process[1])
-                self.ytdl._finished_processes = {}
+                self.ytdl.finished_processes = {}
             if not self.ytdl.is_running():
                 self.ytdl_state = self._YTDL_ENDING
             self.root.after(500, self.ytdl_state_machine)
