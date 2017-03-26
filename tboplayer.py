@@ -302,6 +302,7 @@ class OMXPlayer(object):
 
 
 from hashlib import sha256
+from threading import Lock
 import json
 
 
@@ -332,6 +333,9 @@ class Ytdl:
     
     _running_processes = {}
     finished_processes = {}
+    
+    running_processes_lock = Lock()
+    finished_processes_lock = Lock()
         
     MSGS = ("Problem retreiving content. Do you have up-to-date dependencies?", 
                                      "Problem retreiving content. Content may be copyrighted or the link invalid.",
@@ -364,7 +368,6 @@ class Ytdl:
                 r = (-1, self.MSGS[1])
             else: 
                 r = (1, data)
-        
         self.finished_processes[url] = self._running_processes[url]
         self.finished_processes[url][1] = r
         del self._running_processes[url]
@@ -382,16 +385,13 @@ class Ytdl:
                 if index == 1: continue
                 elif index == 2:
                     del self._running_processes[url]
-                    break
                 else:
                     self._response(url)
-                    break
             except Exception:
                 del self._running_processes[url]
                 log.logException()
                 sys.exc_clear()
-                break
-            sleep(500)
+        sleep(500)
 
     def _spawn_thread(self, url):
         self._terminate_sent_signal = False
@@ -422,8 +422,7 @@ class Ytdl:
         if url and not url in self._running_processes: 
             return False
         elif not url:
-            return (bool(len(self._running_processes)) and 
-                        any([self.is_running(url) for url in self._running_processes]))
+            return bool(len(self._running_processes))
         process = self._running_processes[url][0]
         return process is not None and process.isalive()
 
@@ -836,15 +835,20 @@ class TBOPlayer:
                 self.monitor("      Ytdl state machine: "+self.ytdl_state)
             self.root.after(500, self.ytdl_state_machine)
 
-        elif self.ytdl_state == self._YTDL_WORKING:
-            if len(self.ytdl.finished_processes):
-                for url  in self.ytdl.finished_processes:
-                    process = self.ytdl.finished_processes[url]
-                    self.treat_ytdl_result(url, process[1])
-                self.ytdl.finished_processes = {}
-            if not self.ytdl.is_running():
-                self.ytdl_state = self._YTDL_ENDING
-            self.root.after(500, self.ytdl_state_machine)
+        elif self.ytdl_state == self._YTDL_WORKING:            
+            try:
+                if len(self.ytdl.finished_processes):
+                    for url  in self.ytdl.finished_processes:
+                        process = self.ytdl.finished_processes[url]
+                        self.treat_ytdl_result(url, process[1])
+                    self.ytdl.finished_processes = {}
+
+                if not self.ytdl.is_running():
+                    self.ytdl_state = self._YTDL_ENDING
+                    self.root.after(500, self.ytdl_state_machine)
+            except Exception:
+                log.logException()
+                sys.exc_clear()
 
         elif self.ytdl_state == self._YTDL_ENDING:
             self.ytdl.reset_processes()
@@ -2971,8 +2975,8 @@ if __name__ == "__main__":
                 bplayer.root.update()
                 gobject.timeout_add(66, refresh_player)
             except: 
-                bplayer.shutdown()
                 gobject_loop.quit()
+                bplayer.shutdown()
         def start_gobject():
             gobject_loop.run()
         gobject.timeout_add(66, refresh_player)
