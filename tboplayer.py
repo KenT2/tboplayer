@@ -302,9 +302,7 @@ class OMXPlayer(object):
 
 
 from hashlib import sha256
-from threading import Lock
 import json
-
 
 # ***************************************
 # YTDL CLASS
@@ -333,9 +331,6 @@ class Ytdl:
     
     _running_processes = {}
     finished_processes = {}
-    
-    running_processes_lock = Lock()
-    finished_processes_lock = Lock()
         
     MSGS = ("Problem retreiving content. Do you have up-to-date dependencies?", 
                                      "Problem retreiving content. Content may be copyrighted or the link invalid.",
