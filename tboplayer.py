@@ -790,7 +790,12 @@ class TBOPlayer:
             self.monitor("What next, Starting repeat track")
             self.play()
             return
-        elif self.options.mode=='playlist':
+        elif 'playlist' in self.options.mode:
+            if not 'repeat' in self.options.mode and self.start_track_index == self.playlist.length() - 1: 
+                self.stop_required_signal=True
+                self.set_play_button_state(0)
+                self.monitor("What next, reached end of playlist, so exit")
+                return
             self.monitor("What next, Starting playlist track")
             self.select_next_track()
             self.play()
@@ -2232,8 +2237,10 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_repeat.grid(row=12,column=0,sticky=W)
         rb_playlist=Radiobutton(master, text="Playlist", variable=self.mode_var,value="playlist")
         rb_playlist.grid(row=13,column=0,sticky=W)
+        rb_rplaylist=Radiobutton(master, text="Repeat playlist", variable=self.mode_var,value="repeat playlist")
+        rb_rplaylist.grid(row=14,column=0,sticky=W)
         rb_shuffle=Radiobutton(master, text="Shuffle", variable=self.mode_var,value="shuffle")
-        rb_shuffle.grid(row=14,column=0,sticky=W)
+        rb_shuffle.grid(row=15,column=0,sticky=W)
 
         Label(master, text="").grid(row=16, sticky=W)
         Label(master, text="Download from Youtube:").grid(row=17, sticky=W)
@@ -2903,8 +2910,9 @@ class AutoLyricsDialog(Toplevel):
             pagesrc = requests.get(api_response['url']).text
             parser = LyricWikiParser()
             parser.feed(pagesrc)
-            lyrics = artist +": " + title + "\n-- - -- - -- - -- - --\n\n"
-            lyrics = lyrics + parser.result
+            lyrics = (artist + ": " + title +
+                            "\n               -- - -- - -- - -- - -- - -- - -- - -- - --               \n\n" +
+                            parser.result)
             self.lyrics_var.set(lyrics)
         except:
             self.nope()
