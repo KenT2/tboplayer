@@ -840,10 +840,10 @@ class TBOPlayer:
 
                 if not self.ytdl.is_running():
                     self.ytdl_state = self._YTDL_ENDING
-                    self.root.after(500, self.ytdl_state_machine)
             except Exception:
                 log.logException()
                 sys.exc_clear()
+            self.root.after(500, self.ytdl_state_machine)
 
         elif self.ytdl_state == self._YTDL_ENDING:
             self.ytdl.reset_processes()
@@ -2951,7 +2951,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 26 Mar 2017"
+    datestring=" 27 Mar 2017"
 
     dbusif_tboplayer = None
     try:
