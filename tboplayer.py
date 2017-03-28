@@ -938,7 +938,7 @@ class TBOPlayer:
                     self.omx.misc['artist']):
             track_title = self.omx.misc['artist'] + '-' + self.omx.misc['title']
 
-        self.autolyrics = AutoLyricsDialog(self.root, track_title, os.path.isfile(track[0]))
+        self.autolyrics = AutoLyricsDialog(self, track_title, os.path.isfile(track[0]))
 
     def remove_waiting_track(self, url):
         tracks = self.playlist.waiting_tracks()
@@ -2121,6 +2121,7 @@ class Options:
             self.cue_track_mode = int(config.get('config','cue_track_mode',0))
             self.autoplay = int(config.get('config','autoplay',0))
             self.find_lyrics = int(config.get('config','find_lyrics',0))
+            self.autolyrics_coords = config.get('config','autolyrics_coords',0)
 
             if config.get('config','debug',0) == 'on':
                 self.debug = True
@@ -2161,6 +2162,7 @@ class Options:
         config.set('config','cue_track_mode','0')
         config.set('config','autoplay','1')
         config.set('config','find_lyrics','0')
+        config.set('config','autolyrics_coords','+350+350')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
             configfile.close()
@@ -2188,6 +2190,7 @@ class Options:
         config.set('config','cue_track_mode',self.cue_track_mode)
         config.set('config','autoplay',self.autoplay)
         config.set('config','find_lyrics',self.find_lyrics)
+        config.set('config','autolyrics_coords',self.autolyrics_coords)
         with open(self.options_file, 'w+') as configfile:
             config.write(configfile)
             configfile.close()
@@ -2214,6 +2217,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.full_screen_var = config.get('config','full_screen',0)
         self.windowed_mode_coords_var = config.get('config','windowed_mode_coords',0)
         self.windowed_mode_resolution_var = config.get('config','windowed_mode_resolution',0)
+        self.autolyrics_coords_var = config.get('config','autolyrics_coords',0)
 
         Label(master, text="Audio Output:").grid(row=0, sticky=W)
         self.audio_var=StringVar()
@@ -2377,6 +2381,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','cue_track_mode',self.cue_track_mode_var.get())
         config.set('config','autoplay',self.autoplay_var.get())
         config.set('config','find_lyrics',self.find_lyrics_var.get())
+        config.set('config','autolyrics_coords',self.find_lyrics_var.get())
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
             optionsfile.close()
@@ -2861,9 +2866,16 @@ class TBOPlayerDBusInterface (Object):
 class AutoLyricsDialog(Toplevel):
     _ARTIST_TITLE_REXP = re.compile(r"([\w\d ]*)[-:|/]([\w\d ]*)", re.UNICODE)
 
-    def __init__(self, parent, track_title, track_is_file=False):
-        Toplevel.__init__(self, parent, background="#d9d9d9")
-        self.transient(parent)
+    def __init__(self, tboplayer_instance, track_title, track_is_file=False):
+        Toplevel.__init__(self, tboplayer_instance.root, background="#d9d9d9")
+        try:
+            self.geometry(tboplayer_instance.options.autolyrics_coords)
+        except: 
+            pass
+        self.transient(tboplayer_instance.root)
+        self.tboplayer_instance = tboplayer_instance
+
+        self.bind('<Configure>', self.save_coords)
 
         self.title("Lyrics Finder")
         self.resizable(False,False)
@@ -2921,6 +2933,12 @@ class AutoLyricsDialog(Toplevel):
         self.lyrics_var.set("Unable to retrieve lyrics for this track.")
         self.after(3000, lambda: self.destroy())
 
+    def save_coords(self, *event):
+        x = self.winfo_x()
+        y = self.winfo_y()
+        self.tboplayer_instance.options.autolyrics_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
+        self.tboplayer_instance.options.save_state()
+
 
 class LyricWikiParser(HTMLParser):
 
@@ -2959,7 +2977,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 27 Mar 2017"
+    datestring=" 28 Mar 2017"
 
     dbusif_tboplayer = None
     try:
