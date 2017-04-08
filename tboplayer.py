@@ -938,7 +938,12 @@ class TBOPlayer:
                     self.omx.misc['artist']):
             track_title = self.omx.misc['artist'] + '-' + self.omx.misc['title']
 
-        self.autolyrics = AutoLyricsDialog(self, track_title, os.path.isfile(track[0]))
+        self.autolyrics = AutoLyricsDialog(self.root, self.options.autolyrics_coords, self._save_autolyrics_coords, track_title, os.path.isfile(track[0]))
+
+    def _save_autolyrics_coords(self, *event):
+        x = self.autolyrics.winfo_x()
+        y = self.autolyrics.winfo_y()
+        self.options.autolyrics_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
 
     def remove_waiting_track(self, url):
         tracks = self.playlist.waiting_tracks()
@@ -1294,6 +1299,7 @@ class TBOPlayer:
         self.options.save_state()
 
     def shutdown(self):
+        self.root.quit()
         self.ytdl.quit()
         if self.omx is not None:
             self.omx.stop()
@@ -2866,16 +2872,15 @@ class TBOPlayerDBusInterface (Object):
 class AutoLyricsDialog(Toplevel):
     _ARTIST_TITLE_REXP = re.compile(r"([\w\d ]*)[-:|/]([\w\d ]*)", re.UNICODE)
 
-    def __init__(self, tboplayer_instance, track_title, track_is_file=False):
-        Toplevel.__init__(self, tboplayer_instance.root, background="#d9d9d9")
+    def __init__(self, parent, coords, update_coords_func, track_title, track_is_file=False):
+        Toplevel.__init__(self, parent, background="#d9d9d9")
         try:
-            self.geometry(tboplayer_instance.options.autolyrics_coords)
+            self.geometry(coords)
         except: 
             pass
-        self.transient(tboplayer_instance.root)
-        self.tboplayer_instance = tboplayer_instance
+        self.transient(parent)
 
-        self.bind('<Configure>', self.save_coords)
+        self.bind('<Configure>', update_coords_func)
 
         self.title("Lyrics Finder")
         self.resizable(False,False)
@@ -2933,12 +2938,6 @@ class AutoLyricsDialog(Toplevel):
         self.lyrics_var.set("Unable to retrieve lyrics for this track.")
         self.after(3000, lambda: self.destroy())
 
-    def save_coords(self, *event):
-        x = self.winfo_x()
-        y = self.winfo_y()
-        self.tboplayer_instance.options.autolyrics_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
-        self.tboplayer_instance.options.save_state()
-
 
 class LyricWikiParser(HTMLParser):
 
@@ -2977,7 +2976,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 28 Mar 2017"
+    datestring=" 7 Apr 2017"
 
     dbusif_tboplayer = None
     try:
