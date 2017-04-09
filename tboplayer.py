@@ -2868,7 +2868,7 @@ class TBOPlayerDBusInterface (Object):
 
 
 class AutoLyricsDialog(Toplevel):
-    _ARTIST_TITLE_REXP = re.compile(r"([\w\d ]*)[-:|/]([\w\d ]*)", re.UNICODE)
+    _ARTIST_TITLE_REXP = re.compile(r"([\w\d.&\\/ ]*)[-:|]([\w\d.&\\/ ]*)", re.UNICODE)
 
     def __init__(self, parent, coords, update_coords_func, track_title, track_is_file=False):
         Toplevel.__init__(self, parent, background="#d9d9d9")
@@ -2976,7 +2976,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 8 Apr 2017"
+    datestring=" 9 Apr 2017"
 
     dbusif_tboplayer = None
     try:
