@@ -569,9 +569,12 @@ class TBOPlayer:
             self._cued = False
 
             #play the selelected track
+            index = self.playlist.selected_track_index()
+            self.display_selected_track(index)
+
             self.start_omx(self.playlist.selected_track_location)
             self.play_state_machine()
-            
+
             self.set_play_button_state(1)
 
 
@@ -865,7 +868,6 @@ class TBOPlayer:
             except Exception:
                 log.logException()
                 sys.exc_clear()
-                self.display_selected_track_title.set(self.ytdl.MSGS[2])
                 self.remove_waiting_track(url)
                 return
             if 'entries' in result:
@@ -877,6 +879,7 @@ class TBOPlayer:
             if self.play_state==self._OMX_STARTING:
                 self.quit_sent_signal = True
             self.display_selected_track_title.set(res[1])
+            self.root.after(3000, lambda: self.display_selected_track())
         return
 
     def treat_video_data(self, url, data):
@@ -894,7 +897,6 @@ class TBOPlayer:
                         self.start_omx(media_url,skip_ytdl_check=True)
                     self.refresh_playlist_display()
                     self.playlist.select(track[0])
-                    self.display_selected_track(self.playlist.selected_track_index())
                     break
 
     def treat_youtube_playlist_data(self, data):
@@ -907,6 +909,7 @@ class TBOPlayer:
             self.playlist.append([media_url,entry['title'],'',''])
         self.playlist.select(self.playlist.length() - len(data['entries']))
         self.refresh_playlist_display()
+        self.root.after(3000, lambda: self.display_selected_track())
 
     def _treat_video_data(self, data, extractor, force_quality=False):
         media_url = None
@@ -938,7 +941,12 @@ class TBOPlayer:
                     self.omx.misc['artist']):
             track_title = self.omx.misc['artist'] + '-' + self.omx.misc['title']
 
-        self.autolyrics = AutoLyricsDialog(self, track_title, os.path.isfile(track[0]))
+        self.autolyrics = AutoLyricsDialog(self.root, self.options.autolyrics_coords, self._save_autolyrics_coords, track_title, os.path.isfile(track[0]))
+
+    def _save_autolyrics_coords(self, *event):
+        x = self.autolyrics.winfo_x()
+        y = self.autolyrics.winfo_y()
+        self.options.autolyrics_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
 
     def remove_waiting_track(self, url):
         tracks = self.playlist.waiting_tracks()
@@ -962,7 +970,6 @@ class TBOPlayer:
             track = (track[0], self.ytdl.WAIT_TAG+track[1])
             self.playlist.replace(index, track)
             self.playlist.select(index)               
-            self.display_selected_track(index)
             self.refresh_playlist_display()
             return
         track= "'"+ track.replace("'","'\\''") + "'"
@@ -1072,19 +1079,17 @@ class TBOPlayer:
 
         OMXPlayer.set_omx_location(self.options.omx_location)
 
-        self._SUPPORTED_MIME_TYPES = ("video/x-msvideo", "video/quicktime", "video/mp4", "video/x-flv", 
-                "video/x-matroska", "audio/x-matroska", "video/3gpp", "audio/x-aac", "video/h264", "video/h263", 
-                "video/x-m4v", "audio/midi", "audio/x-midi", "audio/mid", "x-music/x-midi",  "audio/vnd.qcelp",
-                "audio/mpeg", "video/mpeg", "audio/mp4", "video/mj2", "audio/x-tta", "audio/tta", 
-                "application/mp4", "audio/ogg", "video/ogg", "audio/wav", "audio/wave", "audio/x-pn-aiff",
-                "audio/x-pn-wav", "audio/x-wav", "audio/flac", "audio/x-flac", "video/h261", "application/adrift", 
-                "video/3gpp2", "video/x-f4v", "application/ogg", "audio/mpeg3", "audio/x-mpeg-3","audio/x-gsm", 
-                "audio/x-mpeg", "audio/mod", "audio/x-mod", "video/x-ms-asf", "audio/x-pn-realaudio",
-                "audio/x-realaudio", "video/vnd.rn-realvideo", "video/fli", "video/x-fli", "audio/x-ms-wmv",
-                "video/avi", "video/msvideo", "video/m4v", "audio/x-ms-wma",  "application/octet-stream",
-                "application/x-url", "text/url", "text/x-url", "application/vnd.rn-realmedia", "audio/vnd.rn-realaudio", 
-                "audio/x-pn-realaudio", "audio/x-realaudio", "audio/aiff", "audio/x-aiff", "sound/aiff", 
-                "audio/rmf", "audio/x-rmf")
+        self._SUPPORTED_MIME_TYPES = ('video/x-msvideo', 'video/quicktime', 'video/mp4', 'video/x-flv', 'video/x-matroska', 'audio/x-matroska',
+          'video/3gpp', 'audio/x-aac', 'video/h264', 'video/h263', 'video/x-m4v', 'audio/midi', 
+          'audio/mid', 'audio/vnd.qcelp', 'audio/mpeg', 'video/mpeg', 'audio/rmf', 'audio/x-rmf',
+          'audio/mp4', 'video/mj2', 'audio/x-tta', 'audio/tta', 'application/mp4', 'audio/ogg',
+          'video/ogg', 'audio/wav', 'audio/wave' ,'audio/x-pn-aiff', 'audio/x-pn-wav', 'audio/x-wav',
+          'audio/flac', 'audio/x-flac', 'video/h261', 'application/adrift', 'video/3gpp2', 'video/x-f4v',
+          'application/ogg', 'audio/mpeg3', 'audio/x-mpeg-3', 'audio/x-gsm', 'audio/x-mpeg', 'audio/mod',
+          'audio/x-mod', 'video/x-ms-asf', 'audio/x-pn-realaudio', 'audio/x-realaudio' ,'video/vnd.rn-realvideo', 'video/fli',
+          'video/x-fli', 'audio/x-ms-wmv', 'video/avi', 'video/msvideo', 'video/m4v', 'audio/x-ms-wma',
+          'application/octet-stream', 'application/x-url', 'text/url', 'text/x-url', 'application/vnd.rn-realmedia',
+          'audio/vnd.rn-realaudio', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'audio/aiff', 'audio/x-aiff')
 
         # bind some display fields
         self.filename = tk.StringVar()
@@ -1294,6 +1299,7 @@ class TBOPlayer:
         self.options.save_state()
 
     def shutdown(self):
+        self.root.quit()
         self.ytdl.quit()
         if self.omx is not None:
             self.omx.stop()
@@ -1708,8 +1714,9 @@ class TBOPlayer:
 # DISPLAY TRACKS
 # ***************************************
 
-    def display_selected_track(self,index):
-        if self.playlist.track_is_selected:
+    def display_selected_track(self,index=None):
+        index = index if index != None else self.start_track_index
+        if self.playlist.track_is_selected():
             self.track_titles_display.activate(index)
             self.display_selected_track_title.set(self.playlist.selected_track()[PlayList.TITLE])
         else:
@@ -1783,7 +1790,6 @@ class TBOPlayer:
         else:
             index = self.playlist.length() - 1
         self.playlist.select(index)
-        self.display_selected_track(self.playlist.selected_track_index())
 
 
     def get_dir(self):
@@ -1903,8 +1909,7 @@ class TBOPlayer:
                     d.result[0] = self.ytdl.WAIT_TAG + d.result[0]
                 d.result = (d.result[1],d.result[0])
                 self.playlist.replace(index, d.result)
-                self.playlist.select(index)               
-                self.display_selected_track(index)
+                self.playlist.select(index)
                 self.refresh_playlist_display()
                 if do_ytdl:
                     self.go_ytdl(d.result[0])
@@ -1922,7 +1927,6 @@ class TBOPlayer:
                 if sel:
                     index=int(sel[0]) if event else 0
             self.playlist.select(index)
-            self.display_selected_track(index)
 
 
     def select_and_play(self, event=None):
@@ -2866,16 +2870,15 @@ class TBOPlayerDBusInterface (Object):
 class AutoLyricsDialog(Toplevel):
     _ARTIST_TITLE_REXP = re.compile(r"([\w\d ]*)[-:|/]([\w\d ]*)", re.UNICODE)
 
-    def __init__(self, tboplayer_instance, track_title, track_is_file=False):
-        Toplevel.__init__(self, tboplayer_instance.root, background="#d9d9d9")
+    def __init__(self, parent, coords, update_coords_func, track_title, track_is_file=False):
+        Toplevel.__init__(self, parent, background="#d9d9d9")
         try:
-            self.geometry(tboplayer_instance.options.autolyrics_coords)
+            self.geometry(coords)
         except: 
             pass
-        self.transient(tboplayer_instance.root)
-        self.tboplayer_instance = tboplayer_instance
+        self.transient(parent)
 
-        self.bind('<Configure>', self.save_coords)
+        self.bind('<Configure>', update_coords_func)
 
         self.title("Lyrics Finder")
         self.resizable(False,False)
@@ -2892,14 +2895,16 @@ class AutoLyricsDialog(Toplevel):
                               foreground = 'black', wraplength = 378,
                               textvariable=self.lyrics_var,
                               background="#d9d9d9").grid(column=0, row=0, columnspan=3, sticky=E+W+N+S)
-
+        
         search_result = self._ARTIST_TITLE_REXP.search(track_title)
         if not search_result:
             self.nope()
             return
         title_data = search_result.groups()
+
         artist = title_data[0].strip(' ')
         title = title_data[1].strip(' ')
+
         self.get_lyrics(artist, title)
 
     def get_lyrics(self, artist, title):
@@ -2932,12 +2937,6 @@ class AutoLyricsDialog(Toplevel):
     def nope(self):
         self.lyrics_var.set("Unable to retrieve lyrics for this track.")
         self.after(3000, lambda: self.destroy())
-
-    def save_coords(self, *event):
-        x = self.winfo_x()
-        y = self.winfo_y()
-        self.tboplayer_instance.options.autolyrics_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
-        self.tboplayer_instance.options.save_state()
 
 
 class LyricWikiParser(HTMLParser):
@@ -2977,7 +2976,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 28 Mar 2017"
+    datestring=" 8 Apr 2017"
 
     dbusif_tboplayer = None
     try:
