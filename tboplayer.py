@@ -80,8 +80,8 @@ class OMXPlayer(object):
     _TIMEPROP_REXP = re.compile(r".*Duration: (\d{2}:\d{2}:\d{2}.\d{2}), start: (\d.\d+), bitrate: (\d+).*")
     _FILEPROP_REXP = re.compile(r".*audio streams (\d+) video streams (\d+) chapters (\d+) subtitles (\d+).*")
     _VIDEOPROP_REXP = re.compile(r".*Video codec ([\w-]+) width (\d+) height (\d+) profile ([-]{0,1}\d+) fps ([\d.]+).*")
-    _TITLEPROP_REXP = re.compile(r"(title|TITLE)\s*:\s([\w|\d| ]+){0,1}.*", re.UNICODE)
-    _ARTISTPROP_REXP = re.compile(r"(artist|ARTIST)\s*:\s([\w|\d| ]+){0,1}.*", re.UNICODE)
+    _TITLEPROP_REXP = re.compile(r"(?:title|TITLE)\s*:\s([\w\d.&/\\ ]+){0,1}.*", re.UNICODE)
+    _ARTISTPROP_REXP = re.compile(r"(?:artist|ARTIST)\s*:\s([\w\d.&/\\ ]+){0,1}.*", re.UNICODE)
     _AUDIOPROP_REXP = re.compile(r".*Audio codec (\w+) channels (\d+) samplerate (\d+) bitspersample (\d+).*")
     _STATUS_REXP = re.compile(r"M:\s*([\d.]+).*")
     _DONE_REXP = re.compile(r"have a nice day.*")
@@ -222,11 +222,11 @@ class OMXPlayer(object):
             title_prop = self._TITLEPROP_REXP.search(output)
             if title_prop:
                 title_prop = title_prop.groups()
-                self.misc['title'] = title_prop[1]
+                self.misc['title'] = title_prop[0]
             artist_prop = self._ARTISTPROP_REXP.search(output)
             if artist_prop:
                 artist_prop = artist_prop.groups()
-                self.misc['artist'] = artist_prop[1]
+                self.misc['artist'] = artist_prop[0]
 
 
     def init_dbus_link(self):
