@@ -569,9 +569,12 @@ class TBOPlayer:
             self._cued = False
 
             #play the selelected track
+            index = self.playlist.selected_track_index()
+            self.display_selected_track(index)
+
             self.start_omx(self.playlist.selected_track_location)
             self.play_state_machine()
-            
+
             self.set_play_button_state(1)
 
 
@@ -865,7 +868,6 @@ class TBOPlayer:
             except Exception:
                 log.logException()
                 sys.exc_clear()
-                self.display_selected_track_title.set(self.ytdl.MSGS[2])
                 self.remove_waiting_track(url)
                 return
             if 'entries' in result:
@@ -877,6 +879,7 @@ class TBOPlayer:
             if self.play_state==self._OMX_STARTING:
                 self.quit_sent_signal = True
             self.display_selected_track_title.set(res[1])
+            self.root.after(3000, lambda: self.display_selected_track())
         return
 
     def treat_video_data(self, url, data):
@@ -894,7 +897,6 @@ class TBOPlayer:
                         self.start_omx(media_url,skip_ytdl_check=True)
                     self.refresh_playlist_display()
                     self.playlist.select(track[0])
-                    self.display_selected_track(self.playlist.selected_track_index())
                     break
 
     def treat_youtube_playlist_data(self, data):
@@ -907,6 +909,7 @@ class TBOPlayer:
             self.playlist.append([media_url,entry['title'],'',''])
         self.playlist.select(self.playlist.length() - len(data['entries']))
         self.refresh_playlist_display()
+        self.root.after(3000, lambda: self.display_selected_track())
 
     def _treat_video_data(self, data, extractor, force_quality=False):
         media_url = None
@@ -967,7 +970,6 @@ class TBOPlayer:
             track = (track[0], self.ytdl.WAIT_TAG+track[1])
             self.playlist.replace(index, track)
             self.playlist.select(index)               
-            self.display_selected_track(index)
             self.refresh_playlist_display()
             return
         track= "'"+ track.replace("'","'\\''") + "'"
@@ -1714,8 +1716,9 @@ class TBOPlayer:
 # DISPLAY TRACKS
 # ***************************************
 
-    def display_selected_track(self,index):
-        if self.playlist.track_is_selected:
+    def display_selected_track(self,index=None):
+        index = index if index != None else self.start_track_index
+        if self.playlist.track_is_selected():
             self.track_titles_display.activate(index)
             self.display_selected_track_title.set(self.playlist.selected_track()[PlayList.TITLE])
         else:
@@ -1789,7 +1792,6 @@ class TBOPlayer:
         else:
             index = self.playlist.length() - 1
         self.playlist.select(index)
-        self.display_selected_track(self.playlist.selected_track_index())
 
 
     def get_dir(self):
@@ -1909,8 +1911,7 @@ class TBOPlayer:
                     d.result[0] = self.ytdl.WAIT_TAG + d.result[0]
                 d.result = (d.result[1],d.result[0])
                 self.playlist.replace(index, d.result)
-                self.playlist.select(index)               
-                self.display_selected_track(index)
+                self.playlist.select(index)
                 self.refresh_playlist_display()
                 if do_ytdl:
                     self.go_ytdl(d.result[0])
@@ -1928,7 +1929,6 @@ class TBOPlayer:
                 if sel:
                     index=int(sel[0]) if event else 0
             self.playlist.select(index)
-            self.display_selected_track(index)
 
 
     def select_and_play(self, event=None):
@@ -2897,14 +2897,16 @@ class AutoLyricsDialog(Toplevel):
                               foreground = 'black', wraplength = 378,
                               textvariable=self.lyrics_var,
                               background="#d9d9d9").grid(column=0, row=0, columnspan=3, sticky=E+W+N+S)
-
+        
         search_result = self._ARTIST_TITLE_REXP.search(track_title)
         if not search_result:
             self.nope()
             return
         title_data = search_result.groups()
+
         artist = title_data[0].strip(' ')
         title = title_data[1].strip(' ')
+
         self.get_lyrics(artist, title)
 
     def get_lyrics(self, artist, title):
@@ -2976,7 +2978,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 7 Apr 2017"
+    datestring=" 8 Apr 2017"
 
     dbusif_tboplayer = None
     try:
