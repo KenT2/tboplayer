@@ -5,6 +5,7 @@ SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BIN_PATH=/usr/local/bin
 DESKTOP_PATH=$HOME/Desktop
 FAKE_BIN=$BIN_PATH/tboplayer
+YTDL_EXPECTED_PATH=/usr/local/bin/youtube-dl
 SUPPORTED_TYPES=('video/x-msvideo' 'video/quicktime' 'video/mp4' 'video/x-flv' 'video/x-matroska' 'audio/x-matroska'
           'video/3gpp' 'audio/x-aac' 'video/h264' 'video/h263' 'video/x-m4v' 'audio/midi' 
           'audio/mid' 'audio/vnd.qcelp' 'audio/mpeg' 'video/mpeg' 'audio/rmf' 'audio/x-rmf'
@@ -18,6 +19,12 @@ SUPPORTED_TYPES=('video/x-msvideo' 'video/quicktime' 'video/mp4' 'video/x-flv' '
           'audio/vnd.rn-realaudio' 'audio/x-pn-realaudio' 'audio/x-realaudio' 'audio/aiff' 'audio/x-aiff')
 DESKTOP_ENTRIES=($DESKTOP_PATH/tboplayer.desktop 
 		/usr/share/applications/tboplayer.desktop)
+		
+function echoGreen {
+    tput setaf 2
+    echo $1 
+    tput sgr0
+}
 
 # uninstall TBOPlayer
 if [ "$1" == "uninstall" ]; then
@@ -33,6 +40,7 @@ if [ "$1" == "uninstall" ]; then
         sudo rm "${DESKTOP_ENTRIES[1]}" 
         sudo update-desktop-database
         echo ""
+	echoGreen "ATENTION"
         echo "Would you like to remove all of TBOPlayer dependencies too? [Y/N]" 
         read answer
         if [ "$answer" == "Y" ] || [ "$answer" == "y" ]; then
@@ -80,37 +88,29 @@ else
     sudo apt-get -y --only-upgrade install omxplayer >/dev/null 2>&1
 fi
 
-toaptinstall=""
+aptinstall=""
 
 function addToAptInstall {
-    local cmd=$1
-    local package=$2
-    local pythn=$3
-    if [ $pythn ]; then
-        python -c "import "$cmd >/dev/null 2>&1
-	local cmdres=$? 
-    else
-        command -v $cmd >/dev/null 2>&1
-	local cmdres=$? 
-    fi
-    if [ $cmdres -eq 1 ]; then 
-        toaptinstall+=$package" "
+    dpkg -l $1 >/dev/null 2>&1
+    if [ $? -eq 1 ]; then 
+        aptinstall+=$1" "
     fi
 }
 
-addToAptInstall "requests" "python-requests" true
-addToAptInstall "gobject" "python-gobject-2" true
-addToAptInstall "dbus" "python-dbus" true
-addToAptInstall "tk" "python-tk" true
-addToAptInstall "gtk" "python-gtk2" true
-addToAptInstall "avconv" "libav-tools" false
-addToAptInstall "tkdnd" "tkdnd" false
-addToAptInstall "easy_install" "python-setuptools" false
+addToAptInstall "python-requests"
+addToAptInstall "python-gobject-2"
+addToAptInstall "python-dbus"
+addToAptInstall "python-tk"
+addToAptInstall "python-gtk2"
+addToAptInstall "libav-tools"
+addToAptInstall "tkdnd"
+addToAptInstall "python-setuptools"
 
-echo "* Installing dependencies: "$toaptinstall"..."
-
-sudo apt-get -y install $toaptinstall 2>&1 >/dev/null
-sudo easy_install pip 2>&1 >/dev/null
+if [ "$aptinstall" != "" ]; then
+    echo "* Installing dependencies: "$aptinstall"..."
+    sudo apt-get -y install $aptinstall >/dev/null
+fi
+sudo easy_install pip >/dev/null
 
 python -c 'import pexpect' >/dev/null 2>&1
 PEXPECT_INSTALLED=$?
@@ -128,15 +128,46 @@ if [ $? -eq 1 ]; then
     yes | pip install --user python-magic >/dev/null 2>&1
 fi
 
-# install youtube-dl it's if not installed
-command -v youtube-dl >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
+dpkg -l tkdnd >/dev/null 2>&1
+if [ $? -eq 1 ] ; then
+    echo "* Compiling tkdnd..."
+    sudo apt-get install -y build-essential tcl-dev tk-dev >/dev/null
+    wget https://github.com/petasis/tkdnd/tarball/master -O - | tar xz >/dev/null 2>&1
+    cd petasis-tkdnd-* 
+    ./configure >/dev/null 2>&1
+    make >/dev/null 2>&1
+    sudo make install >/dev/null 2>&1
+    cd ..
+    rm -Rf petasis-tkdnd-* >/dev/null 2>&1
+fi
+
+function installYoutubedl {
     echo "* Installing youtube-dl..."
     sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl >/dev/null 2>&1
     sudo chmod a+rx /usr/local/bin/youtube-dl
-else 
-    echo "* Updating youtube-dl..."
-    sudo youtube-dl -U >/dev/null 2>&1
+}
+
+# install youtube-dl it's if not installed
+YTDL_PATH="$( command -v youtube-dl )"
+if [ $? -eq 1 ]; then 
+    echo "* Installing youtube-dl..."
+    installYoutubedl
+else
+    if [ "$YTDL_PATH" != "$YTDL_EXPECTED_PATH" ]; then
+        echo ""
+	echoGreen "ATENTION"
+        echo "You have youtube-dl installed in a location different than expected."
+	echo "Do you want this setup to install youtube-dl in the expected path? [Y/N]"
+	echo ""
+	read answer
+	if [ "$answer" == "Y" ] || [ "$answer" == "y" ]; then
+	    sudo rm $YTDL_PATH
+	    installYoutubedl
+	fi
+    else
+        echo "* Updating youtube-dl..."
+        sudo youtube-dl -U >/dev/null 2>&1
+    fi
 fi
 
 # install fake tboplayer executable in /home/<user>/bin
@@ -181,7 +212,7 @@ sudo cp $DESKTOP_ENTRY "${DESKTOP_ENTRIES[1]}"
 sudo update-desktop-database
 
 echo ""
-echo "Installation finished."
+echoGreen "Installation finished."
 echo ""
 echo "If all went as expected, TBOPlayer is now installed in your system." 
 echo "TBOPlayer can be found at the "$TBOPLAYER_PATH" directory."
