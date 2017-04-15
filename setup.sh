@@ -5,21 +5,21 @@ SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BIN_PATH=/usr/local/bin
 DESKTOP_PATH=$HOME/Desktop
 FAKE_BIN=$BIN_PATH/tboplayer
-YTDL_EXPECTED_PATH=/usr/local/bin/youtube-dl
-SUPPORTED_TYPES=('video/x-msvideo' 'video/quicktime' 'video/mp4' 'video/x-flv' 'video/x-matroska' 'audio/x-matroska'
-          'video/3gpp' 'audio/x-aac' 'video/h264' 'video/h263' 'video/x-m4v' 'audio/midi' 
-          'audio/mid' 'audio/vnd.qcelp' 'audio/mpeg' 'video/mpeg' 'audio/rmf' 'audio/x-rmf'
-          'audio/mp4' 'video/mj2' 'audio/x-tta' 'audio/tta' 'application/mp4' 'audio/ogg'
-          'video/ogg' 'audio/wav' 'audio/wave' 'audio/x-pn-aiff' 'audio/x-pn-wav' 'audio/x-wav'
-          'audio/flac' 'audio/x-flac' 'video/h261' 'application/adrift' 'video/3gpp2' 'video/x-f4v'
-          'application/ogg' 'audio/mpeg3' 'audio/x-mpeg-3' 'audio/x-gsm' 'audio/x-mpeg' 'audio/mod'
-          'audio/x-mod' 'video/x-ms-asf' 'audio/x-pn-realaudio' 'audio/x-realaudio' 'video/vnd.rn-realvideo' 'video/fli'
-          'video/x-fli' 'audio/x-ms-wmv' 'video/avi' 'video/msvideo' 'video/m4v' 'audio/x-ms-wma'
-          'application/octet-stream' 'application/x-url' 'text/url' 'text/x-url' 'application/vnd.rn-realmedia'
-          'audio/vnd.rn-realaudio' 'audio/x-pn-realaudio' 'audio/x-realaudio' 'audio/aiff' 'audio/x-aiff')
+YTDL_EXPECTED_PATH=$BIN_PATH/youtube-dl
 DESKTOP_ENTRIES=($DESKTOP_PATH/tboplayer.desktop 
 		/usr/share/applications/tboplayer.desktop)
-		
+SUPPORTED_TYPES=('video/x-msvideo' 'video/quicktime' 'video/mp4' 'video/x-flv' 'video/x-matroska' 'audio/x-matroska'
+              'video/3gpp' 'audio/x-aac' 'video/h264' 'video/h263' 'video/x-m4v' 'audio/midi' 
+              'audio/mid' 'audio/vnd.qcelp' 'audio/mpeg' 'video/mpeg' 'audio/rmf' 'audio/x-rmf'
+	      'audio/mp4' 'video/mj2' 'audio/x-tta' 'audio/tta' 'application/mp4' 'audio/ogg'
+              'video/ogg' 'audio/wav' 'audio/wave' 'audio/x-pn-aiff' 'audio/x-pn-wav' 'audio/x-wav'
+              'audio/flac' 'audio/x-flac' 'video/h261' 'application/adrift' 'video/3gpp2' 'video/x-f4v'
+              'application/ogg' 'audio/mpeg3' 'audio/x-mpeg-3' 'audio/x-gsm' 'audio/x-mpeg' 'audio/mod'
+              'audio/x-mod' 'video/x-ms-asf' 'audio/x-pn-realaudio' 'audio/x-realaudio' 'video/vnd.rn-realvideo' 'video/fli'
+              'video/x-fli' 'audio/x-ms-wmv' 'video/avi' 'video/msvideo' 'video/m4v' 'audio/x-ms-wma'
+              'application/octet-stream' 'application/x-url' 'text/url' 'text/x-url' 'application/vnd.rn-realmedia'
+              'audio/vnd.rn-realaudio' 'audio/x-pn-realaudio' 'audio/x-realaudio' 'audio/aiff' 'audio/x-aiff')
+
 function echoGreen {
     tput setaf 2
     echo $1 
@@ -138,13 +138,12 @@ if [ $? -eq 1 ] ; then
     make >/dev/null 2>&1
     sudo make install >/dev/null 2>&1
     cd ..
-    rm -Rf petasis-tkdnd-* >/dev/null 2>&1
 fi
 
 function installYoutubedl {
     echo "* Installing youtube-dl..."
-    sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl >/dev/null 2>&1
-    sudo chmod a+rx /usr/local/bin/youtube-dl
+    sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O $YTDL_EXPECTED_PATH >/dev/null 2>&1
+    sudo chmod a+rx $YTDL_EXPECTED_PATH
 }
 
 # install youtube-dl it's if not installed

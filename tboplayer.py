@@ -434,7 +434,7 @@ class Ytdl:
     
     def check_for_update(self, callback):
         if not os.path.isfile(self._YTLOCATION):
-            return False;
+            return
         try:
             versionsurl = "http://rg3.github.io/youtube-dl/update/versions.json"
             versions = json.loads(requests.get(versionsurl).text)
@@ -932,30 +932,6 @@ class TBOPlayer:
                         media_url = format['url']
         return media_url
 
-    def grab_lyrics(self):
-        track = self.playlist.selected_track()
-        track_title = track[1]
-        if ('title' in self.omx.misc and 
-                    self.omx.misc['title'] and 
-                    'artist' in self.omx.misc and 
-                    self.omx.misc['artist']):
-            track_title = self.omx.misc['artist'] + '-' + self.omx.misc['title']
-
-        self.autolyrics = AutoLyricsDialog(self.root, self.options.autolyrics_coords, self._save_autolyrics_coords, track_title, os.path.isfile(track[0]))
-
-    def _save_autolyrics_coords(self, *event):
-        x = self.autolyrics.winfo_x()
-        y = self.autolyrics.winfo_y()
-        self.options.autolyrics_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
-
-    def remove_waiting_track(self, url):
-        tracks = self.playlist.waiting_tracks()
-        if tracks:
-            for track in tracks:
-                if track[1][0] == url:
-                    self.track_titles_display.delete(track[0],track[0])
-                    self.playlist.remove(track[0])
-                    self.blank_selected_track() 
 
 # ***************************************
 # WRAPPER FOR JBAITER'S PYOMXPLAYER
@@ -1059,7 +1035,7 @@ class TBOPlayer:
 
         # start and configure ytdl object
         def ytdl_not_found():
-            tkMessageBox.showinfo("",("youtube-dl cannot be found in the path configured "
+            tkMessageBox.showinfo("",("youtube-dl binary could be found in the path configured "
                               + "in the options, please check your configuration"))
         f = open(os.path.dirname(os.path.realpath(sys.argv[0])) + "/yt-dl_supported_sites", "r")
         self.ytdl = Ytdl(self.options, json.loads(f.read()), ytdl_not_found)
@@ -1270,7 +1246,6 @@ class TBOPlayer:
         self.root.grid_rowconfigure(6, weight=0)
         self.root.grid_rowconfigure(7, weight=0)
 
-  
 # if files were passed in the command line, add them to the playlist
         for f in sys.argv[1:]:
             if os.path.isfile(f) and self.is_file_supported(f):
@@ -1281,10 +1256,9 @@ class TBOPlayer:
             elif os.path.isfile(f) and  f[f.rfind('.')+1:]=="csv":
                 self.open_list(f)
         
-        if pexpect.spawn("dpkg --print-architecture").expect(["armhf", pexpect.EOF]) == 0:
-            def ytdl_updated():
-                tkMessageBox.showinfo("","youtube-dl has been updated")
-            self.ytdl.check_for_update(ytdl_updated)
+        def ytdl_updated_msg():
+            tkMessageBox.showinfo("","youtube-dl has been updated")
+        self.ytdl.check_for_update(ytdl_updated_msg)
 
         if self.playlist.length() > 0 and self.options.autoplay:
             self.select_track(False)
@@ -1293,10 +1267,6 @@ class TBOPlayer:
         self.dnd = DnD(self.root)
         self.dnd.bindtarget(self.root, 'text/uri-list', '<Drop>', self.add_drag_drop)
 
-
-    def save_geometry(self, *sec):
-        self.options.geometry = self.root.geometry()
-        self.options.save_state()
 
     def shutdown(self):
         self.root.quit()
@@ -1357,7 +1327,6 @@ class TBOPlayer:
         self.send_special('\x1b\x5b\x41')
         self.monitor("Seek back 600")
 
-
     def key_ctrlright(self,event):
         self.skip_to_next_track()
 
@@ -1393,6 +1362,35 @@ class TBOPlayer:
         else:
             self.send_command(char)
             return
+
+    def grab_lyrics(self):
+        track = self.playlist.selected_track()
+        track_title = track[1]
+        if ('title' in self.omx.misc and 
+                    self.omx.misc['title'] and 
+                    'artist' in self.omx.misc and 
+                    self.omx.misc['artist']):
+            track_title = self.omx.misc['artist'] + '-' + self.omx.misc['title']
+
+        self.autolyrics = AutoLyricsDialog(self.root, self.options.autolyrics_coords, self._save_autolyrics_coords, track_title, os.path.isfile(track[0]))
+
+    def save_geometry(self, *sec):
+        self.options.geometry = self.root.geometry()
+        self.options.save_state()
+
+    def _save_autolyrics_coords(self, *event):
+        x = self.autolyrics.winfo_x()
+        y = self.autolyrics.winfo_y()
+        self.options.autolyrics_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
+
+    def remove_waiting_track(self, url):
+        tracks = self.playlist.waiting_tracks()
+        if tracks:
+            for track in tracks:
+                if track[1][0] == url:
+                    self.track_titles_display.delete(track[0],track[0])
+                    self.playlist.remove(track[0])
+                    self.blank_selected_track() 
 
 
 # ******************************************
@@ -2976,7 +2974,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 9 Apr 2017"
+    datestring=" 11 Apr 2017"
 
     dbusif_tboplayer = None
     try:
