@@ -172,6 +172,7 @@ Below are the methods in TBOPlayer`s DBus interface:
 | fullscreen   |                                |
 | volumnDown   |                                |
 | volumnUp     |                                |
+| clearList    |                                |
 
 TROUBLESHOOTING
 =========
@@ -191,7 +192,7 @@ To uninstall tboplayer, open a terminal window and type:
         /opt/tboplayer/setup.sh uninstall
 
 Contributors:
--------------
+==========
 
 KenT2 - Original idea and implementation
 
