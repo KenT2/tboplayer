@@ -386,7 +386,7 @@ class Ytdl:
                 del self._running_processes[url]
                 log.logException()
                 sys.exc_clear()
-        sleep(500)
+            sleep(500)
 
     def _spawn_thread(self, url):
         self._terminate_sent_signal = False
@@ -1254,7 +1254,7 @@ class TBOPlayer:
                 self.playlist.append([self.file, self.file_pieces[-1],'',''])
                 self.track_titles_display.insert(END, self.file_pieces[-1])
             elif os.path.isfile(f) and  f[f.rfind('.')+1:]=="csv":
-                self.open_list(f)
+                self._open_list(f)
         
         def ytdl_updated_msg():
             tkMessageBox.showinfo("","youtube-dl has been updated")
@@ -1744,7 +1744,7 @@ class TBOPlayer:
                 self._add_url(item)
             elif os.path.isfile(item):
                 if item.endswith('.csv'):
-                    self.open_list(item)
+                    self._open_list(item)
                 else:
                     self._add_files([item,])
             elif os.path.isdir(item):
@@ -1996,10 +1996,10 @@ class TBOPlayer:
         filename = self.filename.get()
         if filename=="":
             return
-        self.open_list(filename)
+        self._open_list(filename)
 
 
-    def open_list(self, filename):
+    def _open_list(self, filename):
         self.options.initial_playlist_dir = ''
         ifile  = open(filename, 'rb')
         pl=csv.reader(ifile)
@@ -2864,6 +2864,43 @@ class TBOPlayerDBusInterface (Object):
     def openFiles(self, files):
         self.tboplayer_instance._add_files(files)
 
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature='s')
+    def openPlaylist(self, file):
+        self.tboplayer_instance._open_list(file)
+
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature='s')
+    def openUrl(self, url):
+        self.tboplayer_instance._add_url(url)
+
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature = 'i')
+    def play(self, track_index=0):
+        self.tboplayer_instance.playlist.select(track_index)
+        self.tboplayer_instance.play_track()
+
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
+    def pause(self):
+        self.tboplayer_instance.toggle_pause()
+
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
+    def stop(self):
+        self.tboplayer_instance.stop_track()
+
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
+    def next(self):
+        self.tboplayer_instance.skip_to_next_track()
+
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
+    def previous(self):
+        self.tboplayer_instance.skip_to_previous_track()
+
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
+    def volumnDown(self):
+        self.tboplayer_instance.volminus()
+
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
+    def volumnUp(self):
+        self.tboplayer_instance.volplus()
+
 
 class AutoLyricsDialog(Toplevel):
     _ARTIST_TITLE_REXP = re.compile(r"([\w\d.&\\/'` ]*)[-:|]([\w\d.&\\/'` ]*)", re.UNICODE)
@@ -2974,7 +3011,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 11 Apr 2017"
+    datestring=" 16 Apr 2017"
 
     dbusif_tboplayer = None
     try:
