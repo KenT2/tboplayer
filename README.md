@@ -144,6 +144,34 @@ For a list of streaming services supported by youtube-dl, see this link: https:/
 
 If the option 'Find lyrics' is enabled, TBOPlayer will look for the metatags 'artist' and 'title' in the media file, and if such tags are not found, it will try to find this info in a pattern in the file name (or in the track title for web links), something along the forms 'Artist Name - Song Title' or 'Artist Name : Song Title', in order to grab the lyrics from [LyricWikia](http://lyrics.wikia.com/wiki/Lyrics_Wiki) webservice.
 
+DBus Interface
+-------
+
+TBOPlayer exposes some methods to the session bus of the DBus layer in your system, which gives basic control functionality programatically.
+
+These are the details for connecting to the DBus interface:
+
+| Constant  | Value                    |
+|-----------|--------------------------|
+| object    | org.tboplayer.TBOPlayer  | 
+| path      | /org/tboplayer/TBOPlayer | 
+| interface | org.tboplayer.TBOPlayer  |
+
+Below are the methods in TBOPlayer`s DBus interface:
+
+| Method       | Argument                       |
+|--------------|--------------------------------|
+| openFiles    | [String] array                 | 
+| openPlaylist | String                         | 
+| openUrl      | String                         | 
+| play         | 32-bit integer (defaults to 0) |     
+| pause        |                                |
+| stop         |                                |
+| next         |                                |
+| previous     |                                |
+| volumnDown   |                                |
+| volumnUp     |                                |
+
 TROUBLESHOOTING
 =========
 
@@ -151,9 +179,9 @@ If you have problems playing a track try it from the command line with `omxplaye
 
 If the progress bar, volume bar, or windowed video mode don't work for you, it may be that you have another instance of omxplayer running in the background. In that case, you can try to close that instance, and then play the track again. You can force omxplayer to terminate by typing in a terminal: `sudo pkill -9 omxplayer`
 
-In Raspbian, youtube-dl should always be up-to-date, but if you use another OS and keep getting a lot of "Content may be copyrighted or the link invalid" when trying to play videos from streaming services supported by youtube-dl, you can try to update youtube-dl by typing in a terminal: `sudo youtube-dl -U`
-
 If the videos appear displaced by an amount of pixels, you must be having overscan problems. To disable overscan go to Menu>Preferences>Raspberry Pi Configuration and then set Overscan to Disabled.
+
+With TBOPlayer, the youtube-dl binary should always be up-to-date, but if you keep getting a lot of "Content may be copyrighted or the link invalid" when trying to play videos from streaming services supported by youtube-dl, you can try to update youtube-dl by typing in a terminal: `sudo youtube-dl -U`
 
 UNINSTALLING
 ==========
