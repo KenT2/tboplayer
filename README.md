@@ -169,6 +169,7 @@ Below are the methods in TBOPlayer`s DBus interface:
 | stop         |                                |
 | next         |                                |
 | previous     |                                |
+| fullscreen   |                                |
 | volumnDown   |                                |
 | volumnUp     |                                |
 
