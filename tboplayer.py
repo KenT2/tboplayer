@@ -688,6 +688,23 @@ class TBOPlayer:
             self.toggle_pause()
 
 
+    def play_track_by_index(self, track_index=0):
+        if self.play_state == self._OMX_CLOSED:
+             self.playlist.select(track_index)
+             self.play_track()
+             return
+        elif (track_index == self.start_track_index 
+                    and self.play_state == self._OMX_PLAYING):
+            self.toggle_pause()
+            return
+        
+        self.stop_track()
+        def play_after():
+            self.playlist.select(track_index)
+            self.play_track()
+        self.root.after(1200, play_after)
+
+
     def skip_to_next_track(self):
         # send signals to stop and then to play the next track
         if self.play_state == self._OMX_PLAYING:
@@ -1372,7 +1389,7 @@ class TBOPlayer:
                     self.omx.misc['artist']):
             track_title = self.omx.misc['artist'] + '-' + self.omx.misc['title']
 
-        self.autolyrics = AutoLyricsDialog(self.root, self.options.autolyrics_coords, self._save_autolyrics_coords, track_title, os.path.isfile(track[0]))
+        self.autolyrics = AutoLyrics(self.root, self.options.autolyrics_coords, self._save_autolyrics_coords, track_title)
 
     def save_geometry(self, *sec):
         self.options.geometry = self.root.geometry()
@@ -2874,8 +2891,7 @@ class TBOPlayerDBusInterface (Object):
 
     @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature = 'i')
     def play(self, track_index=0):
-        self.tboplayer_instance.playlist.select(track_index)
-        self.tboplayer_instance.play_track()
+        self.tboplayer_instance.play_track_by_index(track_index)
 
     @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
     def pause(self):
@@ -2894,6 +2910,10 @@ class TBOPlayerDBusInterface (Object):
         self.tboplayer_instance.skip_to_previous_track()
 
     @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
+    def fullscreen(self):
+        self.tboplayer_instance.toggle_full_screen()
+
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
     def volumnDown(self):
         self.tboplayer_instance.volminus()
 
@@ -2902,10 +2922,10 @@ class TBOPlayerDBusInterface (Object):
         self.tboplayer_instance.volplus()
 
 
-class AutoLyricsDialog(Toplevel):
+class AutoLyrics(Toplevel):
     _ARTIST_TITLE_REXP = re.compile(r"([\w\d.&\\/'` ]*)[-:|]([\w\d.&\\/'` ]*)", re.UNICODE)
 
-    def __init__(self, parent, coords, update_coords_func, track_title, track_is_file=False):
+    def __init__(self, parent, coords, update_coords_func, track_title):
         Toplevel.__init__(self, parent, background="#d9d9d9")
         try:
             self.geometry(coords)
