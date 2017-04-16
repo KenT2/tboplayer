@@ -2921,6 +2921,10 @@ class TBOPlayerDBusInterface (Object):
     def volumnUp(self):
         self.tboplayer_instance.volplus()
 
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
+    def clearList(self):
+        self.tboplayer_instance.clear_list()
+
 
 class AutoLyrics(Toplevel):
     _ARTIST_TITLE_REXP = re.compile(r"([\w\d.&\\/'` ]*)[-:|]([\w\d.&\\/'` ]*)", re.UNICODE)
