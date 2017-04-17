@@ -164,7 +164,6 @@ Below are the methods in TBOPlayer`s DBus interface:
 | openFiles    | String[] files              |
 | openPlaylist | String file                 |
 | openUrl      | String url                  |
-| setOption    | String option, String value |
 | play         | Int32 index (defaults to 0) |
 | pause        |                             |
 | stop         |                             |
@@ -174,6 +173,7 @@ Below are the methods in TBOPlayer`s DBus interface:
 | volumnDown   |                             |
 | volumnUp     |                             |
 | clearList    |                             |
+| setOption    | String option, String value |
 
 Available options and respective accepted values are:
 
