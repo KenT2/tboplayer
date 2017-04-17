@@ -1400,14 +1400,43 @@ class TBOPlayer:
         y = self.autolyrics.winfo_y()
         self.options.autolyrics_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
 
-    def remove_waiting_track(self, url):
-        tracks = self.playlist.waiting_tracks()
-        if tracks:
-            for track in tracks:
-                if track[1][0] == url:
-                    self.track_titles_display.delete(track[0],track[0])
-                    self.playlist.remove(track[0])
-                    self.blank_selected_track() 
+
+    def set_option(self, option, value):
+        boolean = ["0", "1"]
+        allowed_options_values = {
+            "omx_user_options": "str",
+            "omx_location": "str",
+            "ytdl_location": "str",
+            "omx_audio_output": ["hdmi","local","auto","alsa"],
+            "mode": ["single", "repeat","playlist","repeat playlist", "shuffle"],
+            "debug": ["on", "off"],
+            "youtube_media_format": ["mp4", "m4a"],
+            "download_media_url_upon": ["add","play"],
+            "youtube_video_quality": ["low", "medium","high"],
+            "windowed_mode_coords": self.RE_COORDS,
+            "windowed_mode_resolution": self.RE_RESOLUTION,
+            "autolyrics_coords": self.RE_COORDS,
+            "forbid_windowed_mode": boolean,
+            "cue_track_mode": boolean,
+            "autoplay": boolean,
+            "find_lyrics": boolean,
+            "full_screen": boolean
+        }
+        allowed_option_values = allowed_options_values[option]
+        option_type = str(type(allowed_option_values))
+        if (allowed_option_values == "str" or 
+                            ("list" in option_type and value in allowed_option_values) or
+                            ("SRE_Pattern" in option_type and allowed_option_values.match(value) != None)):
+            if allowed_option_values == boolean:
+                value = int(value)
+            setattr(self.options, option, value)
+            self.options.save_state()
+            self.options.read(self.options.options_file)
+            if option=="ytdl_location": 
+                self.ytld.set_options(self.options)
+            elif option=="omx_location": 
+                OMXPlayer.set_omx_location(self.options.omx_location)
+        else: raise Exception("Option does not match expected value or pattern")
 
 
 # ******************************************
@@ -1990,6 +2019,16 @@ class TBOPlayer:
             self.playlist.select(index)               
             self.display_selected_track(index)
 
+
+    def remove_waiting_track(self, url):
+        tracks = self.playlist.waiting_tracks()
+        if tracks:
+            for track in tracks:
+                if track[1][0] == url:
+                    self.track_titles_display.delete(track[0],track[0])
+                    self.playlist.remove(track[0])
+                    self.blank_selected_track() 
+
       
 # ***************************************
 # PLAYLISTS
@@ -2213,9 +2252,6 @@ class Options:
         with open(self.options_file, 'wb') as configfile:
             config.write(configfile)
             configfile.close()
-
-    def set_option(self, option, value):
-        setattr(self, option, value)
 
 
 # *************************************
@@ -2931,37 +2967,10 @@ class TBOPlayerDBusInterface (Object):
 
     @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature='ss')
     def setOption(self, option, value):
-        boolean = ["0", "1"]
-        allowed_options_values = {
-            "omx_user_options": "str",
-            "omx_location": "str",
-            "ytdl_location": "str",
-            "omx_audio_output": ["hdmi","local","auto","alsa"],
-            "mode": ["single", "repeat","playlist","repeat playlist", "shuffle"],
-            "debug": ["on", "off"],
-            "youtube_media_format": ["mp4", "m4a"],
-            "download_media_url_upon": ["add","play"],
-            "youtube_video_quality": ["low", "medium","high"],
-            "windowed_mode_coords": self.tboplayer_instance.RE_COORDS,
-            "windowed_mode_resolution": self.tboplayer_instance.RE_RESOLUTION,
-            "autolyrics_coords": self.tboplayer_instance.RE_COORDS,
-            "forbid_windowed_mode": boolean,
-            "cue_track_mode": boolean,
-            "autoplay": boolean,
-            "find_lyrics": boolean,
-            "full_screen": boolean
-        }
-        allowed_option_values = allowed_options_values[option]
-        option_type = str(type(allowed_option_values))
-        if (allowed_option_values == "str" or 
-                            ("list" in option_type and value in allowed_option_values) or
-                            ("SRE_Pattern" in option_type and allowed_option_values.match(value) != None)):
-            if allowed_option_values == boolean:
-                value = int(value)
-            self.tboplayer_instance.options.set_option(option, value)
-            self.tboplayer_instance.options.save_state()
-            self.tboplayer_instance.options.read(self.tboplayer_instance.options.options_file)
-        else: raise Exception("Option does not match expected value or pattern")
+        try:
+            self.tboplayer_instance.set_option(option, value)
+        except Exception, e:
+            raise e
 
 class AutoLyrics(Toplevel):
     _ARTIST_TITLE_REXP = re.compile(r"([\w\d.&\\/'` ]*)[-:|]([\w\d.&\\/'` ]*)", re.UNICODE)
