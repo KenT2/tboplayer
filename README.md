@@ -159,20 +159,43 @@ These are the details for connecting to the DBus interface:
 
 Below are the methods in TBOPlayer`s DBus interface:
 
-| Method       | Argument                       |
-|--------------|--------------------------------|
-| openFiles    | [String] array                 | 
-| openPlaylist | String                         | 
-| openUrl      | String                         | 
-| play         | 32-bit integer (defaults to 0) |     
-| pause        |                                |
-| stop         |                                |
-| next         |                                |
-| previous     |                                |
-| fullscreen   |                                |
-| volumnDown   |                                |
-| volumnUp     |                                |
-| clearList    |                                |
+| Method       | Arguments                   |
+|--------------|-----------------------------|
+| openFiles    | String[] files              |
+| openPlaylist | String file                 |
+| openUrl      | String url                  |
+| setOption    | String option, String value |
+| play         | Int32 index (defaults to 0) |
+| pause        |                             |
+| stop         |                             |
+| next         |                             |
+| previous     |                             |
+| fullscreen   |                             |
+| volumnDown   |                             |
+| volumnUp     |                             |
+| clearList    |                             |
+
+Available options and respective accepted values are:
+
+| Option                   | Allowed values/pattern                             |
+|--------------------------|----------------------------------------------------|
+| omx_audio_output         | hdmi, local, auto, alsa                            |
+| mode                     | single, repeat, playlist, repeat playlist, shuffle |
+| youtube_media_format     | mp4, m4a                                           |
+| download_media_url_upon  | add, play                                          |
+| youtube_video_quality    | low, medium, high                                  |
+| windowed_mode_coords     | `[+-]Integer[+-]Integer` pattern                   |
+| autolyrics_coords        | `[+-]Integer[+-]Integer` pattern                   |
+| windowed_mode_resolution | `IntegerxInteger` pattern                          |
+| debug                    | on, off                                            |
+| forbid_windowed_mode     | 0, 1                                               |
+| cue_track_mode           | 0, 1                                               |
+| autoplay                 | 0, 1                                               |
+| find_lyrics              | 0, 1                                               |
+| full_screen              | 0, 1                                               |
+| omx_user_options         | omxplayer options                                  |
+| omx_location             | complete file path to omxplayer binary             |
+| ytdl_location            | complete file path to youtube-dl binary            |
 
 TROUBLESHOOTING
 =========
