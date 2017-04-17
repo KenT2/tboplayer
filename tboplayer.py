@@ -502,9 +502,9 @@ import ConfigParser
 class TBOPlayer:
 
 
-    # real expression patterns
+    # regular expression patterns
     RE_RESOLUTION = re.compile("([0-9]+)x([0-9]+)")
-    RE_COORDS = re.compile("([\+|-][0-9]+)([\+|-][0-9]+)")
+    RE_COORDS = re.compile("([\+-][0-9]+)([\+-][0-9]+)")
 
 
 # ***************************************
@@ -966,8 +966,8 @@ class TBOPlayer:
             self.refresh_playlist_display()
             return
         track= "'"+ track.replace("'","'\\''") + "'"
-        opts= (self.options.omx_user_options + " " + self.options.omx_audio_option + " " +
-                                                        self.options.omx_subtitles_option + " --vol " + str(self.get_mB()))
+        opts= (self.options.omx_user_options + " " + self.options.omx_audio_output + " " +
+                                                        self.options.omx_subtitles + " --vol " + str(self.get_mB()))
         if self.media_is_video():
             if not self.options.forbid_windowed_mode and not self.options.full_screen and '--win' not in opts:
                 mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
@@ -2089,8 +2089,8 @@ class Options:
     def __init__(self):
 
         # define options for interface with player
-        self.omx_audio_option = "" # omx audio option
-        self.omx_subtitles_option = "" # omx subtitle option
+        self.omx_audio_output = "" # omx audio option
+        self.omx_subtitles = "" # omx subtitle option
         self.mode = ""
         self.initial_track_dir =""   # initial directory for add track.
         self.initial_playlist_dir =""   # initial directory for open playlist      
@@ -2119,9 +2119,9 @@ class Options:
         config.read(filename)
         try:
             if  config.get('config','audio',0) == 'auto':
-                self.omx_audio_option = ""
+                self.omx_audio_output = ""
             else:
-                self.omx_audio_option = "-o "+config.get('config','audio',0)
+                self.omx_audio_output = "-o "+config.get('config','audio',0)
             
             self.mode = config.get('config','mode',0)
             self.initial_track_dir = config.get('config','tracks',0)
@@ -2148,9 +2148,9 @@ class Options:
                 self.debug = False
 
             if config.get('config','subtitles',0) == 'on':
-                self.omx_subtitles_option = "-t on"
+                self.omx_subtitles = "-t on"
             else:
-                self.omx_subtitles_option = ""
+                self.omx_subtitles = ""
         except Exception:
             log.logException()
             sys.exc_clear()
@@ -2189,8 +2189,8 @@ class Options:
     def save_state(self):
         config=ConfigParser.ConfigParser()
         config.add_section('config')
-        config.set('config','audio',self.omx_audio_option.replace("-o ",''))
-        config.set('config','subtitles',"on" if "on" in self.omx_subtitles_option else "off")       
+        config.set('config','audio',self.omx_audio_output.replace("-o ",''))
+        config.set('config','subtitles',"on" if "on" in self.omx_subtitles else "off")       
         config.set('config','mode',self.mode)
         config.set('config','playlists',self.initial_playlist_dir)
         config.set('config','tracks',self.initial_track_dir)
@@ -2210,9 +2210,12 @@ class Options:
         config.set('config','autoplay',self.autoplay)
         config.set('config','find_lyrics',self.find_lyrics)
         config.set('config','autolyrics_coords',self.autolyrics_coords)
-        with open(self.options_file, 'w+') as configfile:
+        with open(self.options_file, 'wb') as configfile:
             config.write(configfile)
             configfile.close()
+
+    def set_option(self, option, value):
+        setattr(self, option, value)
 
 
 # *************************************
@@ -2404,6 +2407,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         with open(self.options_file, 'wb') as optionsfile:
             config.write(optionsfile)
             optionsfile.close()
+            
     
 
 
@@ -2925,6 +2929,39 @@ class TBOPlayerDBusInterface (Object):
     def clearList(self):
         self.tboplayer_instance.clear_list()
 
+    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature='ss')
+    def setOption(self, option, value):
+        boolean = ["0", "1"]
+        allowed_options_values = {
+            "omx_user_options": "str",
+            "omx_location": "str",
+            "ytdl_location": "str",
+            "omx_audio_output": ["hdmi","local","auto","alsa"],
+            "mode": ["single", "repeat","playlist","repeat playlist", "shuffle"],
+            "debug": ["on", "off"],
+            "youtube_media_format": ["mp4", "m4a"],
+            "download_media_url_upon": ["add","play"],
+            "youtube_video_quality": ["low", "medium","high"],
+            "windowed_mode_coords": self.tboplayer_instance.RE_COORDS,
+            "windowed_mode_resolution": self.tboplayer_instance.RE_RESOLUTION,
+            "autolyrics_coords": self.tboplayer_instance.RE_COORDS,
+            "forbid_windowed_mode": boolean,
+            "cue_track_mode": boolean,
+            "autoplay": boolean,
+            "find_lyrics": boolean,
+            "full_screen": boolean
+        }
+        allowed_option_values = allowed_options_values[option]
+        option_type = str(type(allowed_option_values))
+        if (allowed_option_values == "str" or 
+                            ("list" in option_type and value in allowed_option_values) or
+                            ("SRE_Pattern" in option_type and allowed_option_values.match(value) != None)):
+            if allowed_option_values == boolean:
+                value = int(value)
+            self.tboplayer_instance.options.set_option(option, value)
+            self.tboplayer_instance.options.save_state()
+            self.tboplayer_instance.options.read(self.tboplayer_instance.options.options_file)
+        else: raise Exception("Option does not match expected value or pattern")
 
 class AutoLyrics(Toplevel):
     _ARTIST_TITLE_REXP = re.compile(r"([\w\d.&\\/'` ]*)[-:|]([\w\d.&\\/'` ]*)", re.UNICODE)
@@ -3035,7 +3072,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 16 Apr 2017"
+    datestring=" 17 Apr 2017"
 
     dbusif_tboplayer = None
     try:
