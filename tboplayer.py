@@ -1422,7 +1422,10 @@ class TBOPlayer:
             "find_lyrics": boolean,
             "full_screen": boolean
         }
-        allowed_option_values = allowed_options_values[option]
+        try:
+            allowed_option_values = allowed_options_values[option]
+        except KeyError, er:
+            raise KeyError("Option '"+option+"' is invalid")
         option_type = str(type(allowed_option_values))
         if (allowed_option_values == "str" or 
                             ("list" in option_type and value in allowed_option_values) or
@@ -1436,7 +1439,7 @@ class TBOPlayer:
                 self.ytld.set_options(self.options)
             elif option=="omx_location": 
                 OMXPlayer.set_omx_location(self.options.omx_location)
-        else: raise Exception("Option does not match expected value or pattern")
+        else: raise AttributeError("Option value does not match an expected value or pattern")
 
 
 # ******************************************
@@ -2971,6 +2974,7 @@ class TBOPlayerDBusInterface (Object):
             self.tboplayer_instance.set_option(option, value)
         except Exception, e:
             raise e
+
 
 class AutoLyrics(Toplevel):
     _ARTIST_TITLE_REXP = re.compile(r"([\w\d.&\\/'` ]*)[-:|]([\w\d.&\\/'` ]*)", re.UNICODE)
