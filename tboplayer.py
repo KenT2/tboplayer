@@ -346,9 +346,7 @@ class Ytdl:
         self.compile_regexps()
 
     def compile_regexps(self updated=False):
-        if hasattr(self, "compiling_process") and self.compiling_process.isalive(): return
-        self.compiling_process = Thread(target=self._compile_regexps,args=[updated])
-        self.compiling_process.start()
+        Thread(target=self._compile_regexps,args=[updated]).start()
 
     def _compile_regexps(self, updated=False):
         if not os.path.isfile(self._YTLOCATION) : return
@@ -496,8 +494,8 @@ class Ytdl:
             sleep(500)
         
         if updated:
-            callback()
             self.compile_regexps(updated)
+            callback()
 
     def reset_processes(self):
         self._running_processes = {}
