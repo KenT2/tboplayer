@@ -528,8 +528,8 @@ class TBOPlayer:
 
 
     # regular expression patterns
-    RE_RESOLUTION = re.compile("([0-9]+)x([0-9]+)")
-    RE_COORDS = re.compile("([\+-][0-9]+)([\+-][0-9]+)")
+    RE_RESOLUTION = re.compile("^([0-9]+)x([0-9]+)$")
+    RE_COORDS = re.compile("^([\+-][0-9]+)([\+-][0-9]+)$")
 
 
 # ***************************************
@@ -1329,7 +1329,7 @@ class TBOPlayer:
 
     def show_help (self):
         tkMessageBox.showinfo("Help",
-          "To control playing type a character\np - pause/play\nspacebar - pause/play\nq - quit\n"
+          "To control playing, type a key\np - pause/play\nspacebar - pause/play\nq - quit\n"
         + "+ - increase volume\n- - decrease volume\nz - tv show info\n1 - reduce speed\n"
         + "2 - increase speed\nj - previous audio index\nk - next audio index\ni - back a chapter\n"
         + "o - forward a chapter\nn - previous subtitle index\nm - next subtitle index\n"
@@ -1423,7 +1423,6 @@ class TBOPlayer:
         y = self.autolyrics.winfo_y()
         self.options.autolyrics_coords = ("+" if x>=0 else "-")+str(x)+("+" if y>=0 else "-")+str(y)
 
-
     def set_option(self, option, value):
         boolean = ["0", "1"]
         allowed_options_values = {
@@ -1435,7 +1434,7 @@ class TBOPlayer:
             "debug": ["on", "off"],
             "youtube_media_format": ["mp4", "m4a"],
             "download_media_url_upon": ["add","play"],
-            "youtube_video_quality": ["low", "medium","high"],
+            "youtube_video_quality": ["small", "medium","high"],
             "windowed_mode_coords": self.RE_COORDS,
             "windowed_mode_resolution": self.RE_RESOLUTION,
             "autolyrics_coords": self.RE_COORDS,
@@ -1458,7 +1457,7 @@ class TBOPlayer:
             setattr(self.options, option, value)
             self.options.save_state()
             self.options.read(self.options.options_file)
-            if option=="ytdl_location": 
+            if option in ("ytdl_location", "youtube_media_format"): 
                 self.ytld.set_options(self.options)
             elif option=="omx_location": 
                 OMXPlayer.set_omx_location(self.options.omx_location)
@@ -2127,11 +2126,11 @@ class TBOPlayer:
     def show_omx_track_info(self):
         try:
             tkMessageBox.showinfo("Track Information", self.playlist.selected_track()[PlayList.LOCATION]  +"\n\n"+ 
-                                            "Video: " + str(self.omx.video) + "\nAudio: " + str(self.omx.audio) + "\nTime: " + str(self.omx.timenf))
-        except Exception:
-            log.logException()
-            sys.exc_clear()
-            return
+                                            "Video: " + str(self.omx.video) + "\n" +
+                                            "Audio: " + str(self.omx.audio) + "\n" +
+                                            "Time: " + str(self.omx.timenf) + "\n" +
+                                            "Misc: " + str(self.omx.misc))
+        except: return
 
 
 # ***************************************
@@ -3102,7 +3101,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 17 Apr 2017"
+    datestring=" 19 Apr 2017"
 
     dbusif_tboplayer = None
     try:
