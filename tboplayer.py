@@ -345,7 +345,7 @@ class Ytdl:
         self.yt_not_found_callback = yt_not_found_callback
         self.compile_regexps()
 
-    def compile_regexps(self updated=False):
+    def compile_regexps(self, updated=False):
         Thread(target=self._compile_regexps,args=[updated]).start()
 
     def _compile_regexps(self, updated=False):
@@ -1923,18 +1923,12 @@ class TBOPlayer:
             name = url
         if self.ytdl.is_running(url): return
         if self.options.download_media_url_upon == "add" and self.ytdl.whether_to_use_youtube_dl(url):
-            #if self.ytdl_state != self._YTDL_CLOSED or self.ytdl.is_running():
-               # return
             self.go_ytdl(url)
             name = self.ytdl.WAIT_TAG + name
 
-        # append it to the playlist
         self.playlist.append([url, name])
-        # add title to playlist display
         self.track_titles_display.insert(END, name)
-        # and set it as the selected track
         self.playlist.select(self.playlist.length()-1)
-        self.display_selected_track(self.playlist.selected_track_index())
 
     def youtube_search(self):
         def add_url_from_search(link):
