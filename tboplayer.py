@@ -340,14 +340,40 @@ class Ytdl:
     start_signal = False
     end_signal = False
     
-    def __init__(self, options, supported_services, yt_not_found_callback):
+    def __init__(self, options, yt_not_found_callback):
         self.set_options(options)
         self.yt_not_found_callback = yt_not_found_callback
-        Thread(target=self._compile_regexps,args=supported_services).start()
+        self.compile_regexps()
 
-    def _compile_regexps(self,*supported_services):
-        for s in supported_services: 
-            self._SERVICES_REGEXPS = self._SERVICES_REGEXPS + (re.compile(self._ACCEPTED_LINK_REXP_FORMAT % (s)),)
+    def compile_regexps(self updated=False):
+        if hasattr(self, "compiling_process") and self.compiling_process.isalive(): return
+        self.compiling_process = Thread(target=self._compile_regexps,args=[updated])
+        self.compiling_process.start()
+
+    def _compile_regexps(self, updated=False):
+        if not os.path.isfile(self._YTLOCATION) : return
+        self._SERVICES_REGEXPS = ()
+
+        extractors_f = os.path.expanduser("~") + "/.tboplayer/ytdl_extractors"
+        if not os.path.isfile(extractors_f) or updated:
+            os.system(self._YTLOCATION + " --list-extractors > "+ extractors_f)
+
+        f = open(extractors_f, "r")
+        extractors = f.read().split("\n")
+        f.close()
+
+        supported_service_re = re.compile("^[\w\d.]+$")
+        supported_services = ()
+
+        for e in extractors:
+            if supported_service_re.match(e) != None:
+                supported_services = supported_services + (e.lower(),)
+
+        for s in list(sorted(supported_services, reverse=True)):
+            if "." in s:
+                self._SERVICES_REGEXPS = self._SERVICES_REGEXPS + (re.compile(s),)
+            else:
+                self._SERVICES_REGEXPS = self._SERVICES_REGEXPS + (re.compile(self._ACCEPTED_LINK_REXP_FORMAT % (s)),)
     
     def _response(self, url):
         process = self._running_processes[url][0]
@@ -471,6 +497,7 @@ class Ytdl:
         
         if updated:
             callback()
+            self.compile_regexps(updated)
 
     def reset_processes(self):
         self._running_processes = {}
@@ -1054,9 +1081,7 @@ class TBOPlayer:
         def ytdl_not_found():
             tkMessageBox.showinfo("",("youtube-dl binary could be found in the path configured "
                               + "in the options, please check your configuration"))
-        f = open(os.path.dirname(os.path.realpath(sys.argv[0])) + "/yt-dl_supported_sites", "r")
-        self.ytdl = Ytdl(self.options, json.loads(f.read()), ytdl_not_found)
-        f.close()
+        self.ytdl = Ytdl(self.options, ytdl_not_found)
 
         #create the internal playlist
         self.playlist = PlayList()
