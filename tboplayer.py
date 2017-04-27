@@ -1001,7 +1001,7 @@ class TBOPlayer:
                     w, h, x, y = [int(v) for v in mg.groups()+mc.groups()]
                     opts += ' --win %d,%d,%d,%d' % (x, y, x+w, y+h)
 
-            if not not '--aspect-mode' in opts:
+            if not '--aspect-mode' in opts:
                 opts += ' --aspect-mode letterbox'
             
             if not '--no-osd' in opts:
@@ -1077,8 +1077,8 @@ class TBOPlayer:
 
         # start and configure ytdl object
         def ytdl_not_found():
-            tkMessageBox.showinfo("",("youtube-dl binary could be found in the path configured "
-                              + "in the options, please check your configuration"))
+            tkMessageBox.showinfo("",("youtube-dl binary is not in the path configured "
+                              + "in the Options, please check your configuration"))
         self.ytdl = Ytdl(self.options, ytdl_not_found)
 
         #create the internal playlist
@@ -3101,7 +3101,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 19 Apr 2017"
+    datestring=" 27 Apr 2017"
 
     dbusif_tboplayer = None
     try:
