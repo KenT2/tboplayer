@@ -319,7 +319,6 @@ class Ytdl:
     _YTLAUNCH_ARGS_FORMAT = ' -j -f %s --youtube-skip-dash-manifest "%s"'
     _YTLAUNCH_PLST_CMD = ''
     _YTLAUNCH_PLST_ARGS_FORMAT = ' -J -f mp4 --youtube-skip-dash-manifest "%s"'
-    _YOUTUBE_MEDIA_TYPE = ''
     
     _FINISHED_STATUS = "\n"
     _WRN_STATUS = "WARNING:"
@@ -391,9 +390,6 @@ class Ytdl:
         self.finished_processes[url][1] = r
         del self._running_processes[url]
 
-    def _get_link_media_format(self, url):
-        return "m4a" if (self._YOUTUBE_MEDIA_TYPE == "m4a" and "youtube." in url) else "mp4"
-
     def _background_process(self, url):
         process = self._running_processes[url][0]
         while self.is_running(url):
@@ -416,9 +412,9 @@ class Ytdl:
         self._terminate_sent_signal = False
         Thread(target=self._background_process, args=[url]).start()
 
-    def retrieve_media_url(self, url):
+    def retrieve_media_url(self, url, format):
         if self.is_running(url): return
-        ytcmd = self._YTLAUNCH_CMD % (self._get_link_media_format(url), url)
+        ytcmd = self._YTLAUNCH_CMD % (format, url)
         process = pexpect.spawn(ytcmd)
         self._running_processes[url] = [process, ''] # process, result
         self._spawn_thread(url)
@@ -449,7 +445,6 @@ class Ytdl:
         self._YTLOCATION=options.ytdl_location
         self._YTLAUNCH_CMD=self._YTLOCATION + self._YTLAUNCH_ARGS_FORMAT
         self._YTLAUNCH_PLST_CMD=self._YTLOCATION + self._YTLAUNCH_PLST_ARGS_FORMAT
-        self._YOUTUBE_MEDIA_TYPE=options.youtube_media_format
 
     def quit(self):
         self._terminate_sent_signal = True
@@ -859,7 +854,7 @@ class TBOPlayer:
             self.ytdl.start_signal=True
           
         if not playlist:
-            self.ytdl.retrieve_media_url(url)
+            self.ytdl.retrieve_media_url(url, self.options.youtube_media_format)
         else:
             self.ytdl.retrieve_youtube_playlist(url)
         if self.ytdl_state==self._YTDL_STARTING:
@@ -1457,7 +1452,7 @@ class TBOPlayer:
             setattr(self.options, option, value)
             self.options.save_state()
             self.options.read(self.options.options_file)
-            if option in ("ytdl_location", "youtube_media_format"): 
+            if option=="ytdl_location": 
                 self.ytld.set_options(self.options)
             elif option=="omx_location": 
                 OMXPlayer.set_omx_location(self.options.omx_location)
@@ -3101,7 +3096,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 27 Apr 2017"
+    datestring=" 16 May 2017"
 
     dbusif_tboplayer = None
     try:
