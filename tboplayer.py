@@ -390,6 +390,9 @@ class Ytdl:
         self.finished_processes[url][1] = r
         del self._running_processes[url]
 
+    def _get_link_media_format(self, url, f):
+        return "m4a" if (f == "m4a" and "youtube." in url) else "mp4"
+
     def _background_process(self, url):
         process = self._running_processes[url][0]
         while self.is_running(url):
@@ -400,21 +403,24 @@ class Ytdl:
                 if index == 1: continue
                 elif index == 2:
                     del self._running_processes[url]
+                    break
                 else:
                     self._response(url)
+                    break
             except Exception:
                 del self._running_processes[url]
                 log.logException()
                 sys.exc_clear()
+                break
             sleep(500)
 
     def _spawn_thread(self, url):
         self._terminate_sent_signal = False
         Thread(target=self._background_process, args=[url]).start()
 
-    def retrieve_media_url(self, url, format):
+    def retrieve_media_url(self, url, f):
         if self.is_running(url): return
-        ytcmd = self._YTLAUNCH_CMD % (format, url)
+        ytcmd = self._YTLAUNCH_CMD % (self._get_link_media_format(url, f), url)
         process = pexpect.spawn(ytcmd)
         self._running_processes[url] = [process, ''] # process, result
         self._spawn_thread(url)
@@ -482,6 +488,7 @@ class Ytdl:
                     break
             except pexpect.EOF, e:
                 log.warning("      youtube-dl update error: %s" % e.message)
+                break
             except Exception:
                 log.logException()
                 sys.exc_clear()
@@ -1452,7 +1459,7 @@ class TBOPlayer:
             setattr(self.options, option, value)
             self.options.save_state()
             self.options.read(self.options.options_file)
-            if option=="ytdl_location": 
+            if option == "ytdl_location": 
                 self.ytld.set_options(self.options)
             elif option=="omx_location": 
                 OMXPlayer.set_omx_location(self.options.omx_location)
@@ -3096,7 +3103,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 16 May 2017"
+    datestring=" 19 May 2017"
 
     dbusif_tboplayer = None
     try:
