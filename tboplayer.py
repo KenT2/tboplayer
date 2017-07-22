@@ -634,7 +634,11 @@ class TBOPlayer:
                 if self.options.find_lyrics:
                     self.grab_lyrics()
             else:
-                self.monitor("      OMXPlayer did not start yet.")
+                if self.ytdl_state == self._YTDL_CLOSED:
+                    self.play_state=self._OMX_CLOSED
+                    self.monitor("      youtube-dl failed, stopping omx state machine")
+                else:
+                    self.monitor("      OMXPlayer did not start yet.")
             self.root.after(350, self.play_state_machine)
 
         elif self.play_state == self._OMX_PLAYING :
@@ -652,7 +656,7 @@ class TBOPlayer:
                     if self.omx.end_play_signal:
                         self.monitor("            <end play signal received")
                         self.monitor("            <end detected at: " + str(self.omx.position))
-                    self.play_state =self. _OMX_ENDING
+                    self.play_state =self._OMX_ENDING
                     self.reset_progress_bar()
                     if self.media_is_video():
                         self.destroy_vprogress_bar()
@@ -3103,7 +3107,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 19 May 2017"
+    datestring=" 21 Jul 2017"
 
     dbusif_tboplayer = None
     try:
