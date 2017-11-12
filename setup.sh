@@ -6,10 +6,10 @@ BIN_PATH=/usr/local/bin
 DESKTOP_PATH=$HOME/Desktop
 FAKE_BIN=$BIN_PATH/tboplayer
 YTDL_EXPECTED_PATH=$BIN_PATH/youtube-dl
-DESKTOP_ENTRIES=($DESKTOP_PATH/tboplayer.desktop 
+DESKTOP_ENTRIES=($DESKTOP_PATH/tboplayer.desktop
 		/usr/share/applications/tboplayer.desktop)
 SUPPORTED_TYPES=('video/x-msvideo' 'video/quicktime' 'video/mp4' 'video/x-flv' 'video/x-matroska' 'audio/x-matroska'
-              'video/3gpp' 'audio/x-aac' 'video/h264' 'video/h263' 'video/x-m4v' 'audio/midi' 
+              'video/3gpp' 'audio/x-aac' 'video/h264' 'video/h263' 'video/x-m4v' 'audio/midi'
               'audio/mid' 'audio/vnd.qcelp' 'audio/mpeg' 'video/mpeg' 'audio/rmf' 'audio/x-rmf'
 	      'audio/mp4' 'video/mj2' 'audio/x-tta' 'audio/tta' 'application/mp4' 'audio/ogg'
               'video/ogg' 'audio/wav' 'audio/wave' 'audio/x-pn-aiff' 'audio/x-pn-wav' 'audio/x-wav'
@@ -22,26 +22,26 @@ SUPPORTED_TYPES=('video/x-msvideo' 'video/quicktime' 'video/mp4' 'video/x-flv' '
 
 function echoGreen {
     tput setaf 2
-    echo $1 
+    echo $1
     tput sgr0
 }
 
 # uninstall TBOPlayer
 if [ "$1" == "uninstall" ]; then
     echo ""
-    echo "Do you really wish to uninstall TBOPlayer? [Y/N]" 
+    echo "Do you really wish to uninstall TBOPlayer? [Y/N]"
     read answer
     if [ "$answer" == "Y" ] || [ "$answer" == "y" ]; then
 	echo ""
         echo "* Removing TBOPlayer..."
         sudo rm -Rf $TBOPLAYER_PATH
         sudo rm $FAKE_BIN
-	rm "${DESKTOP_ENTRIES[0]}" 
-        sudo rm "${DESKTOP_ENTRIES[1]}" 
+	rm "${DESKTOP_ENTRIES[0]}"
+        sudo rm "${DESKTOP_ENTRIES[1]}"
         sudo update-desktop-database
         echo ""
 	echoGreen "ATENTION"
-        echo "Would you like to remove all of TBOPlayer dependencies too? [Y/N]" 
+        echo "Would you like to remove all of TBOPlayer dependencies too? [Y/N]"
         read answer
         if [ "$answer" == "Y" ] || [ "$answer" == "y" ]; then
             echo ""
@@ -67,7 +67,7 @@ echo "Installing TBOPlayer and its dependencies..."
 echo ""
 
 sudo mv $SCRIPT_PATH $TBOPLAYER_PATH >/dev/null 2>&1
-if [ $? -eq 1 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then 
+if [ $? -eq 1 ] && [ "$TBOPLAYER_PATH" != "$SCRIPT_PATH" ]; then
     echo ""
     echo "Installation failed. :("
     echo "Please, move this folder to "$HOME" and then run this setup script (setup.sh) again."
@@ -80,7 +80,7 @@ echo "* Updating distro packages database... This may take some seconds."
 sudo apt-get update >/dev/null 2>&1
 
 command -v omxplayer >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
+if [ $? -eq 1 ]; then
     echo "* Installing omxplayer..."
     sudo apt-get install -y omxplayer >/dev/null 2>&1
 else
@@ -92,7 +92,7 @@ aptinstall=""
 
 function addToAptInstall {
     dpkg -l $1 >/dev/null 2>&1
-    if [ $? -eq 1 ]; then 
+    if [ $? -eq 1 ]; then
         aptinstall+=$1" "
     fi
 }
@@ -102,28 +102,29 @@ addToAptInstall "python-gobject-2"
 addToAptInstall "python-dbus"
 addToAptInstall "python-tk"
 addToAptInstall "python-gtk2"
+addToAptInstall "python-pip"
 addToAptInstall "libav-tools"
 addToAptInstall "tkdnd"
-addToAptInstall "python-setuptools"
+#addToAptInstall "python-setuptools"
 
 if [ "$aptinstall" != "" ]; then
     echo "* Installing dependencies: "$aptinstall"..."
     sudo apt-get -y install $aptinstall >/dev/null
 fi
-sudo easy_install pip >/dev/null
+#sudo easy_install pip >/dev/null
 
 python -c 'import pexpect' >/dev/null 2>&1
 PEXPECT_INSTALLED=$?
 python -c 'import ptyprocess' >/dev/null 2>&1
 PTYPROCESS_INSTALLED=$?
-if [ $PEXPECT_INSTALLED -eq 1 ]; then 
+if [ $PEXPECT_INSTALLED -eq 1 ]; then
     echo "* Installing pexpect..."
     [[ $PTYPROCESS_INSTALLED -eq 1 ]] && ptyprocess='ptyprocess' || ptyprocess=''
     yes | pip install --user pexpect $ptyprocess >/dev/null 2>&1
 fi
 
 python -c 'import magic' >/dev/null 2>&1
-if [ $? -eq 1 ]; then 
+if [ $? -eq 1 ]; then
     echo "* Installing magic..."
     yes | pip install --user python-magic >/dev/null 2>&1
 fi
@@ -133,7 +134,7 @@ if [ $? -eq 1 ] ; then
     echo "* Compiling tkdnd..."
     sudo apt-get install -y build-essential tcl-dev tk-dev >/dev/null
     wget https://github.com/petasis/tkdnd/tarball/master -O - | tar xz >/dev/null 2>&1
-    cd petasis-tkdnd-* 
+    cd petasis-tkdnd-*
     ./configure >/dev/null 2>&1
     make >/dev/null 2>&1
     sudo make install >/dev/null 2>&1
@@ -148,7 +149,7 @@ function installYoutubedl {
 
 # install youtube-dl it's if not installed
 YTDL_PATH="$( command -v youtube-dl )"
-if [ $? -eq 1 ]; then 
+if [ $? -eq 1 ]; then
     echo "* Installing youtube-dl..."
     installYoutubedl
 else
@@ -171,7 +172,7 @@ fi
 
 # install fake tboplayer executable in /home/<user>/bin
 command -v $FAKE_BIN >/dev/null 2>&1
-if [ $? -eq 0 ]; then 
+if [ $? -eq 0 ]; then
     sudo rm $FAKE_BIN
 fi
 
@@ -188,7 +189,7 @@ sudo mv $TMP_BIN $FAKE_BIN
 echo "* Creating shortcuts and file associations..."
 DESKTOP_ENTRY="${DESKTOP_ENTRIES[0]}"
 $DESKTOP_ENTRY >/dev/null 2>&1
-if [ $? -eq 126 ]; then 
+if [ $? -eq 126 ]; then
     rm $DESKTOP_ENTRY
 fi
 
@@ -213,7 +214,7 @@ sudo update-desktop-database
 echo ""
 echoGreen "Installation finished."
 echo ""
-echo "If all went as expected, TBOPlayer is now installed in your system." 
+echo "If all went as expected, TBOPlayer is now installed in your system."
 echo "TBOPlayer can be found at the "$TBOPLAYER_PATH" directory."
 echo "To run it, you can type 'tboplayer' in a new terminal,"
 echo "or use the shortcut created on your Desktop and apps menu,"
