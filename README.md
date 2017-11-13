@@ -70,21 +70,21 @@ Buttons
 
 * `OPEN/SAVE/CLEAR LIST` - duplicates the Playlist>Open,Save,Clear menu item
 
-* `PLAY/PAUSE` - Play the selected track or pause if playing
+* `PLAY/PAUSE` - play the selected track or pause if playing
 
-* `STOP` - Stop playing, operational only during playing
+* `STOP` - stop playing, operational only during playing
 
-* `PREVIOUS` - Play previous track, operational only after played some track
+* `PREVIOUS` - play previous track, operational only after played some track
 
-* `NEXT` - Play next track, up to mode that you set
+* `NEXT` - play next track, up to mode that you set
 
-* `- VOL +` - Minus/plus volume control
+* `- VOL +` - minus/plus volume control
 
-* `Playlist` - Can be clicked over to play a track, and can be used to add tracks by 'drag and dropping' files over
+* `Playlist` - can be clicked over to play a track, and can be used to add tracks by 'drag and dropping' files over
 
-* `Progress bar` - Show/Seek position
+* `Progress bar` - show/Seek position
 
-* `Resize video` - At the right side of the video progress bar, allows resizing video
+* `Resize video` - at the bottom right side of the video progress bar, allows resizing video
 
 Menus
 -----
@@ -117,10 +117,12 @@ Menus
     * Youtube media quality - lets you choose among "small", "medium" and "high" qualities (Youtube only feature)
     
     * youtube-dl location - path to youtube-dl binary
+
+    * Interface language - change GUI active language, requires restart
     
-    * Start/End track paused - Pauses the track both in the beginning and in the end of the track
+    * Start/End track paused - pauses the track both in the beginning and in the end of the track
     
-    * Autoplay at start up - If TBOPlayer has just been opened and has some file in the playlist, automatically start playing the first file in the list
+    * Autoplay at start up - if TBOPlayer has just been opened and has some file in the playlist, automatically start playing the first file in the list
     
     * Forbid windowed mode - if enabled will make videos always show in full screen, disabling the video window mode and video progress bar - may be useful if you're using tboplayer through a remote desktop
     
@@ -214,14 +216,14 @@ To uninstall tboplayer, open a terminal window and type:
 
         /opt/tboplayer/setup.sh uninstall
 
-Contributors:
+Contributors/Who to blame:
 ==========
 
 KenT2 - Original idea and implementation
 
 eysispeisi - GUI enhancements
 
-heniotierra - GUI enhancements, youtube-dl integration, and setup
+heniotierra - GUI enhancements, youtube-dl integration, internationalization and setup
 
 krugg - GUI enhancements
 
