@@ -228,3 +228,6 @@ heniotierra - GUI enhancements, youtube-dl integration, internationalization and
 krugg - GUI enhancements
 
 popiazaza - GUI enhancements
+
+patgmez - Spanish translation
+

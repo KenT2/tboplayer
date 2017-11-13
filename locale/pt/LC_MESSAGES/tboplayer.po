@@ -1,8 +1,11 @@
+# Copyright (C) 2017 TBOPLAYER
+# Hênio Tierra <heniotster@gmail.com>, 2017.
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2017-11-12 05:05-0300\n"
-"PO-Revision-Date: 2017-11-12 07:34-0300\n"
+"PO-Revision-Date: 2017-11-13 20:00-0300\n"
 "Last-Translator: Hẽnio Tierra <heniotster@gmail.com>\n"
 "Language-Team: \n"
 "Language: pt\n"
@@ -15,14 +18,14 @@ msgstr ""
 
 #: /opt/tboplayer/tboplayer.py:360
 msgid "Problem retreiving content. Do you have up-to-date dependencies?"
-msgstr "Problema ao recuperar o conteúdo. Você tem dependências atualizadas?"
+msgstr "Problema ao recuperar conteúdo. Você tem dependências atualizadas?"
 
 #: /opt/tboplayer/tboplayer.py:361
 msgid ""
 "Problem retreiving content. Content may be copyrighted or the link may be "
 "invalid."
 msgstr ""
-"Problema ao recuar o conteúdo. O conteúdo pode ser protegido por direitos "
+"Problema ao recuperar conteúdo. O conteúdo pode ser protegido por direitos "
 "autorais ou o link pode ser inválido."
 
 #: /opt/tboplayer/tboplayer.py:362
@@ -451,4 +454,4 @@ msgstr "Tentando pegar letras da web..."
 
 #: /opt/tboplayer/tboplayer.py:3120
 msgid "Unable to retrieve lyrics for this track."
-msgstr "Não é possível recuperar as letras dessa faixa."
+msgstr "Não foi possível recuperar a letra dessa faixa."
