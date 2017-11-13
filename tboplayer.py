@@ -68,16 +68,24 @@ locale_folder = sys.path[0] + '/locale'
 try:
     lf = open(lang_file, 'r')
     lang = rstrip(lf.next())
-    gettext.translation('tboplayer', localedir=locale_folder, languages=[lang if lang else 'en']).install()
     lf.close()
+    if lang == 'en' or not lang in ('es','pt'):
+        _ = lambda x:x
+    elif lang:
+        gettext.translation('tboplayer', localedir=locale_folder, languages=[lang]).install()
 except Exception, e:
     if not os.path.exists(config_path):
         os.mkdir(config_path)
-    lf = open(lang_file, 'w')
-    lf.write('en')
-    lf.close()
+    def isen():
+        lf = open(lang_file,'r')
+        lang = rstrip(lf.next())
+        lf.close()
+        return lang != 'en'
+    if not os.path.exists(lang_file) or not isen():
+        lf = open(lang_file, 'w')
+        lf.write('en')
+        lf.close()
     _ = lambda x:x
-
 
 # pyomxplayer from https://github.com/jbaiter/pyomxplayer
 # modified by KenT, heniotierra
@@ -2259,7 +2267,7 @@ class Options:
         config.set('config','ytdl_location','/usr/local/bin/youtube-dl')
         config.set('config','download_media_url_upon','add')
         config.set('config','youtube_video_quality','medium')
-        config.set('config','geometry','530x400+350+250')
+        config.set('config','geometry','580x370+350+250')
         config.set('config','full_screen','0')
         config.set('config','windowed_mode_coords','+200+200')
         config.set('config','windowed_mode_resolution','480x360')
@@ -2415,7 +2423,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         Label(master, text=_("Interface language:")).grid(row=23, column=0, sticky=W)
         self.lang_var=StringVar()
         self.lang_var.set(config.get('config','lang',0))
-        om_lang = OptionMenu(master, self.lang_var, 'en', 'pt')
+        om_lang = OptionMenu(master, self.lang_var, 'en', 'es', 'pt')
         om_lang.grid(row=23, column=2, sticky=W)
         
 
@@ -3151,7 +3159,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 12 Nov 2017"
+    datestring=" 13 Nov 2017"
 
     dbusif_tboplayer = None
     try:
