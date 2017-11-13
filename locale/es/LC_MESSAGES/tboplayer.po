@@ -1,0 +1,449 @@
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2017-11-13 19:32+0100\n"
+"PO-Revision-Date: 2017-11-13 19:57-0300\n"
+"Last-Translator: Hẽnio Tierra <heniotster@gmail.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.7.1\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: es_ES\n"
+
+#: /opt/tboplayer/tboplayer.py:339
+msgid "Problem retreiving content. Do you have up-to-date dependencies?"
+msgstr "Hubo un problema al adquirir contenido. ¿Tiene las dependencias actualizadas?"
+
+#: /opt/tboplayer/tboplayer.py:340
+msgid "Problem retreiving content. Content may be copyrighted or the link may be invalid."
+msgstr "Hubo un problema al adquirir contenido. El contenido puede tener copyright o el enlace puede ser inválido"
+
+#: /opt/tboplayer/tboplayer.py:341
+msgid "Problem retrieving content. Content may have been truncated."
+msgstr "Hubo un problema al adquirir contenido. El contenido puede haberse truncado"
+
+#: /opt/tboplayer/tboplayer.py:342
+msgid "wait"
+msgstr "esperar"
+
+#: /opt/tboplayer/tboplayer.py:702
+msgid "Paused"
+msgstr "Pausado"
+
+#: /opt/tboplayer/tboplayer.py:705
+msgid "Starting"
+msgstr "Comenzando"
+
+#: /opt/tboplayer/tboplayer.py:710
+msgid "End"
+msgstr "Fin"
+
+#: /opt/tboplayer/tboplayer.py:789 /opt/tboplayer/tboplayer.py:1216
+msgid "Play"
+msgstr "Reproducir"
+
+#: /opt/tboplayer/tboplayer.py:791
+msgid "Pause"
+msgstr "Pausa"
+
+#: /opt/tboplayer/tboplayer.py:1091
+msgid "youtube-dl binary is not in the path configured in the Options, please check your configuration"
+msgstr "No está configurada la ruta al programa youtube-dl en las Opciones. Por favor, examine su configuración"
+
+#: /opt/tboplayer/tboplayer.py:1158
+msgid "Track"
+msgstr "Pista"
+
+#: /opt/tboplayer/tboplayer.py:1159 /opt/tboplayer/tboplayer.py:1191
+msgid "Add"
+msgstr "Añadir"
+
+#: /opt/tboplayer/tboplayer.py:1160 /opt/tboplayer/tboplayer.py:1195
+msgid "Add Dir"
+msgstr "Añadir Carpeta"
+
+#: /opt/tboplayer/tboplayer.py:1161
+msgid "Add Dirs"
+msgstr "Añadir Carpetas"
+
+#: /opt/tboplayer/tboplayer.py:1162 /opt/tboplayer/tboplayer.py:1199
+#: /opt/tboplayer/tboplayer.py:1916
+msgid "Add URL"
+msgstr "Añadir URL"
+
+#: /opt/tboplayer/tboplayer.py:1163 /opt/tboplayer/tboplayer.py:2642
+msgid "Youtube search"
+msgstr "Búsqueda en Youtube"
+
+#: /opt/tboplayer/tboplayer.py:1164
+msgid "Remove"
+msgstr "Borrar"
+
+#: /opt/tboplayer/tboplayer.py:1165 /opt/tboplayer/tboplayer.py:1180
+msgid "Edit"
+msgstr "Editar"
+
+#: /opt/tboplayer/tboplayer.py:1168
+msgid "Playlists"
+msgstr "Listas"
+
+#: /opt/tboplayer/tboplayer.py:1169
+msgid "Open playlist"
+msgstr "Abrir lista"
+
+#: /opt/tboplayer/tboplayer.py:1170
+msgid "Save playlist"
+msgstr "Guardar lista"
+
+#: /opt/tboplayer/tboplayer.py:1171 /opt/tboplayer/tboplayer.py:2527
+msgid "Load Youtube playlist"
+msgstr "Cargar lista de Youtube"
+
+#: /opt/tboplayer/tboplayer.py:1172
+msgid "Clear"
+msgstr "Limpiar"
+
+#: /opt/tboplayer/tboplayer.py:1176
+msgid "Track Info"
+msgstr "Información de Pista"
+
+#: /opt/tboplayer/tboplayer.py:1179
+msgid "Options"
+msgstr "Opciones"
+
+#: /opt/tboplayer/tboplayer.py:1183 /opt/tboplayer/tboplayer.py:1184
+#: /opt/tboplayer/tboplayer.py:1341
+msgid "Help"
+msgstr "Ayuda"
+
+#: /opt/tboplayer/tboplayer.py:1185 /opt/tboplayer/tboplayer.py:1351
+msgid "About"
+msgstr "Sobre"
+
+#: /opt/tboplayer/tboplayer.py:1204
+msgid "Open List"
+msgstr "Abrir Lista"
+
+#: /opt/tboplayer/tboplayer.py:1208
+msgid "Save List"
+msgstr "Guardar Lista"
+
+#: /opt/tboplayer/tboplayer.py:1212
+msgid "Clear List"
+msgstr "Borrar Lista"
+
+#: /opt/tboplayer/tboplayer.py:1221
+msgid "Stop"
+msgstr "Parar"
+
+#: /opt/tboplayer/tboplayer.py:1225
+msgid "Previous"
+msgstr "Anterior"
+
+#: /opt/tboplayer/tboplayer.py:1229
+msgid "Next"
+msgstr "Siguiente"
+
+#: /opt/tboplayer/tboplayer.py:1310
+msgid "youtube-dl has been updated"
+msgstr "Se ha actualizado youtube-dl"
+
+#: /opt/tboplayer/tboplayer.py:1335
+msgid "Edit Options"
+msgstr "Editar Opciones"
+
+#: /opt/tboplayer/tboplayer.py:1342
+msgid ""
+"To control playing, type a key\n"
+"p - pause/play\n"
+"spacebar - pause/play\n"
+"q - quit\n"
+msgstr ""
+"Para controlar la reproducción, pulse una tecla\n"
+"p - pausa/reproducir\n"
+"Espacio - pausa/reproducir\n"
+"q - salir\n"
+
+#: /opt/tboplayer/tboplayer.py:1343
+msgid ""
+"+ - increase volume\n"
+"- - decrease volume\n"
+"z - tv show info\n"
+"1 - reduce speed\n"
+"o - forward a chapter\n"
+msgstr ""
+"+ - incrementa volumen\n"
+"- - decrementa volumen\n"
+"z - mostrar información de tv\n"
+"1 - reduce velocidad\n"
+"o - avanzar un capí­tulo\n"
+
+#: /opt/tboplayer/tboplayer.py:1344
+msgid ""
+"2 - increase speed\n"
+"j - previous audio index\n"
+"k - next audio index\n"
+"i - back a chapter\n"
+"n - previous subtitle index\n"
+msgstr ""
+"2 - incrementa velocidad\n"
+"j - í­ndice del audio anterior\n"
+"k - í­ndice del audio siguiente\n"
+"i - volver un capí­tulo \n"
+"n - í­ndice del capí­tulo anterior\n"
+
+#: /opt/tboplayer/tboplayer.py:1345
+msgid ""
+"m - next subtitle index\n"
+"s - toggle subtitles\n"
+">cursor - seek forward 30\n"
+"<cursor - seek back 30\n"
+msgstr ""
+"m - í­ndice del subtí­tulo siguiente\n"
+"s - intercambia subtí­tulos\n"
+">cursor - saltar hacia adelante 30s\n"
+"<cursor - saltar hacia atrás 30s\n"
+
+#: /opt/tboplayer/tboplayer.py:1346
+msgid ""
+"SHIFT >cursor - seek forward 600\n"
+"SHIFT <cursor - seek back 600\n"
+"CTRL >cursor - next track\n"
+"CTRL <cursor - previous track\n"
+msgstr ""
+"SHIFT >cursor - saltar hacia adelante 600s\n"
+"SHIFT <cursor - saltar hacia atrás 600s\n"
+"CTRL >cursor - pista siguiente\n"
+"CTRL <cursor - pista anterior\n"
+
+#: /opt/tboplayer/tboplayer.py:1347
+msgid ""
+"F11 - toggle full screen/windowed mode\n"
+"\n"
+"For more help, consult the 'Operation' section of the README file"
+msgstr ""
+"F11 - intercambia pantalla completa/pantalla en ventana\n"
+"\n"
+"Para más ayuda,  consulte la sección 'Operación' del archivo README"
+
+#: /opt/tboplayer/tboplayer.py:1351
+msgid "GUI for omxplayer using jbaiter's pyomxplayer wrapper\n"
+msgstr "GUI for omxplayer está basado en el trabajo pyomxplayer de jbaiter\n"
+
+#: /opt/tboplayer/tboplayer.py:1352
+msgid ""
+"Version dated: %s \n"
+"Author:\n"
+"    Ken Thompson  - KenT2\n"
+msgstr ""
+"Fecha de la versión: %s \n"
+"Autor:\n"
+"    Ken Thompson  - KenT2\n"
+
+#: /opt/tboplayer/tboplayer.py:1353
+msgid ""
+"Contributors:\n"
+"    eysispeisi\n"
+"    heniotierra\n"
+"    krugg\n"
+"    popiazaza"
+msgstr ""
+"Contribuidores:\n"
+"    eysispeisi\n"
+"    heniotierra\n"
+"    krugg\n"
+"    popiazaza"
+
+#: /opt/tboplayer/tboplayer.py:1840 /opt/tboplayer/tboplayer.py:1842
+msgid "Choose the file(s)"
+msgstr "Seleccione archivo(s)"
+
+#: /opt/tboplayer/tboplayer.py:1873 /opt/tboplayer/tboplayer.py:1875
+msgid "Choose a directory"
+msgstr "Seleccione una carpeta"
+
+#: /opt/tboplayer/tboplayer.py:1917 /opt/tboplayer/tboplayer.py:1971
+msgid "Title"
+msgstr "Título"
+
+#: /opt/tboplayer/tboplayer.py:1918 /opt/tboplayer/tboplayer.py:1972
+msgid "Location"
+msgstr "Ruta"
+
+#: /opt/tboplayer/tboplayer.py:1944 /opt/tboplayer/tboplayer.py:2114
+msgid "Wait. Loading playlist content..."
+msgstr "Espere. Cargando el contenido de la lista..."
+
+#: /opt/tboplayer/tboplayer.py:1970
+msgid "Edit Track"
+msgstr "Editar Pista"
+
+#: /opt/tboplayer/tboplayer.py:2101
+msgid "Clear Playlist"
+msgstr "Borrar Lista"
+
+#: /opt/tboplayer/tboplayer.py:2135
+msgid "Track Information"
+msgstr "Información de Pista"
+
+#: /opt/tboplayer/tboplayer.py:2136
+msgid "Video: "
+msgstr "Vídeo:"
+
+#: /opt/tboplayer/tboplayer.py:2137
+msgid "Audio: "
+msgstr "Audio:"
+
+#: /opt/tboplayer/tboplayer.py:2138
+msgid "Time: "
+msgstr "Tiempo:"
+
+#: /opt/tboplayer/tboplayer.py:2139
+msgid "Misc: "
+msgstr "Varios:"
+
+#: /opt/tboplayer/tboplayer.py:2306
+msgid "Audio Output:"
+msgstr "Salida de Audio:"
+
+#: /opt/tboplayer/tboplayer.py:2309
+msgid "HDMI"
+msgstr "HDMI"
+
+#: /opt/tboplayer/tboplayer.py:2311
+msgid "Local"
+msgstr "Local"
+
+#: /opt/tboplayer/tboplayer.py:2313
+msgid "Auto"
+msgstr "Auto"
+
+#: /opt/tboplayer/tboplayer.py:2319
+msgid "Mode:"
+msgstr "Modo:"
+
+#: /opt/tboplayer/tboplayer.py:2322
+msgid "Single"
+msgstr "Solo"
+
+#: /opt/tboplayer/tboplayer.py:2324
+msgid "Repeat"
+msgstr "Repetir"
+
+#: /opt/tboplayer/tboplayer.py:2326
+msgid "Playlist"
+msgstr "Lista"
+
+#: /opt/tboplayer/tboplayer.py:2328
+msgid "Repeat playlist"
+msgstr "Repetir Lista"
+
+#: /opt/tboplayer/tboplayer.py:2330
+msgid "Shuffle"
+msgstr "Aleatorio"
+
+#: /opt/tboplayer/tboplayer.py:2334
+msgid "Download from Youtube:"
+msgstr "Descargar de Youtube:"
+
+#: /opt/tboplayer/tboplayer.py:2337
+msgid "Video and audio"
+msgstr "Vídeo y audio"
+
+#: /opt/tboplayer/tboplayer.py:2339
+msgid "Audio only"
+msgstr "Solo audio"
+
+#: /opt/tboplayer/tboplayer.py:2342
+msgid "Youtube media quality:"
+msgstr "Calidad de los medios en Youtube:"
+
+#: /opt/tboplayer/tboplayer.py:2348
+msgid "Initial directory for tracks:"
+msgstr "Carpeta inicial para las pistas:"
+
+#: /opt/tboplayer/tboplayer.py:2352
+msgid "Inital directory for playlists:"
+msgstr "Carpeta inicial para las Listas:"
+
+#: /opt/tboplayer/tboplayer.py:2358
+msgid "OMXPlayer location:"
+msgstr "Ruta a OMXPlayer"
+
+#: /opt/tboplayer/tboplayer.py:2362
+msgid "OMXPlayer options:"
+msgstr "Opciones de OMXPlayer:"
+
+#: /opt/tboplayer/tboplayer.py:2368
+msgid "Subtitles"
+msgstr "Subtítulos"
+
+#: /opt/tboplayer/tboplayer.py:2376
+msgid "youtube-dl location:"
+msgstr "Ruta a youtube-dl:"
+
+#: /opt/tboplayer/tboplayer.py:2382
+msgid "Download actual media URL:"
+msgstr "Descargar medio de la URL:"
+
+#: /opt/tboplayer/tboplayer.py:2384 /opt/tboplayer/tboplayer.py:2385
+msgid "when adding URL"
+msgstr "cuando se añade la URL"
+
+#: /opt/tboplayer/tboplayer.py:2384 /opt/tboplayer/tboplayer.py:2385
+msgid "when playing URL"
+msgstr "cuando se reproduce la URL"
+
+#: /opt/tboplayer/tboplayer.py:2422
+msgid "Interface language:"
+msgstr "Lenguaje de interfaz:"
+
+#: /opt/tboplayer/tboplayer.py:2390
+msgid "Forbid windowed mode"
+msgstr "Prohibido el modo ventana"
+
+#: /opt/tboplayer/tboplayer.py:2401
+msgid "Begin/End track paused"
+msgstr "Comenzar/Finalizar con la pista en pausa"
+
+#: /opt/tboplayer/tboplayer.py:2412
+msgid "Autoplay on start up"
+msgstr "Reproducir automáticamente al principio"
+
+#: /opt/tboplayer/tboplayer.py:2420
+msgid "Debug"
+msgstr "Depurar"
+
+#: /opt/tboplayer/tboplayer.py:2428
+msgid "Find lyrics"
+msgstr "Encontrar letra"
+
+#: /opt/tboplayer/tboplayer.py:2491
+msgid "Restart TBOplayer to change language"
+msgstr "Reinicie TBOPlayer para cambiar el idioma"
+
+#: /opt/tboplayer/tboplayer.py:2650
+msgid "Search!"
+msgstr "¡Buscar!"
+
+#: /opt/tboplayer/tboplayer.py:2657
+msgid "Page: "
+msgstr "Página:"
+
+#: /opt/tboplayer/tboplayer.py:3015
+msgid "Lyrics Finder"
+msgstr "Buscador de letra"
+
+#: /opt/tboplayer/tboplayer.py:3020
+msgid "Trying to grab lyrics from the web..."
+msgstr "Intentando conseguir la letra en la web..."
+
+#: /opt/tboplayer/tboplayer.py:3070
+msgid "Unable to retrieve lyrics for this track."
+msgstr "Incapaz de encontrar la letra de esta pista."
