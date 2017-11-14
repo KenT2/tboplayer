@@ -80,7 +80,7 @@ except Exception, e:
         lf = open(lang_file,'r')
         lang = rstrip(lf.next())
         lf.close()
-        return lang != 'en'
+        return lang == 'en'
     if not os.path.exists(lang_file) or not isen():
         lf = open(lang_file, 'w')
         lf.write('en')
