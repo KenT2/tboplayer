@@ -69,9 +69,9 @@ try:
     lf = open(lang_file, 'r')
     lang = rstrip(lf.next())
     lf.close()
-    if lang == 'en' or not lang in ('es','pt'):
+    if lang == 'en' or not lang in ('es','fr','pt'):
         _ = lambda x:x
-    elif lang:
+    else:
         gettext.translation('tboplayer', localedir=locale_folder, languages=[lang]).install()
 except Exception, e:
     if not os.path.exists(config_path):
@@ -2423,7 +2423,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         Label(master, text=_("Interface language:")).grid(row=23, column=0, sticky=W)
         self.lang_var=StringVar()
         self.lang_var.set(config.get('config','lang',0))
-        om_lang = OptionMenu(master, self.lang_var, 'en', 'es', 'pt')
+        om_lang = OptionMenu(master, self.lang_var, 'en', 'es' , 'fr', 'pt')
         om_lang.grid(row=23, column=2, sticky=W)
         
 
@@ -3159,7 +3159,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 13 Nov 2017"
+    datestring=" 19 Jan 2018"
 
     dbusif_tboplayer = None
     try:
