@@ -185,7 +185,7 @@ Available options and respective accepted values are:
 | mode                     | single, repeat, playlist, repeat playlist, shuffle |
 | youtube_media_format     | mp4, m4a                                           |
 | download_media_url_upon  | add, play                                          |
-| youtube_video_quality    | small, medium, high                                  |
+| youtube_video_quality    | small, medium, high                                |
 | windowed_mode_coords     | `[+-]Integer[+-]Integer` pattern                   |
 | autolyrics_coords        | `[+-]Integer[+-]Integer` pattern                   |
 | windowed_mode_resolution | `IntegerxInteger` pattern                          |
@@ -230,4 +230,6 @@ krugg - GUI enhancements
 popiazaza - GUI enhancements
 
 patgmez - Spanish translation
+
+Fabien HENON - French translation
 

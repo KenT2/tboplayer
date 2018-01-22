@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2017-11-13 19:32+0100\n"
-"PO-Revision-Date: 2018-01-19 12:18+0100\n"
+"PO-Revision-Date: 2018-01-21 03:24-0300\n"
 "Last-Translator: Hẽnio Tierra <heniotster@gmail.com>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -66,11 +66,11 @@ msgstr "Ajouter"
 
 #: /opt/tboplayer/tboplayer.py:1160 /opt/tboplayer/tboplayer.py:1195
 msgid "Add Dir"
-msgstr "Ajouter un répertoire"
+msgstr "Ajouter répertoire"
 
 #: /opt/tboplayer/tboplayer.py:1161
 msgid "Add Dirs"
-msgstr "Ajouter des répertoires"
+msgstr "Ajouter répertoires"
 
 #: /opt/tboplayer/tboplayer.py:1162 /opt/tboplayer/tboplayer.py:1199
 #: /opt/tboplayer/tboplayer.py:1916
@@ -99,7 +99,7 @@ msgstr "Ouvrir Liste"
 
 #: /opt/tboplayer/tboplayer.py:1170
 msgid "Save playlist"
-msgstr "Sauvegarder Liste"
+msgstr "Sauver Liste"
 
 #: /opt/tboplayer/tboplayer.py:1171 /opt/tboplayer/tboplayer.py:2527
 msgid "Load Youtube playlist"
@@ -132,7 +132,7 @@ msgstr "Ouvrir Liste"
 
 #: /opt/tboplayer/tboplayer.py:1208
 msgid "Save List"
-msgstr "Sauvegarder Liste"
+msgstr "Sauver Liste"
 
 #: /opt/tboplayer/tboplayer.py:1212
 msgid "Clear List"
@@ -140,7 +140,7 @@ msgstr "Nettoyer Liste"
 
 #: /opt/tboplayer/tboplayer.py:1221
 msgid "Stop"
-msgstr "Stop"
+msgstr "Arrêtez"
 
 #: /opt/tboplayer/tboplayer.py:1225
 msgid "Previous"
