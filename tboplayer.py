@@ -2267,7 +2267,7 @@ class Options:
         config.set('config','ytdl_location','/usr/local/bin/youtube-dl')
         config.set('config','download_media_url_upon','add')
         config.set('config','youtube_video_quality','medium')
-        config.set('config','geometry','580x370+350+250')
+        config.set('config','geometry','662x380+350+250')
         config.set('config','full_screen','0')
         config.set('config','windowed_mode_coords','+200+200')
         config.set('config','windowed_mode_resolution','480x360')
@@ -3159,7 +3159,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 19 Jan 2018"
+    datestring=" 21 Jan 2018"
 
     dbusif_tboplayer = None
     try:
