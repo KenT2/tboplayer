@@ -503,11 +503,11 @@ class Ytdl:
         
         if current_version_hash != latest_version_hash:
             self._update_process = pexpect.spawn("sudo " + self._YTLOCATION + " -U")
-            Thread(target=self._update_process,args=[callback]).start()
+            Thread(target=self._background_update_process,args=[callback]).start()
 
-    def _update_process(self, callback):
+    def _background_update_process(self, callback):
         updated = False
-        while self._update_process.is_alive():
+        while self._update_process.isalive():
             try:
                 index = self._update_process.expect([self._UPDATED_STATUS,
                                                 pexpect.TIMEOUT,
@@ -520,7 +520,7 @@ class Ytdl:
             except pexpect.EOF, e:
                 log.warning("      youtube-dl update error: %s" % e.message)
                 break
-            except Exception:
+            except:
                 log.logException()
                 sys.exc_clear()
                 break
@@ -563,6 +563,24 @@ class TBOPlayer:
     # regular expression patterns
     RE_RESOLUTION = re.compile("^([0-9]+)x([0-9]+)$")
     RE_COORDS = re.compile("^([\+-][0-9]+)([\+-][0-9]+)$")
+
+    _SUPPORTED_MIME_TYPES = ('video/x-msvideo', 'video/quicktime', 'video/mp4', 'video/x-flv', 'video/x-matroska', 'audio/x-matroska',
+          'video/3gpp', 'audio/x-aac', 'video/h264', 'video/h263', 'video/x-m4v', 'audio/midi', 
+          'audio/mid', 'audio/vnd.qcelp', 'audio/mpeg', 'video/mpeg', 'audio/rmf', 'audio/x-rmf',
+          'audio/mp4', 'video/mj2', 'audio/x-tta', 'audio/tta', 'application/mp4', 'audio/ogg',
+          'video/ogg', 'audio/wav', 'audio/wave' ,'audio/x-pn-aiff', 'audio/x-pn-wav', 'audio/x-wav',
+          'audio/flac', 'audio/x-flac', 'video/h261', 'application/adrift', 'video/3gpp2', 'video/x-f4v',
+          'application/ogg', 'audio/mpeg3', 'audio/x-mpeg-3', 'audio/x-gsm', 'audio/x-mpeg', 'audio/mod',
+          'audio/x-mod', 'video/x-ms-asf', 'audio/x-pn-realaudio', 'audio/x-realaudio' ,'video/vnd.rn-realvideo', 'video/fli',
+          'video/x-fli', 'audio/x-ms-wmv', 'video/avi', 'video/msvideo', 'video/m4v', 'audio/x-ms-wma',
+          'application/octet-stream', 'application/x-url', 'text/url', 'text/x-url', 'application/vnd.rn-realmedia',
+          'audio/vnd.rn-realaudio', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'audio/aiff', 'audio/x-aiff')
+    
+    progress_bar_total_steps = 200
+    progress_bar_step_rate = 0
+    volume_max = 60
+    volume_normal_step = 40
+    volume_critical_step = 49
 
 
 # ***************************************
@@ -1131,30 +1149,12 @@ class TBOPlayer:
 
         OMXPlayer.set_omx_location(self.options.omx_location)
 
-        self._SUPPORTED_MIME_TYPES = ('video/x-msvideo', 'video/quicktime', 'video/mp4', 'video/x-flv', 'video/x-matroska', 'audio/x-matroska',
-          'video/3gpp', 'audio/x-aac', 'video/h264', 'video/h263', 'video/x-m4v', 'audio/midi', 
-          'audio/mid', 'audio/vnd.qcelp', 'audio/mpeg', 'video/mpeg', 'audio/rmf', 'audio/x-rmf',
-          'audio/mp4', 'video/mj2', 'audio/x-tta', 'audio/tta', 'application/mp4', 'audio/ogg',
-          'video/ogg', 'audio/wav', 'audio/wave' ,'audio/x-pn-aiff', 'audio/x-pn-wav', 'audio/x-wav',
-          'audio/flac', 'audio/x-flac', 'video/h261', 'application/adrift', 'video/3gpp2', 'video/x-f4v',
-          'application/ogg', 'audio/mpeg3', 'audio/x-mpeg-3', 'audio/x-gsm', 'audio/x-mpeg', 'audio/mod',
-          'audio/x-mod', 'video/x-ms-asf', 'audio/x-pn-realaudio', 'audio/x-realaudio' ,'video/vnd.rn-realvideo', 'video/fli',
-          'video/x-fli', 'audio/x-ms-wmv', 'video/avi', 'video/msvideo', 'video/m4v', 'audio/x-ms-wma',
-          'application/octet-stream', 'application/x-url', 'text/url', 'text/x-url', 'application/vnd.rn-realmedia',
-          'audio/vnd.rn-realaudio', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'audio/aiff', 'audio/x-aiff')
-
         # bind some display fields
         self.filename = tk.StringVar()
         self.display_selected_track_title = tk.StringVar()
         self.display_time = tk.StringVar()
         self.volume_var = tk.IntVar()
         self.progress_bar_var = tk.IntVar()
-
-        self.progress_bar_total_steps = 200
-        self.progress_bar_step_rate = 0
-        self.volume_max = 60
-        self.volume_normal_step = 40
-        self.volume_critical_step = 49
 
         self.root.bind("<Configure>", self.save_geometry)
         #Keys
@@ -2502,7 +2502,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','youtube_media_format',self.youtube_media_format_var.get())
         config.set('config','omx_location',self.e_omx_location.get())
         config.set('config','ytdl_location',self.e_ytdl_location.get())
-        config.set('config','download_media_url_upon',"add" if "add" in self.download_media_url_upon_var.get() else "play")
+        config.set('config','download_media_url_upon',"add" if self.download_media_url_upon_var.get() == _("when adding URL") else "play")
         config.set('config','youtube_video_quality',self.youtube_video_quality_var.get())
         config.set('config','geometry',self.geometry_var)
         config.set('config','full_screen',self.full_screen_var)
@@ -2672,8 +2672,9 @@ class PlayList():
 
     def waiting_tracks(self):
         waiting = []
+        l = len(Ytdl.WAIT_TAG)
         for i in range(len(self._tracks)):
-            if self._tracks[i][1][:6] == Ytdl.WAIT_TAG:
+            if self._tracks[i][1][:l] == Ytdl.WAIT_TAG:
                 waiting += [(i, self._tracks[i])]
         return waiting if len(waiting) else False
 
@@ -2701,7 +2702,7 @@ class YoutubeSearchDialog(Toplevel):
         Button(master, width = 5, height = 1, text = _('Search!'),
                               foreground='black', command = self.search, 
                               background='light grey').grid(row=0, column=1)
-        Button(master, width = 5, height = 1, text = 'Clear',
+        Button(master, width = 5, height = 1, text = _('Clear'),
                               foreground='black', command = self.clear_search, 
                               background='light grey').grid(row=1, column=1)
 
@@ -2810,7 +2811,7 @@ class YtresultCell(Frame):
                               foreground='black', wraplength = 300, height = 2,
                               textvariable=self.video_name,
                               background="grey").grid(row = 0, column=0, columnspan=2, sticky=W)
-        Button(self, width = 5, height = 1, text='Add',
+        Button(self, width = 5, height = 1, text=_('Add'),
                               foreground='black', command = self.add_link, 
                               background="light grey").grid(row = 0, column=2, sticky=W)
 
@@ -3051,7 +3052,7 @@ class TBOPlayerDBusInterface (Object):
 
 
 class AutoLyrics(Toplevel):
-    _ARTIST_TITLE_REXP = re.compile(r"([\w\d.&\\/'` ]*)[-:|]([\w\d.&\\/'` ]*)", re.UNICODE)
+    _ARTIST_TITLE_REXP = re.compile(r"([\w\d.&\\/'` ]*)[-:|~]([\w\d.&\\/'` ]*)", re.UNICODE)
 
     def __init__(self, parent, coords, update_coords_func, track_title):
         Toplevel.__init__(self, parent, background="#d9d9d9")
@@ -3104,13 +3105,14 @@ class AutoLyrics(Toplevel):
                 'title': title,
                 'no_pager': True
             }).json()
-            if not api_response['page_id']:
-                self.nope()
-                return
+
+            if not api_response or not 'page_id' in api_response:
+                raise Exception()
+            
             pagesrc = requests.get(api_response['url']).text
             parser = LyricWikiParser()
             parser.feed(pagesrc)
-            lyrics = (artist + ": " + title +
+            lyrics = (api_response["artist"] + ": " + api_response["song"] +
                             "\n               -- - -- - -- - -- - -- - -- - -- - -- - --               \n\n" +
                             parser.result)
             self.lyrics_var.set(lyrics)
@@ -3131,12 +3133,12 @@ class LyricWikiParser(HTMLParser):
         HTMLParser.__init__(self)
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'div' : 
+        if tag == "div" : 
             for t in attrs:
                 if "lyricbox" in t[1]: 
                     self.grab = True
                     break
-
+                    
     def handle_startendtag(self, tag, attrs):
         if self.grab and tag == "br":
             self.result += "\n"
