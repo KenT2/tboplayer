@@ -1,0 +1,461 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2018-02-02 15:46+0200\n"
+"PO-Revision-Date: 2018-02-02 17:23+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 1.8.11\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?"
+"2:1));\n"
+"Language: ro\n"
+
+#: /opt/tboplayer/tboplayer.py:360
+msgid "Problem retreiving content. Do you have up-to-date dependencies?"
+msgstr "Problemă în redarea conținutului. Aveți dependențele actualizate?"
+
+#: /opt/tboplayer/tboplayer.py:361
+msgid ""
+"Problem retreiving content. Content may be copyrighted or the link may be "
+"invalid."
+msgstr ""
+"Problemă în redarea conținutului. Conținutul poate fi protejat prin drepturi "
+"de autor sau linkul poate fi nevalid."
+
+#: /opt/tboplayer/tboplayer.py:362
+msgid "Problem retrieving content. Content may have been truncated."
+msgstr ""
+"Problemă în redarea conținutului. Conținutul poate să fi fost trunchiat."
+
+#: /opt/tboplayer/tboplayer.py:363
+msgid "wait"
+msgstr "așteptați"
+
+#: /opt/tboplayer/tboplayer.py:723
+msgid "Paused"
+msgstr "Pauză"
+
+#: /opt/tboplayer/tboplayer.py:726
+msgid "Starting"
+msgstr "Pornește"
+
+#: /opt/tboplayer/tboplayer.py:731
+msgid "End"
+msgstr "Sfârșit"
+
+#: /opt/tboplayer/tboplayer.py:810 /opt/tboplayer/tboplayer.py:1237
+msgid "Play"
+msgstr "Redați"
+
+#: /opt/tboplayer/tboplayer.py:812
+msgid "Pause"
+msgstr "Pauză"
+
+#: /opt/tboplayer/tboplayer.py:1112
+msgid ""
+"youtube-dl binary is not in the path configured in the Options, please check "
+"your configuration"
+msgstr ""
+"youtube-dl nu se află în calea configurată în Opțiuni, verificați "
+"configurația"
+
+#: /opt/tboplayer/tboplayer.py:1179
+msgid "Track"
+msgstr "Pistă"
+
+#: /opt/tboplayer/tboplayer.py:1180 /opt/tboplayer/tboplayer.py:1212
+msgid "Add"
+msgstr "Adăugă"
+
+#: /opt/tboplayer/tboplayer.py:1181 /opt/tboplayer/tboplayer.py:1216
+msgid "Add Dir"
+msgstr "Adăugă director"
+
+#: /opt/tboplayer/tboplayer.py:1182
+msgid "Add Dirs"
+msgstr "Adăugă directoare"
+
+#: /opt/tboplayer/tboplayer.py:1183 /opt/tboplayer/tboplayer.py:1220
+#: /opt/tboplayer/tboplayer.py:1937
+msgid "Add URL"
+msgstr "Adăugă adresa"
+
+#: /opt/tboplayer/tboplayer.py:1184 /opt/tboplayer/tboplayer.py:2692
+msgid "Youtube search"
+msgstr "Căută pe Youtube"
+
+#: /opt/tboplayer/tboplayer.py:1185
+msgid "Remove"
+msgstr "Eliminare"
+
+#: /opt/tboplayer/tboplayer.py:1186 /opt/tboplayer/tboplayer.py:1201
+msgid "Edit"
+msgstr "Editare"
+
+#: /opt/tboplayer/tboplayer.py:1189
+msgid "Playlists"
+msgstr "Liste de redare"
+
+#: /opt/tboplayer/tboplayer.py:1190
+msgid "Open playlist"
+msgstr "Încarcă listă de redare"
+
+#: /opt/tboplayer/tboplayer.py:1191
+msgid "Save playlist"
+msgstr "Salvează listă de redare"
+
+#: /opt/tboplayer/tboplayer.py:1192 /opt/tboplayer/tboplayer.py:2577
+msgid "Load Youtube playlist"
+msgstr "Încarcă listă de redare Youtube"
+
+#: /opt/tboplayer/tboplayer.py:1193
+msgid "Clear"
+msgstr "Șterge"
+
+#: /opt/tboplayer/tboplayer.py:1197
+msgid "Track Info"
+msgstr "Informații pistă"
+
+#: /opt/tboplayer/tboplayer.py:1200
+msgid "Options"
+msgstr "Opțiuni"
+
+#: /opt/tboplayer/tboplayer.py:1204 /opt/tboplayer/tboplayer.py:1205
+#: /opt/tboplayer/tboplayer.py:1362
+msgid "Help"
+msgstr "Ajutor"
+
+#: /opt/tboplayer/tboplayer.py:1206 /opt/tboplayer/tboplayer.py:1372
+msgid "About"
+msgstr "Despre"
+
+#: /opt/tboplayer/tboplayer.py:1225
+msgid "Open List"
+msgstr "Deschide listă"
+
+#: /opt/tboplayer/tboplayer.py:1229
+msgid "Save List"
+msgstr "Salvează listă"
+
+#: /opt/tboplayer/tboplayer.py:1233
+msgid "Clear List"
+msgstr "Șterge listă"
+
+#: /opt/tboplayer/tboplayer.py:1242
+msgid "Stop"
+msgstr "Stop"
+
+#: /opt/tboplayer/tboplayer.py:1246
+msgid "Previous"
+msgstr "Anterior"
+
+#: /opt/tboplayer/tboplayer.py:1250
+msgid "Next"
+msgstr "Următorul"
+
+#: /opt/tboplayer/tboplayer.py:1331
+msgid "youtube-dl has been updated"
+msgstr "youtube-dl a fost actualizat"
+
+#: /opt/tboplayer/tboplayer.py:1356
+msgid "Edit Options"
+msgstr "Editarea opțiunilor"
+
+#: /opt/tboplayer/tboplayer.py:1363
+msgid ""
+"To control playing, type a key\n"
+"p - pause/play\n"
+"spacebar - pause/play\n"
+"q - quit\n"
+msgstr ""
+"Pentru a controla redarea, tastați\n"
+"p - pauză / redare\n"
+"spațiu - pauză / redare\n"
+"q - renunț\n"
+
+#: /opt/tboplayer/tboplayer.py:1364
+msgid ""
+"+ - increase volume\n"
+"- - decrease volume\n"
+"z - tv show info\n"
+"1 - reduce speed\n"
+"o - forward a chapter\n"
+msgstr ""
+"+ - crește volumul\n"
+"- - reduce volumul\n"
+"z - informații TV show\n"
+"1 - reduce viteza\n"
+"o - înaintează un capitol\n"
+
+#: /opt/tboplayer/tboplayer.py:1365
+msgid ""
+"2 - increase speed\n"
+"j - previous audio index\n"
+"k - next audio index\n"
+"i - back a chapter\n"
+"n - previous subtitle index\n"
+msgstr ""
+"2 - crește viteza\n"
+"j - indice audio anterior\n"
+"k - indicele audio următor\n"
+"i - înapoi un capitol\n"
+"n - indexul anterior al subtitrării\n"
+
+#: /opt/tboplayer/tboplayer.py:1366
+msgid ""
+"m - next subtitle index\n"
+"s - toggle subtitles\n"
+">cursor - seek forward 30\n"
+"<cursor - seek back 30\n"
+msgstr ""
+"m - următorul index de subtitrări\n"
+"s - comutare subtitrări\n"
+"săgeată dreapta - caută înainte 30\n"
+"săgeată stânga - caută înapoi 30\n"
+
+#: /opt/tboplayer/tboplayer.py:1367
+msgid ""
+"SHIFT >cursor - seek forward 600\n"
+"SHIFT <cursor - seek back 600\n"
+"CTRL >cursor - next track\n"
+"CTRL <cursor - previous track\n"
+msgstr ""
+"SHIFT + săgeată dreapta - caută înainte 600\n"
+"SHIFT + săgeată stânga - caută înapoi 600\n"
+"CTRL + săgeată dreapta - următoarea pistă\n"
+"CTRL + săgeată stânga - pista anterioară\n"
+
+#: /opt/tboplayer/tboplayer.py:1368
+msgid ""
+"F11 - toggle full screen/windowed mode\n"
+"\n"
+"For more help, consult the 'Operation' section of the README file"
+msgstr ""
+"F11 - comutați pe ecran complet / modul fereastră \n"
+"\n"
+"Pentru mai multe informații, consultați secțiunea 'Utilizare' a fișierului "
+"README"
+
+#: /opt/tboplayer/tboplayer.py:1372
+msgid "GUI for omxplayer using jbaiter's pyomxplayer wrapper\n"
+msgstr "GUI pentru omxplayer folosind wrapperul pyomxplayer al lui jbaiter\n"
+
+#: /opt/tboplayer/tboplayer.py:1373
+msgid ""
+"Version dated: %s \n"
+"Author:\n"
+"    Ken Thompson  - KenT2\n"
+msgstr ""
+"Versiune datată: %s \n"
+"Autor: \n"
+"    Ken Thompson - KenT2\n"
+
+#: /opt/tboplayer/tboplayer.py:1374
+msgid ""
+"Contributors:\n"
+"    eysispeisi\n"
+"    heniotierra\n"
+"    krugg\n"
+"    popiazaza"
+msgstr ""
+"Contribuitori:\n"
+"    eysispeisi\n"
+"    heniotierra\n"
+"    krugg\n"
+"    popiazaza"
+
+#: /opt/tboplayer/tboplayer.py:1861 /opt/tboplayer/tboplayer.py:1863
+msgid "Choose the file(s)"
+msgstr "Alegeți fișierul (fișierele)"
+
+#: /opt/tboplayer/tboplayer.py:1894 /opt/tboplayer/tboplayer.py:1896
+msgid "Choose a directory"
+msgstr "Alegeți un director"
+
+#: /opt/tboplayer/tboplayer.py:1938 /opt/tboplayer/tboplayer.py:1992
+msgid "Title"
+msgstr "Titlu"
+
+#: /opt/tboplayer/tboplayer.py:1939 /opt/tboplayer/tboplayer.py:1993
+msgid "Location"
+msgstr "Locație"
+
+#: /opt/tboplayer/tboplayer.py:1965 /opt/tboplayer/tboplayer.py:2135
+msgid "Wait. Loading playlist content..."
+msgstr "Așteptați. Se încărcarcă lista de redare ..."
+
+#: /opt/tboplayer/tboplayer.py:1991
+msgid "Edit Track"
+msgstr "Editare pistă"
+
+#: /opt/tboplayer/tboplayer.py:2122
+msgid "Clear Playlist"
+msgstr "Șterge lista de redare"
+
+#: /opt/tboplayer/tboplayer.py:2156
+msgid "Track Information"
+msgstr "Informații despre pistă"
+
+#: /opt/tboplayer/tboplayer.py:2157
+msgid "Video: "
+msgstr "Video:"
+
+#: /opt/tboplayer/tboplayer.py:2158
+msgid "Audio: "
+msgstr "Audio:"
+
+#: /opt/tboplayer/tboplayer.py:2159
+msgid "Time: "
+msgstr "Timp:"
+
+#: /opt/tboplayer/tboplayer.py:2160
+msgid "Misc: "
+msgstr "Diverse:"
+
+#: /opt/tboplayer/tboplayer.py:2334
+msgid "Audio Output:"
+msgstr "Ieșire audio:"
+
+#: /opt/tboplayer/tboplayer.py:2337
+msgid "HDMI"
+msgstr "HDMI"
+
+#: /opt/tboplayer/tboplayer.py:2339
+msgid "Local"
+msgstr "Local"
+
+#: /opt/tboplayer/tboplayer.py:2341
+msgid "Auto"
+msgstr "Auto"
+
+#: /opt/tboplayer/tboplayer.py:2347
+msgid "Mode:"
+msgstr "Mod:"
+
+#: /opt/tboplayer/tboplayer.py:2350
+msgid "Single"
+msgstr "Redare individuală"
+
+#: /opt/tboplayer/tboplayer.py:2352
+msgid "Repeat"
+msgstr "Repetare individuală"
+
+#: /opt/tboplayer/tboplayer.py:2354
+msgid "Playlist"
+msgstr "Listă de redare"
+
+#: /opt/tboplayer/tboplayer.py:2356
+msgid "Repeat playlist"
+msgstr "Repetare listă"
+
+#: /opt/tboplayer/tboplayer.py:2358
+msgid "Shuffle"
+msgstr "Aleator"
+
+#: /opt/tboplayer/tboplayer.py:2362
+msgid "Download from Youtube:"
+msgstr "Descarcă de pe Youtube:"
+
+#: /opt/tboplayer/tboplayer.py:2365
+msgid "Video and audio"
+msgstr "Video și audio"
+
+#: /opt/tboplayer/tboplayer.py:2367
+msgid "Audio only"
+msgstr "Numai audio"
+
+#: /opt/tboplayer/tboplayer.py:2370
+msgid "Youtube media quality:"
+msgstr "Calitate media Youtube:"
+
+#: /opt/tboplayer/tboplayer.py:2376
+msgid "Initial directory for tracks:"
+msgstr "Director inițial pentru piste:"
+
+#: /opt/tboplayer/tboplayer.py:2380
+msgid "Inital directory for playlists:"
+msgstr "Directorul principal pentru liste redare:"
+
+#: /opt/tboplayer/tboplayer.py:2386
+msgid "OMXPlayer location:"
+msgstr "Locația OMXPlayer:"
+
+#: /opt/tboplayer/tboplayer.py:2390
+msgid "OMXPlayer options:"
+msgstr "Opțiuni pentru OMXPlayer:"
+
+#: /opt/tboplayer/tboplayer.py:2401
+msgid "Subtitles"
+msgstr "Subtitrări"
+
+#: /opt/tboplayer/tboplayer.py:2409
+msgid "youtube-dl location:"
+msgstr "Locația youtube-dl:"
+
+#: /opt/tboplayer/tboplayer.py:2415
+msgid "Download actual media URL:"
+msgstr "Descarcă URL-ul media real:"
+
+#: /opt/tboplayer/tboplayer.py:2417 /opt/tboplayer/tboplayer.py:2418
+msgid "when adding URL"
+msgstr "la adăugare"
+
+#: /opt/tboplayer/tboplayer.py:2417 /opt/tboplayer/tboplayer.py:2418
+msgid "when playing URL"
+msgstr "la redare"
+
+#: /opt/tboplayer/tboplayer.py:2422
+msgid "Interface language:"
+msgstr "Limbă interfață:"
+
+#: /opt/tboplayer/tboplayer.py:2431
+msgid "Forbid windowed mode"
+msgstr "Interzice mod fereastră"
+
+#: /opt/tboplayer/tboplayer.py:2442
+msgid "Begin/End track paused"
+msgstr "Începutul / sfârșitul melodiei întrerupt"
+
+#: /opt/tboplayer/tboplayer.py:2453
+msgid "Autoplay on start up"
+msgstr "Redare automată la pornire"
+
+#: /opt/tboplayer/tboplayer.py:2461
+msgid "Debug"
+msgstr "Debug"
+
+#: /opt/tboplayer/tboplayer.py:2469
+msgid "Find lyrics"
+msgstr "Caută versuri"
+
+#: /opt/tboplayer/tboplayer.py:2491
+msgid "Restart TBOplayer to change language"
+msgstr "Reporniți TBOplayer pentru a schimba limba"
+
+#: /opt/tboplayer/tboplayer.py:2700
+msgid "Search!"
+msgstr "Caută!"
+
+#: /opt/tboplayer/tboplayer.py:2707
+msgid "Page: "
+msgstr "Pagina:"
+
+#: /opt/tboplayer/tboplayer.py:3065
+msgid "Lyrics Finder"
+msgstr "Căutare versuri"
+
+#: /opt/tboplayer/tboplayer.py:3070
+msgid "Trying to grab lyrics from the web..."
+msgstr "Se caută versuri de pe web ..."
+
+#: /opt/tboplayer/tboplayer.py:3120
+msgid "Unable to retrieve lyrics for this track."
+msgstr "Nu s-au găsit versuri pentru această pistă."
