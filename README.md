@@ -233,3 +233,5 @@ patgmez - Spanish translation
 
 Fabien HENON - French translation
 
+andrei tanasescu - Romenian translation
+
