@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2017-11-12 05:01+BRT\n"
+"POT-Creation-Date: 2018-02-06 10:59+BRT\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,149 +15,157 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: /opt/tboplayer/tboplayer.py:360
+#: tboplayer.py:366
 msgid "Problem retreiving content. Do you have up-to-date dependencies?"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:361
+#: tboplayer.py:367
 msgid "Problem retreiving content. Content may be copyrighted or the link may be invalid."
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:362
+#: tboplayer.py:368
 msgid "Problem retrieving content. Content may have been truncated."
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:363
+#: tboplayer.py:369
 msgid "wait"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:723
+#: tboplayer.py:774
 msgid "Paused"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:726
+#: tboplayer.py:777
 msgid "Starting"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:731
+#: tboplayer.py:782
 msgid "End"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:810 /opt/tboplayer/tboplayer.py:1237
+#: tboplayer.py:861 tboplayer.py:1290
 msgid "Play"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:812
+#: tboplayer.py:863
 msgid "Pause"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1112
+#: tboplayer.py:1070
+msgid "youtube-dl has been updated."
+msgstr ""
+
+#: tboplayer.py:1072
+msgid "Failed to update youtube-dl."
+msgstr ""
+
+#: tboplayer.py:1075
+msgid ""
+"youtube-dl needs to be updated.\n"
+"Please inform your password."
+msgstr ""
+
+#: tboplayer.py:1184
 msgid "youtube-dl binary is not in the path configured in the Options, please check your configuration"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1179
+#: tboplayer.py:1232
 msgid "Track"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1180 /opt/tboplayer/tboplayer.py:1212
+#: tboplayer.py:1233 tboplayer.py:1265 tboplayer.py:2876
 msgid "Add"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1181 /opt/tboplayer/tboplayer.py:1216
+#: tboplayer.py:1234 tboplayer.py:1269
 msgid "Add Dir"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1182
+#: tboplayer.py:1235
 msgid "Add Dirs"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1183 /opt/tboplayer/tboplayer.py:1220
-#: /opt/tboplayer/tboplayer.py:1937
+#: tboplayer.py:1236 tboplayer.py:1273 tboplayer.py:1989
 msgid "Add URL"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1184 /opt/tboplayer/tboplayer.py:2692
+#: tboplayer.py:1237 tboplayer.py:2756
 msgid "Youtube search"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1185
+#: tboplayer.py:1238
 msgid "Remove"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1186 /opt/tboplayer/tboplayer.py:1201
+#: tboplayer.py:1239 tboplayer.py:1254
 msgid "Edit"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1189
+#: tboplayer.py:1242
 msgid "Playlists"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1190
+#: tboplayer.py:1243
 msgid "Open playlist"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1191
+#: tboplayer.py:1244
 msgid "Save playlist"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1192 /opt/tboplayer/tboplayer.py:2577
+#: tboplayer.py:1245 tboplayer.py:2640
 msgid "Load Youtube playlist"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1193
+#: tboplayer.py:1246 tboplayer.py:2767
 msgid "Clear"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1197
+#: tboplayer.py:1250
 msgid "Track Info"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1200
+#: tboplayer.py:1253
 msgid "Options"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1204 /opt/tboplayer/tboplayer.py:1205
-#: /opt/tboplayer/tboplayer.py:1362
+#: tboplayer.py:1257 tboplayer.py:1258 tboplayer.py:1414
 msgid "Help"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1206 /opt/tboplayer/tboplayer.py:1372
+#: tboplayer.py:1259 tboplayer.py:1424
 msgid "About"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1225
+#: tboplayer.py:1278
 msgid "Open List"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1229
+#: tboplayer.py:1282
 msgid "Save List"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1233
+#: tboplayer.py:1286
 msgid "Clear List"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1242
+#: tboplayer.py:1295
 msgid "Stop"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1246
+#: tboplayer.py:1299
 msgid "Previous"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1250
+#: tboplayer.py:1303
 msgid "Next"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1331
-msgid "youtube-dl has been updated"
-msgstr ""
-
-#: /opt/tboplayer/tboplayer.py:1356
+#: tboplayer.py:1408
 msgid "Edit Options"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1363
+#: tboplayer.py:1415
 msgid ""
 "To control playing, type a key\n"
 "p - pause/play\n"
@@ -165,7 +173,7 @@ msgid ""
 "q - quit\n"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1364
+#: tboplayer.py:1416
 msgid ""
 "+ - increase volume\n"
 "- - decrease volume\n"
@@ -174,7 +182,7 @@ msgid ""
 "o - forward a chapter\n"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1365
+#: tboplayer.py:1417
 msgid ""
 "2 - increase speed\n"
 "j - previous audio index\n"
@@ -183,7 +191,7 @@ msgid ""
 "n - previous subtitle index\n"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1366
+#: tboplayer.py:1418
 msgid ""
 "m - next subtitle index\n"
 "s - toggle subtitles\n"
@@ -191,7 +199,7 @@ msgid ""
 "<cursor - seek back 30\n"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1367
+#: tboplayer.py:1419
 msgid ""
 "SHIFT >cursor - seek forward 600\n"
 "SHIFT <cursor - seek back 600\n"
@@ -199,26 +207,26 @@ msgid ""
 "CTRL <cursor - previous track\n"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1368
+#: tboplayer.py:1420
 msgid ""
 "F11 - toggle full screen/windowed mode\n"
 "\n"
 "For more help, consult the 'Operation' section of the README file"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1372
+#: tboplayer.py:1424
 msgid ""
 "GUI for omxplayer using jbaiter's pyomxplayer wrapper\n"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1373
+#: tboplayer.py:1425
 msgid ""
 "Version dated: %s \n"
 "Author:\n"
 "    Ken Thompson  - KenT2\n"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1374
+#: tboplayer.py:1426
 msgid ""
 "Contributors:\n"
 "    eysispeisi\n"
@@ -227,195 +235,195 @@ msgid ""
 "    popiazaza"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1861 /opt/tboplayer/tboplayer.py:1863
+#: tboplayer.py:1913 tboplayer.py:1915
 msgid "Choose the file(s)"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1894 /opt/tboplayer/tboplayer.py:1896
+#: tboplayer.py:1946 tboplayer.py:1948
 msgid "Choose a directory"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1938 /opt/tboplayer/tboplayer.py:1992
+#: tboplayer.py:1990 tboplayer.py:2044
 msgid "Title"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1939 /opt/tboplayer/tboplayer.py:1993
+#: tboplayer.py:1991 tboplayer.py:2045
 msgid "Location"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1965 /opt/tboplayer/tboplayer.py:2135
+#: tboplayer.py:2017 tboplayer.py:2187
 msgid "Wait. Loading playlist content..."
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:1991
+#: tboplayer.py:2043
 msgid "Edit Track"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2122
+#: tboplayer.py:2174
 msgid "Clear Playlist"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2156
+#: tboplayer.py:2208
 msgid "Track Information"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2157
+#: tboplayer.py:2209
 msgid "Video: "
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2158
+#: tboplayer.py:2210
 msgid "Audio: "
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2159
+#: tboplayer.py:2211
 msgid "Time: "
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2160
+#: tboplayer.py:2212
 msgid "Misc: "
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2334
+#: tboplayer.py:2389
 msgid "Audio Output:"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2337
+#: tboplayer.py:2392
 msgid "HDMI"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2339
+#: tboplayer.py:2394
 msgid "Local"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2341
+#: tboplayer.py:2396
 msgid "Auto"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2347
+#: tboplayer.py:2402
 msgid "Mode:"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2350
+#: tboplayer.py:2405
 msgid "Single"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2352
+#: tboplayer.py:2407
 msgid "Repeat"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2354
+#: tboplayer.py:2409
 msgid "Playlist"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2356
+#: tboplayer.py:2411
 msgid "Repeat playlist"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2358
+#: tboplayer.py:2413
 msgid "Shuffle"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2362
+#: tboplayer.py:2417
 msgid "Download from Youtube:"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2365
+#: tboplayer.py:2420
 msgid "Video and audio"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2367
+#: tboplayer.py:2422
 msgid "Audio only"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2370
+#: tboplayer.py:2425
 msgid "Youtube media quality:"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2376
+#: tboplayer.py:2431
 msgid "Initial directory for tracks:"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2380
+#: tboplayer.py:2435
 msgid "Inital directory for playlists:"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2386
+#: tboplayer.py:2441
 msgid "OMXPlayer location:"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2390
+#: tboplayer.py:2445
 msgid "OMXPlayer options:"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2395
-msgid ""
-msgstr ""
-
-#: /opt/tboplayer/tboplayer.py:2401
+#: tboplayer.py:2451
 msgid "Subtitles"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2409
+#: tboplayer.py:2459
 msgid "youtube-dl location:"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2415
+#: tboplayer.py:2465
 msgid "Download actual media URL:"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2417 /opt/tboplayer/tboplayer.py:2418
-msgid "when adding URL"
-msgstr ""
-
-#: /opt/tboplayer/tboplayer.py:2417 /opt/tboplayer/tboplayer.py:2418
+#: tboplayer.py:2467 tboplayer.py:2468
 msgid "when playing URL"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2422
+#: tboplayer.py:2467 tboplayer.py:2468 tboplayer.py:2565
+msgid "when adding URL"
+msgstr ""
+
+#: tboplayer.py:2473
 msgid "Interface language:"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2431
+#: tboplayer.py:2482
 msgid "Forbid windowed mode"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2442
+#: tboplayer.py:2493
 msgid "Begin/End track paused"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2453
+#: tboplayer.py:2504
 msgid "Autoplay on start up"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2461
-msgid "Debug"
+#: tboplayer.py:2513
+msgid "Keep youtube-dl up-to-date"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2469
+#: tboplayer.py:2521
 msgid "Find lyrics"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2491
+#: tboplayer.py:2529
+msgid "Debug"
+msgstr ""
+
+#: tboplayer.py:2552
 msgid "Restart TBOplayer to change language"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2700
+#: tboplayer.py:2764
 msgid "Search!"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:2707
+#: tboplayer.py:2771
 msgid "Page: "
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:3065
+#: tboplayer.py:3129
 msgid "Lyrics Finder"
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:3070
+#: tboplayer.py:3134
 msgid "Trying to grab lyrics from the web..."
 msgstr ""
 
-#: /opt/tboplayer/tboplayer.py:3120
+#: tboplayer.py:3185
 msgid "Unable to retrieve lyrics for this track."
 msgstr ""
 
