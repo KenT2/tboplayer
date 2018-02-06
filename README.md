@@ -123,6 +123,8 @@ Menus
     * Start/End track paused - pauses the track both in the beginning and in the end of the track
     
     * Autoplay at start up - if TBOPlayer has just been opened and has some file in the playlist, automatically start playing the first file in the list
+
+    * Keep youtube-dl up-to-date - upon start, check if there is a newer version of youtube-dl, and if there is, install it
     
     * Forbid windowed mode - if enabled will make videos always show in full screen, disabling the video window mode and video progress bar - may be useful if you're using tboplayer through a remote desktop
     

@@ -352,10 +352,11 @@ class Ytdl:
     _YTLAUNCH_PLST_ARGS_FORMAT = ' -J -f mp4 --youtube-skip-dash-manifest "%s"'
     
     _FINISHED_STATUS = "\n"
-    _WRN_STATUS = "WARNING:"
-    _UPDATED_STATUS = "Restart youtube-dl to use the new version."
-    _ERR_STATUS = "ERROR:"
-    
+    _WRN_STATUS = ".*WARNING:.*"
+    _UPDATED_STATUS = ".*Restart youtube-dl to use the new version.*"
+    _ERR_STATUS = ".*ERROR:.*"
+    _SUDO_STATUS = "[sudo]"
+
     _SERVICES_REGEXPS = ()
     _ACCEPTED_LINK_REXP_FORMAT = "(http[s]{0,1}://(?:\w|\.{0,1})+%s\.(?:[a-z]{2,3})(?:\.[a-z]{2,3}){0,1}/)"
     
@@ -365,10 +366,17 @@ class Ytdl:
     MSGS = (_("Problem retreiving content. Do you have up-to-date dependencies?"), 
                                      _("Problem retreiving content. Content may be copyrighted or the link may be invalid."),
                                      _("Problem retrieving content. Content may have been truncated."))
-    WAIT_TAG = "[" + _("wait") +"]"
+    WAIT_TAG = "[" + _("wait") + "]"
     
     start_signal = False
     end_signal = False
+    updated_signal = False
+    updating_signal = False
+    update_failed_signal = False
+    password_requested_signal = False
+    has_password_signal = False
+
+    _sudo_password = ''
     
     def __init__(self, options, yt_not_found_callback):
         self.set_options(options)
@@ -443,7 +451,7 @@ class Ytdl:
                 log.logException()
                 sys.exc_clear()
                 break
-            sleep(500)
+            sleep(1)
 
     def _spawn_thread(self, url):
         self._terminate_sent_signal = False
@@ -483,52 +491,74 @@ class Ytdl:
         self._YTLAUNCH_CMD=self._YTLOCATION + self._YTLAUNCH_ARGS_FORMAT
         self._YTLAUNCH_PLST_CMD=self._YTLOCATION + self._YTLAUNCH_PLST_ARGS_FORMAT
 
+    def set_password(self, password):
+        self._sudo_password = password
+        self.has_password_signal = True
+
     def quit(self):
         self._terminate_sent_signal = True
         for url in self._running_processes:
             self._running_processes[url][0].terminate(force=True)
     
-    def check_for_update(self, callback):
+    def check_for_update(self):
         if not os.path.isfile(self._YTLOCATION):
             return
+        self.updating_signal = True
+        Thread(target=self._check_for_update,args=[]).start()
+        
+    def _check_for_update(self):
         try:
             versionsurl = "http://rg3.github.io/youtube-dl/update/versions.json"
             versions = json.loads(requests.get(versionsurl).text)
         except Exception:
             log.logException()
             sys.exc_clear()
+            self.updating_signal = False
             return
         current_version_hash = sha256(open(self._YTLOCATION, 'rb').read()).hexdigest()
         latest_version_hash = versions['versions'][versions['latest']]['bin'][1]
-        
-        if current_version_hash != latest_version_hash:
-            self._update_process = pexpect.spawn("sudo " + self._YTLOCATION + " -U")
-            Thread(target=self._background_update_process,args=[callback]).start()
 
-    def _background_update_process(self, callback):
-        updated = False
-        while self._update_process.isalive():
-            try:
-                index = self._update_process.expect([self._UPDATED_STATUS,
-                                                pexpect.TIMEOUT,
-                                                self._ERR_STATUS])
-                if index in (1,2):
-                    break
-                elif index == 0:
-                    updated = True
-                    break
-            except pexpect.EOF, e:
-                log.warning("      youtube-dl update error: %s" % e.message)
-                break
-            except:
-                log.logException()
-                sys.exc_clear()
-                break
-            sleep(500)
+        if current_version_hash != latest_version_hash:
+            self._update_process = pexpect.spawn("sudo %s -U" % self._YTLOCATION, timeout=60)
         
-        if updated:
-            self.compile_regexps(updated)
-            callback()
+            while self.updating_signal:
+                try:
+                    index = self._update_process.expect([self._UPDATED_STATUS,
+                                                    pexpect.TIMEOUT,
+                                                    self._ERR_STATUS,
+                                                    self._SUDO_STATUS])
+                    if index in (1,2):
+                        self.update_failed_signal = True
+                        self.updating_signal = False
+                        break
+                    elif index == 3:
+                        if self._sudo_password:                            
+                            self.password_requested_signal = False
+                            self._update_process.sendline(self._sudo_password)
+                            self._sudo_password = ''
+                        elif self._sudo_password == None:
+                            self.password_requested_signal = False   
+                            self.updating_signal = False
+                            self._sudo_password = ''
+                            break
+                        elif not self.has_password_signal:                
+                            self.password_requested_signal = True
+                    elif index == 0:
+                        self.updating_signal = False
+                        self.updated_signal = True
+                        break
+                except pexpect.EOF, e:
+                    log.warning("      youtube-dl update error: %s" % e.message)
+                    break
+                except:
+                    log.logException()
+                    sys.exc_clear()
+                    break
+                sleep(5)
+            if self.updated_signal:
+                self.compile_regexps(updated=True)
+            self.updating_signal = False
+                    
 
     def reset_processes(self):
         self._running_processes = {}
@@ -581,7 +611,6 @@ class TBOPlayer:
     volume_max = 60
     volume_normal_step = 40
     volume_critical_step = 49
-
 
 # ***************************************
 # # PLAYING STATE MACHINE
@@ -660,7 +689,6 @@ class TBOPlayer:
         if self.play_state == self._OMX_CLOSED:
             self.monitor("      State machine: " + self.play_state)
             self.what_next()
-            self.monitor("SHOULD QUIT STATE MACHINE LOOP")
             return 
                 
         elif self.play_state == self._OMX_STARTING:
@@ -907,6 +935,11 @@ class TBOPlayer:
             return
 
 
+# ***************************************
+#   YTDL STATE MACHINE
+# ***************************************
+
+
     def go_ytdl(self, url, playlist=False):
         self.quit_ytdl_sent_signal = False
         if self.ytdl_state in (self._YTDL_CLOSED, self._YTDL_ENDING):
@@ -979,6 +1012,7 @@ class TBOPlayer:
             self.root.after(3000, lambda: self.display_selected_track())
         return
 
+
     def treat_video_data(self, url, data):
         media_url = self._treat_video_data(data, data['extractor'])
         if not media_url and self.options.youtube_video_quality == "small":  
@@ -1030,6 +1064,21 @@ class TBOPlayer:
         return media_url
 
 
+    def ytdl_update_messages_loop(self):
+        if not self.ytdl.updating_signal:
+            if self.ytdl.updated_signal:
+                tkMessageBox.showinfo("",_("youtube-dl has been updated."))
+            elif self.ytdl.update_failed_signal:
+                tkMessageBox.showinfo("",_("Failed to update youtube-dl."))
+        else:
+            if self.ytdl.password_requested_signal and not self.ytdl.has_password_signal:
+                password = tkSimpleDialog.askstring("", _("youtube-dl needs to be updated.\nPlease inform your password."), parent=self.root, show="*")
+                if password: self.ytdl.set_password(password)
+                else: return
+                    
+            self.root.after(500, self.ytdl_update_messages_loop)
+
+
 # ***************************************
 # WRAPPER FOR JBAITER'S PYOMXPLAYER
 # ***************************************
@@ -1076,7 +1125,7 @@ class TBOPlayer:
         else:
             self.monitor ("            !>stop not sent to OMX because track not playing")
 
-
+    
     def send_command(self,command):
 
         if command in "+=-pz12jkionms" and self.play_state ==  self._OMX_PLAYING:
@@ -1131,9 +1180,8 @@ class TBOPlayer:
         self.init_play_state_machine()
 
         # start and configure ytdl object
-        def ytdl_not_found():
-            tkMessageBox.showinfo("",_("youtube-dl binary is not in the path configured in the Options, please check your configuration"))
-        self.ytdl = Ytdl(self.options, ytdl_not_found)
+        self.ytdl = Ytdl(self.options, 
+                         lambda: tkMessageBox.showinfo("",_("youtube-dl binary is not in the path configured in the Options, please check your configuration")))
 
         #create the internal playlist
         self.playlist = PlayList()
@@ -1332,17 +1380,16 @@ class TBOPlayer:
             elif os.path.isfile(f) and  f[f.rfind('.')+1:]=="csv":
                 self._open_list(f)
         
-        def ytdl_updated_msg():
-            tkMessageBox.showinfo("",_("youtube-dl has been updated"))
-        self.ytdl.check_for_update(ytdl_updated_msg)
-
         if self.playlist.length() > 0 and self.options.autoplay:
             self.select_track(False)
             self.play_track()
 
         self.dnd = DnD(self.root)
-        self.dnd.bindtarget(self.root, 'text/uri-list', '<Drop>', self.add_drag_drop)
-
+        self.dnd.bindtarget(self.root, 'text/uri-list', '<Drop>', self.add_drag_drop)    
+        
+        if self.options.ytdl_update:
+            self.ytdl.check_for_update()
+            self.ytdl_update_messages_loop()
 
     def shutdown(self):
         self.root.quit()
@@ -2235,6 +2282,7 @@ class Options:
             self.find_lyrics = int(config.get('config','find_lyrics',0))
             self.autolyrics_coords = config.get('config','autolyrics_coords',0)
             self.lang = config.get('config','lang',0)
+            self.ytdl_update = int(config.get('config','ytdl_update',0))
 
             if config.get('config','debug',0) == 'on':
                 self.debug = True
@@ -2277,6 +2325,7 @@ class Options:
         config.set('config','find_lyrics','0')
         config.set('config','autolyrics_coords','+350+350')
         config.set('config','lang','en')
+        config.set('config','ytdl_update','1')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
             configfile.close()
@@ -2306,6 +2355,7 @@ class Options:
         config.set('config','find_lyrics',self.find_lyrics)
         config.set('config','autolyrics_coords',self.autolyrics_coords)
         config.set('config','lang',self.lang)
+        config.set('config','ytdl_update',self.ytdl_update)
 
         with open(self.options_file, 'wb') as configfile:
             config.write(configfile)
@@ -2458,13 +2508,14 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         else:
             self.cb_autoplay.deselect()
 
-        self.debug_var = StringVar()
-        self.cb_debug = Checkbutton(master,text=_("Debug"),variable=self.debug_var, onvalue="on",offvalue="off")
-        self.cb_debug.grid(row=60,column=2, sticky = W)
-        if config.get('config','debug',0)=="on":
-            self.cb_debug.select()
+        self.ytdl_update_var = IntVar()
+        self.ytdl_update_var.set(int(config.get('config','ytdl_update',0)))
+        self.cb_ytdl_update = Checkbutton(master, text=_("Keep youtube-dl up-to-date"), variable=self.ytdl_update_var, onvalue=1, offvalue=0)
+        self.cb_ytdl_update.grid(row=60,column=2, sticky = W)
+        if self.ytdl_update_var.get()==1:
+            self.cb_ytdl_update.select()
         else:
-            self.cb_debug.deselect()
+            self.cb_ytdl_update.deselect()
 
         self.find_lyrics_var = IntVar()
         self.cb_find_lyrics = Checkbutton(master,text=_("Find lyrics"),variable=self.find_lyrics_var, onvalue=1,offvalue=0)
@@ -2473,6 +2524,15 @@ class OptionsDialog(tkSimpleDialog.Dialog):
             self.cb_find_lyrics.select()
         else:
             self.cb_find_lyrics.deselect()	    
+
+        self.debug_var = StringVar()
+        self.cb_debug = Checkbutton(master,text=_("Debug"),variable=self.debug_var, onvalue='on',offvalue='off')
+        self.cb_debug.grid(row=61,column=2, sticky = W)
+        if config.get('config','debug',0)=='on':
+            self.cb_debug.select()
+        else:
+            self.cb_debug.deselect()
+
         return None    # no initial focus
 
     def apply(self):
@@ -2514,6 +2574,8 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','find_lyrics',self.find_lyrics_var.get())
         config.set('config','autolyrics_coords',self.find_lyrics_var.get())
         config.set('config','lang',self.lang_var.get())
+        config.set('config','ytdl_update',self.ytdl_update_var.get())
+        
         
         with open(self.options_file, 'wb') as configfile:
             config.write(configfile)
@@ -3161,7 +3223,7 @@ class LyricWikiParser(HTMLParser):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 3 Fev 2018"
+    datestring=" 6 Fev 2018"
 
     dbusif_tboplayer = None
     try:
