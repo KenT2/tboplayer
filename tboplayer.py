@@ -558,7 +558,6 @@ class Ytdl:
             if self.updated_signal:
                 self.compile_regexps(updated=True)
             self.updating_signal = False
-                    
 
     def reset_processes(self):
         self._running_processes = {}
@@ -2572,7 +2571,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','cue_track_mode',self.cue_track_mode_var.get())
         config.set('config','autoplay',self.autoplay_var.get())
         config.set('config','find_lyrics',self.find_lyrics_var.get())
-        config.set('config','autolyrics_coords',self.find_lyrics_var.get())
+        config.set('config','autolyrics_coords',self.autolyrics_coords_var)
         config.set('config','lang',self.lang_var.get())
         config.set('config','ytdl_update',self.ytdl_update_var.get())
         
