@@ -1380,7 +1380,10 @@ class TBOPlayer:
                 self._open_list(f)
         
         if self.playlist.length() > 0 and self.options.autoplay:
-            self.select_track(False)
+            if self.options.mode=='shuffle':
+                self.random_next_track()
+            else:
+                self.select_track(False)
             self.play_track()
 
         self.dnd = DnD(self.root)
