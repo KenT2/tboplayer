@@ -56,530 +56,43 @@ I think I might have fixed this but two tracks may play at the same time if you 
 
 """
 
-from string import rstrip
-import os
-import gettext
-import sys
-
-config_path = os.path.expanduser("~") + '/.tboplayer'
-lang_file = config_path + '/lang'
-locale_folder = sys.path[0] + '/locale'
-
-try:
-    lf = open(lang_file, 'r')
-    lang = rstrip(lf.next())
-    lf.close()
-    if lang == 'en' or not lang in ('es', 'fr', 'pt', 'ro'):
-        _ = lambda x:x
-    else:
-        gettext.translation('tboplayer', localedir=locale_folder, languages=[lang]).install()
-except Exception, e:
-    if not os.path.exists(config_path):
-        os.mkdir(config_path)
-    def isen():
-        lf = open(lang_file,'r')
-        lang = rstrip(lf.next())
-        lf.close()
-        return lang == 'en'
-    if not os.path.exists(lang_file) or not isen():
-        lf = open(lang_file, 'w')
-        lf.write('en')
-        lf.close()
-    _ = lambda x:x
-
-# pyomxplayer from https://github.com/jbaiter/pyomxplayer
-# modified by KenT, heniotierra
-
-# ********************************
-# PYOMXPLAYER
-# ********************************
-import pexpect
-import re
-import string
-import dbus
-import gobject
-import sys
+from options import *
+from ytdl import *
+from omxplayer import *
+from playlist import *
+from dnd import *
+from dbusinterface import *
+from htmlparsers import *
+from scrolledframe import *
+from debugging import *
 
 from threading import Thread
 from time import sleep
-from dbus import glib
-
-
-class OMXPlayer(object):
-
-    _PROPS_REXP = re.compile(r"([\w|\W]+)Subtitle count:.*", re.M)
-    _TIMEPROP_REXP = re.compile(r".*Duration: (\d{2}:\d{2}:\d{2}.\d{2}), start: (\d.\d+), bitrate: (\d+).*")
-    _FILEPROP_REXP = re.compile(r".*audio streams (\d+) video streams (\d+) chapters (\d+) subtitles (\d+).*")
-    _VIDEOPROP_REXP = re.compile(r".*Video codec ([\w-]+) width (\d+) height (\d+) profile ([-]{0,1}\d+) fps ([\d.]+).*")
-    _TITLEPROP_REXP = re.compile(r"(?:title|TITLE)\s*:\s([\w\d.&\\/'` ]+){0,1}.*", re.UNICODE)
-    _ARTISTPROP_REXP = re.compile(r"(?:artist|ARTIST)\s*:\s([\w\d.&\\/'` ]+){0,1}.*", re.UNICODE)
-    _AUDIOPROP_REXP = re.compile(r".*Audio codec (\w+) channels (\d+) samplerate (\d+) bitspersample (\d+).*")
-    _STATUS_REXP = re.compile(r"M:\s*([\d.]+).*")
-    _DONE_REXP = re.compile(r"have a nice day.*")
-    
-    _LAUNCH_CMD = ''
-    _LAUNCH_ARGS_FORMAT = ' -I -s %s %s'
-    _PAUSE_CMD = 'p'
-    _TOGGLE_SUB_CMD = 's'
-    _QUIT_CMD = 'q'
-    
-    AM_LETTERBOX = 'letterbox'
-    AM_FILL = 'fill'
-    AM_STRETCH = 'stretch'
-    
-    paused = False
-    playing_location = ''
-    # KRT turn subtitles off as a command option is used
-    subtitles_visible = False
-
-    #****** KenT added argument to control dictionary generation
-    def __init__(self, mediafile, args=None, start_playback=False):
-        if not args:
-            args = ""
-        #******* KenT signals to tell the gui playing has started and ended
-        self.start_play_signal = False
-        self.end_play_signal = False
-        self.failed_play_signal = False
-        
-        cmd = self._LAUNCH_CMD % (mediafile, args)
-        #print "        cmd: " + cmd
-        self._process = pexpect.spawn(cmd)
-        # fout= file('logfile.txt','w')
-        # self._process.logfile_send = sys.stdout
-        
-        # ******* KenT dictionary generation moved to a function so it can be omitted.
-        sleep(0.2)
-        self.make_dict()
-            
-        self._position_thread = Thread(target=self._get_position)
-        self._position_thread.start()
-        if not start_playback:
-            self.toggle_pause()
-        # don't use toggle as it seems to have a delay
-        # self.toggle_subtitles()
-
-    def _get_position(self):
-    
-        # ***** KenT added signals to allow polling for end by a gui event loop and also to check if a track is playing before
-        # sending a command to omxplayer
-        self.start_play_signal = True  
-
-        # **** KenT Added self.position=0. Required if dictionary creation is commented out. Possibly best to leave it in even if not
-        self.position=-60.0
-        #         commented out in case gui reads position before it is first written.
-        
-        while self.is_running():
-            try:
-                index = self._process.expect([self._STATUS_REXP,
-                                                pexpect.TIMEOUT,
-                                                pexpect.EOF,
-                                                self._DONE_REXP])
-                if index == 1: continue
-                elif index in (2, 3):
-                    # ******* KenT added
-                    self.end_play_signal=True
-                    self.position=0.0
-                    break
-                else:
-                    self.position = float(self._process.match.group(1))/1000000
-            except Exception:
-                log.logException()
-                sys.exc_clear()
-                break
-            sleep(0.05)
-
-    def make_dict(self):
-        self.timenf = dict()
-        self.video = dict()
-        self.audio = dict()
-        self.misc = dict()
-        index = -1
-
-        try:
-            index = self._process.expect([self._PROPS_REXP, self._DONE_REXP, pexpect.TIMEOUT])
-        except Exception:
-            log.logException()
-            sys.exc_clear()
-            if self.is_running(): self.stop()
-            self.failed_play_signal = True
-        finally:
-            if index != 0: self.failed_play_signal = True
-        if self.failed_play_signal: return False
-        else:
-            # Get file properties
-            output = self._process.match.group()
-
-            # Get time properties
-            time_props = self._TIMEPROP_REXP.search(output)
-            if time_props:
-                time_props = time_props.groups()
-                duration = time_props[0].split(':')
-                self.timenf['duration'] = int(duration[0]) * 3600 + int(duration[1]) * 60 + float(duration[2])
-                self.timenf['start'] = time_props[1]
-                self.timenf['bitrate'] = time_props[2]
-            else:
-                self.timenf['duration'] = -1
-                self.timenf['start'] = -1
-                self.timenf['bitrate'] = -1
-
-            # Get file properties
-            file_props = self._FILEPROP_REXP.search(output)
-            if file_props:
-                file_props = file_props.groups()
-                (self.audio['streams'], self.video['streams'],
-                self.chapters, self.subtitles) = [int(x) for x in file_props]
-
-            # Get video properties        
-            video_props = self._VIDEOPROP_REXP.search(output)
-            if video_props: 
-                video_props = video_props.groups()
-                self.video['decoder'] = video_props[0]
-                self.video['dimensions'] = tuple(int(x) for x in video_props[1:3])
-                self.video['profile'] = int(video_props[3])
-                self.video['fps'] = float(video_props[4])
-                        
-            # Get audio properties
-            audio_props = self._AUDIOPROP_REXP.search(output)
-            if audio_props:
-                audio_props = audio_props.groups()
-                self.audio['decoder'] = audio_props[0]
-                (self.audio['channels'], self.audio['rate'],
-                self.audio['bps']) = [int(x) for x in audio_props[1:]]
-
-            if 'streams' in self.audio and self.audio['streams'] > 0:
-                self.current_audio_stream = 1
-                self.current_volume = 0.0
-
-            title_prop = self._TITLEPROP_REXP.search(output)
-            if title_prop:
-                title_prop = title_prop.groups()
-                self.misc['title'] = title_prop[0]
-            artist_prop = self._ARTISTPROP_REXP.search(output)
-            if artist_prop:
-                artist_prop = artist_prop.groups()
-                self.misc['artist'] = artist_prop[0]
-
-
-    def init_dbus_link(self):
-        try:
-            gobject.threads_init()
-            glib.init_threads()
-            dbus_path = "/tmp/omxplayerdbus." + getuser()
-            bus = dbus.bus.BusConnection(open(dbus_path).readlines()[0].rstrip())
-            remote_object = bus.get_object("org.mpris.MediaPlayer2.omxplayer", "/org/mpris/MediaPlayer2", introspect=False)
-            self.dbusif_player = dbus.Interface(remote_object, 'org.mpris.MediaPlayer2.Player')
-            self.dbusif_props = dbus.Interface(remote_object, 'org.freedesktop.DBus.Properties')
-        except Exception:
-            log.logException()
-            sys.exc_clear()
-            return False
-        return True
-
-    def kill(self):
-        self._process.kill(1)
-
-# ******* KenT added basic command sending function
-    def send_command(self,command):
-        self._process.send(command)
-        return True
-
-# ******* KenT added test of whether _process is running (not certain this is necessary)
-    def is_running(self):
-        return self._process.isalive()
-
-    def toggle_pause(self):
-        if self._process.send(self._PAUSE_CMD):
-            self.paused = not self.paused
-
-    def toggle_subtitles(self):
-        if self._process.send(self._TOGGLE_SUB_CMD):
-            self.subtitles_visible = not self.subtitles_visible
-            
-    def stop(self):
-        self._process.send(self._QUIT_CMD)
-        self._process.terminate(force=True)
-
-    def set_speed(self):
-        raise NotImplementedError
-
-    def set_audiochannel(self, channel_idx):
-        raise NotImplementedError
-
-    def set_subtitles(self, sub_idx):
-        raise NotImplementedError
-
-    def set_chapter(self, chapter_idx):
-        raise NotImplementedError
-
-    def volume(self, volume=False):
-        if not volume:
-            return self.dbusif_props.Volume()
-        else:
-            return self.dbusif_props.Volume(float(volume))
-
-    def set_position(self, secs):
-        return self.dbusif_player.SetPosition(dbus.ObjectPath('/not/used'), long(secs*1000000))
-
-    def set_video_geometry(self, x1, y1, x2, y2):
-        self.dbusif_player.VideoPos(dbus.ObjectPath('/not/used'), str(x1) + ' ' + str(y1) + ' ' + str(x2)+ ' ' + str(y2))
-        
-    def set_aspect_mode(self, mode):
-        '''Use any of the OMXPlayer.AM_??? constants as <mode>'''
-        self.dbusif_player.SetAspectMode(dbus.ObjectPath('/not/used'), mode)
-
-    @staticmethod
-    def set_omx_location(location):
-        OMXPlayer._LAUNCH_CMD = location + OMXPlayer._LAUNCH_ARGS_FORMAT
-
-
-from hashlib import sha256
-import json
-
-# ***************************************
-# YTDL CLASS
-# ***************************************
-
-class Ytdl:
-
-    """
-        interface for youtube-dl
-    """
-    
-    _YTLOCATION = ''
-    _YTLAUNCH_CMD = ''
-    _YTLAUNCH_ARGS_FORMAT = ' -j -f %s --youtube-skip-dash-manifest "%s"'
-    _YTLAUNCH_PLST_CMD = ''
-    _YTLAUNCH_PLST_ARGS_FORMAT = ' -J -f mp4 --youtube-skip-dash-manifest "%s"'
-    
-    _FINISHED_STATUS = "\n"
-    _WRN_STATUS = ".*WARNING:.*"
-    _UPDATED_STATUS = ".*Restart youtube-dl to use the new version.*"
-    _ERR_STATUS = ".*ERROR:.*"
-    _SUDO_STATUS = "[sudo]"
-
-    _SERVICES_REGEXPS = ()
-    _ACCEPTED_LINK_REXP_FORMAT = "(http[s]{0,1}://(?:\w|\.{0,1})+%s\.(?:[a-z]{2,3})(?:\.[a-z]{2,3}){0,1}/)"
-    
-    _running_processes = {}
-    finished_processes = {}
-        
-    MSGS = (_("Problem retreiving content. Do you have up-to-date dependencies?"), 
-                                     _("Problem retreiving content. Content may be copyrighted or the link may be invalid."),
-                                     _("Problem retrieving content. Content may have been truncated."))
-    WAIT_TAG = "[" + _("wait") + "]"
-    
-    start_signal = False
-    end_signal = False
-    updated_signal = False
-    updating_signal = False
-    update_failed_signal = False
-    password_requested_signal = False
-    has_password_signal = False
-
-    _sudo_password = ''
-    
-    def __init__(self, options, yt_not_found_callback):
-        self.set_options(options)
-        self.yt_not_found_callback = yt_not_found_callback
-        self.compile_regexps()
-
-    def compile_regexps(self, updated=False):
-        Thread(target=self._compile_regexps,args=[updated]).start()
-
-    def _compile_regexps(self, updated=False):
-        if not os.path.isfile(self._YTLOCATION) : return
-        self._SERVICES_REGEXPS = ()
-
-        extractors_f = os.path.expanduser("~") + "/.tboplayer/ytdl_extractors"
-        if not os.path.isfile(extractors_f) or updated:
-            os.system(self._YTLOCATION + " --list-extractors > "+ extractors_f)
-
-        f = open(extractors_f, "r")
-        extractors = f.read().split("\n")
-        f.close()
-
-        supported_service_re = re.compile("^[\w\d.]+$")
-        supported_services = ()
-
-        for e in extractors:
-            if supported_service_re.match(e) != None:
-                supported_services = supported_services + (e.lower(),)
-
-        for s in list(sorted(supported_services, reverse=True)):
-            if "." in s:
-                self._SERVICES_REGEXPS = self._SERVICES_REGEXPS + (re.compile(s),)
-            else:
-                self._SERVICES_REGEXPS = self._SERVICES_REGEXPS + (re.compile(self._ACCEPTED_LINK_REXP_FORMAT % (s)),)
-    
-    def _response(self, url):
-        process = self._running_processes[url][0]
-        if self._terminate_sent_signal:
-            r = (-2, '')
-        else:
-            data = process.before
-            if self._WRN_STATUS in data:
-                # warning message
-                r = (0, self.MSGS[0])
-            elif self._ERR_STATUS in data:
-                # error message
-                r = (-1, self.MSGS[1])
-            else: 
-                r = (1, data)
-        self.finished_processes[url] = self._running_processes[url]
-        self.finished_processes[url][1] = r
-        del self._running_processes[url]
-
-    def _get_link_media_format(self, url, f):
-        return "m4a" if (f == "m4a" and "youtube." in url) else "mp4"
-
-    def _background_process(self, url):
-        process = self._running_processes[url][0]
-        while self.is_running(url):
-            try:
-                index = process.expect([self._FINISHED_STATUS,
-                                                pexpect.TIMEOUT,
-                                                pexpect.EOF])
-                if index == 1: continue
-                elif index == 2:
-                    del self._running_processes[url]
-                    break
-                else:
-                    self._response(url)
-                    break
-            except Exception:
-                del self._running_processes[url]
-                log.logException()
-                sys.exc_clear()
-                break
-            sleep(1)
-
-    def _spawn_thread(self, url):
-        self._terminate_sent_signal = False
-        Thread(target=self._background_process, args=[url]).start()
-
-    def retrieve_media_url(self, url, f):
-        if self.is_running(url): return
-        ytcmd = self._YTLAUNCH_CMD % (self._get_link_media_format(url, f), url)
-        process = pexpect.spawn(ytcmd)
-        self._running_processes[url] = [process, ''] # process, result
-        self._spawn_thread(url)
-
-    def retrieve_youtube_playlist(self, url):
-        if self.is_running(url): return
-        ytcmd = self._YTLAUNCH_PLST_CMD % (url)
-        process = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
-        self._running_processes[url] = [process, '']
-        self._spawn_thread(url)
- 
-    def whether_to_use_youtube_dl(self, url): 
-        to_use = url[:4] == "http" and any(regxp.match(url) for regxp in self._SERVICES_REGEXPS)
-        if to_use and not os.path.isfile(self._YTLOCATION):
-            self.yt_not_found_callback();
-            return False
-        return to_use
-
-    def is_running(self, url = None):
-        if url and not url in self._running_processes: 
-            return False
-        elif not url:
-            return bool(len(self._running_processes))
-        process = self._running_processes[url][0]
-        return process is not None and process.isalive()
-
-    def set_options(self, options):
-        self._YTLOCATION=options.ytdl_location
-        self._YTLAUNCH_CMD=self._YTLOCATION + self._YTLAUNCH_ARGS_FORMAT
-        self._YTLAUNCH_PLST_CMD=self._YTLOCATION + self._YTLAUNCH_PLST_ARGS_FORMAT
-
-    def set_password(self, password):
-        self._sudo_password = password
-        self.has_password_signal = True
-
-    def quit(self):
-        self._terminate_sent_signal = True
-        for url in self._running_processes:
-            self._running_processes[url][0].terminate(force=True)
-    
-    def check_for_update(self):
-        if not os.path.isfile(self._YTLOCATION):
-            return
-        self.updating_signal = True
-        Thread(target=self._check_for_update,args=[]).start()
-        
-    def _check_for_update(self):
-        try:
-            versionsurl = "http://rg3.github.io/youtube-dl/update/versions.json"
-            versions = json.loads(requests.get(versionsurl).text)
-        except Exception:
-            log.logException()
-            sys.exc_clear()
-            self.updating_signal = False
-            return
-        current_version_hash = sha256(open(self._YTLOCATION, 'rb').read()).hexdigest()
-        latest_version_hash = versions['versions'][versions['latest']]['bin'][1]
-
-        if current_version_hash != latest_version_hash:
-            self._update_process = pexpect.spawn("sudo %s -U" % self._YTLOCATION, timeout=60)
-        
-            while self.updating_signal:
-                try:
-                    index = self._update_process.expect([self._UPDATED_STATUS,
-                                                    pexpect.TIMEOUT,
-                                                    self._ERR_STATUS,
-                                                    self._SUDO_STATUS])
-                    if index in (1,2):
-                        self.update_failed_signal = True
-                        self.updating_signal = False
-                        break
-                    elif index == 3:
-                        if self._sudo_password:                            
-                            self.password_requested_signal = False
-                            self._update_process.sendline(self._sudo_password)
-                            self._sudo_password = ''
-                        elif self._sudo_password == None:
-                            self.password_requested_signal = False   
-                            self.updating_signal = False
-                            self._sudo_password = ''
-                            break
-                        elif not self.has_password_signal:                
-                            self.password_requested_signal = True
-                    elif index == 0:
-                        self.updating_signal = False
-                        self.updated_signal = True
-                        break
-                except pexpect.EOF, e:
-                    log.warning("      youtube-dl update error: %s" % e.message)
-                    break
-                except:
-                    log.logException()
-                    sys.exc_clear()
-                    break
-                sleep(5)
-            if self.updated_signal:
-                self.compile_regexps(updated=True)
-            self.updating_signal = False
-
-    def reset_processes(self):
-        self._running_processes = {}
-        self.finished_processes = {}
-
-
 from pprint import ( pformat, pprint )
 from random import randint
 from math import log10
-from getpass import getuser
+from magic import from_file
+import gettext
+import json
+import re
+import string
+import sys
+
 from Tkinter import *
 from ttk import ( Progressbar, Style, Sizegrip )
 from gtk.gdk import ( screen_width, screen_height )
-from magic import from_file
 import Tkinter as tk
 import tkFileDialog
 import tkMessageBox
 import tkSimpleDialog
 import tkFont
-import csv
-import os
-import ConfigParser
+
+options = Options()
+
+try:
+    gettext.translation('tboplayer', localedir=sys.path[0] + '/locale', languages=[options.lang]).install()
+except:
+    _ = lambda x:x
 
 
 #**************************
@@ -602,14 +115,21 @@ class TBOPlayer:
           'application/ogg', 'audio/mpeg3', 'audio/x-mpeg-3', 'audio/x-gsm', 'audio/x-mpeg', 'audio/mod',
           'audio/x-mod', 'video/x-ms-asf', 'audio/x-pn-realaudio', 'audio/x-realaudio' ,'video/vnd.rn-realvideo', 'video/fli',
           'video/x-fli', 'audio/x-ms-wmv', 'video/avi', 'video/msvideo', 'video/m4v', 'audio/x-ms-wma',
-          'application/octet-stream', 'application/x-url', 'text/url', 'text/x-url', 'application/vnd.rn-realmedia',
-          'audio/vnd.rn-realaudio', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'audio/aiff', 'audio/x-aiff')
-    
+          'application/octet-stream', 'application/x-url', 'text/url', 'text/x-url', 'application/vnd.rn-realmedia', 'video/webm',
+          'audio/webm', 'audio/vnd.rn-realaudio', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'audio/aiff', 'audio/x-aiff')
+
+    YTDL_MSGS = (_("Problem retreiving content. Do you have up-to-date dependencies?"),
+          _("Problem retreiving content. Content may be copyrighted or the link may be invalid."),
+          _("Problem retrieving content. Content may have been truncated."))
+
+    YTDL_WAIT_TAG = "[" + _("wait") + "]"
+
     progress_bar_total_steps = 200
     progress_bar_step_rate = 0
     volume_max = 60
     volume_normal_step = 40
     volume_critical_step = 49
+
 
 # ***************************************
 # # PLAYING STATE MACHINE
@@ -1007,7 +527,7 @@ class TBOPlayer:
             self.remove_waiting_track(url)
             if self.play_state==self._OMX_STARTING:
                 self.quit_sent_signal = True
-            self.display_selected_track_title.set(res[1])
+            self.display_selected_track_title.set(self.YTDL_MSGS[res[1]])
             self.root.after(3000, lambda: self.display_selected_track())
         return
 
@@ -1088,7 +608,7 @@ class TBOPlayer:
             self.go_ytdl(track)
             index = self.playlist.selected_track_index()
             track = self.playlist.selected_track()
-            track = (track[0], self.ytdl.WAIT_TAG+track[1])
+            track = (track[0], self.YTDL_WAIT_TAG+track[1])
             self.playlist.replace(index, track)
             self.playlist.select(index)               
             self.refresh_playlist_display()
@@ -1163,11 +683,10 @@ class TBOPlayer:
 # INIT
 # ***************************************
 
-    def __init__(self):
+    def __init__(self, options):
 
         # initialise options class and do initial reading/creation of options
-        self.options=Options()
-
+        self.options=options
         if self.options.debug:
             log.setLogFile(self.options.log_file)
             log.enableLogging()
@@ -1777,6 +1296,7 @@ class TBOPlayer:
             x1 = y1 = 0
         x2 = w+x1
         y2 = h+y1
+            
         if pbar:
             y2 -= self.vprogress_bar.winfo_height()
         try:
@@ -2005,7 +1525,7 @@ class TBOPlayer:
         if self.ytdl.is_running(url): return
         if self.options.download_media_url_upon == "add" and self.ytdl.whether_to_use_youtube_dl(url):
             self.go_ytdl(url)
-            name = self.ytdl.WAIT_TAG + name
+            name = self.YTDL_WAIT_TAG + name
 
         self.playlist.append([url, name])
         self.track_titles_display.insert(END, name)
@@ -2021,7 +1541,7 @@ class TBOPlayer:
 
             result = [link,'']
             self.go_ytdl(link)
-            result[1] = self.ytdl.WAIT_TAG + result[0]
+            result[1] = self.YTDL_WAIT_TAG + result[0]
             self.playlist.append(result)
             self.track_titles_display.insert(END, result[1])
         YoutubeSearchDialog(self.root, add_url_from_search)
@@ -2029,7 +1549,7 @@ class TBOPlayer:
 
     def remove_track(self,*event):
         if  self.playlist.length()>0 and self.playlist.track_is_selected():
-            if self.playlist.selected_track()[1][:6] == self.ytdl.WAIT_TAG and self.ytdl_state==self._YTDL_WORKING:
+            if self.playlist.selected_track()[1][:6] == self.YTDL_WAIT_TAG and self.ytdl_state==self._YTDL_WORKING:
                 # tell ytdl_state_machine to stop
                 self.quit_ytdl_sent_signal = True
             index= self.playlist.selected_track_index()
@@ -2048,10 +1568,10 @@ class TBOPlayer:
             do_ytdl = False
 
             if d.result and d.result[1] != '':            
-                if (self.options.download_media_url_upon == "add" and self.playlist.selected_track()[1][:6] != self.ytdl.WAIT_TAG and 
+                if (self.options.download_media_url_upon == "add" and self.playlist.selected_track()[1][:6] != self.YTDL_WAIT_TAG and 
                                                                 self.ytdl.whether_to_use_youtube_dl(d.result[1])):
                     do_ytdl = True
-                    d.result[0] = self.ytdl.WAIT_TAG + d.result[0]
+                    d.result[0] = self.YTDL_WAIT_TAG + d.result[0]
                 d.result = (d.result[1],d.result[0])
                 self.playlist.replace(index, d.result)
                 self.playlist.select(index)
@@ -2213,155 +1733,6 @@ class TBOPlayer:
                                             _("Time: ") + str(self.omx.timenf) + "\n" +
                                             _("Misc: ") + str(self.omx.misc))
         except: return
-
-
-# ***************************************
-# OPTIONS CLASS
-# ***************************************
-
-class Options:
-
-
-# store associated with the object is the tins file. Variables used by the player
-# is just a cached interface.
-# options dialog class is a second class that reads and saves the otions from the options file
-
-    def __init__(self):
-
-        # define options for interface with player
-        self.omx_audio_output = "" # omx audio option
-        self.omx_subtitles = "" # omx subtitle option
-        self.mode = ""
-        self.initial_track_dir =""   # initial directory for add track.
-        self.initial_playlist_dir =""   # initial directory for open playlist      
-        self.omx_user_options = ""  # omx options suppplied by user, audio overidden by audio option (HDMI or local)
-        self.youtube_media_format = "" # what type of file must be downloded from youtube
-        self.debug = False  # print debug information to terminal
-        self.generate_track_info = False  # generate track information from omxplayer output
-        self.lang = ""
-
-        # create an options file if necessary
-        confdir = os.path.expanduser("~") + '/.tboplayer'
-        self.options_file = confdir + '/tboplayer.cfg'
-        self.log_file = confdir + '/tboplayer.log'
-        self.lang_file = confdir + '/lang'
-
-        if os.path.exists(self.options_file):
-            self.read(self.options_file)
-        else:
-            if not os.path.isdir(confdir):
-                os.mkdir(confdir)
-            self.create(self.options_file)
-            self.read(self.options_file)
-
-    
-    def read(self,filename):
-        """reads options from options file to interface"""
-        config=ConfigParser.ConfigParser()
-        config.read(filename)
-        try:
-            if  config.get('config','audio',0) == 'auto':
-                self.omx_audio_output = ""
-            else:
-                self.omx_audio_output = "-o "+config.get('config','audio',0)
-            
-            self.mode = config.get('config','mode',0)
-            self.initial_track_dir = config.get('config','tracks',0)
-            self.initial_playlist_dir = config.get('config','playlists',0)    
-            self.omx_user_options = config.get('config','omx_options',0)
-            self.youtube_media_format = config.get('config','youtube_media_format',0)
-            self.omx_location = config.get('config','omx_location',0)
-            self.ytdl_location = config.get('config','ytdl_location',0)
-            self.download_media_url_upon = config.get('config','download_media_url_upon',0)
-            self.youtube_video_quality = config.get('config','youtube_video_quality',0)
-            self.geometry = config.get('config','geometry',0)
-            self.full_screen = int(config.get('config','full_screen',0))
-            self.windowed_mode_coords = config.get('config','windowed_mode_coords',0)
-            self.windowed_mode_resolution = config.get('config','windowed_mode_resolution',0)
-            self.forbid_windowed_mode = int(config.get('config','forbid_windowed_mode',0))
-            self.cue_track_mode = int(config.get('config','cue_track_mode',0))
-            self.autoplay = int(config.get('config','autoplay',0))
-            self.find_lyrics = int(config.get('config','find_lyrics',0))
-            self.autolyrics_coords = config.get('config','autolyrics_coords',0)
-            self.lang = config.get('config','lang',0)
-            self.ytdl_update = int(config.get('config','ytdl_update',0))
-
-            if config.get('config','debug',0) == 'on':
-                self.debug = True
-            else:
-                self.debug = False
-
-            if config.get('config','subtitles',0) == 'on':
-                self.omx_subtitles = "-t on"
-            else:
-                self.omx_subtitles = ""
-        except Exception:
-            log.logException()
-            sys.exc_clear()
-            self.create(self.options_file)
-            self.read(self.options_file)
-         
-
-    def create(self,filename):
-        config=ConfigParser.ConfigParser()
-        config.add_section('config')
-        config.set('config','audio','hdmi')
-        config.set('config','subtitles','off')       
-        config.set('config','mode','single')
-        config.set('config','playlists','')
-        config.set('config','tracks','')
-        config.set('config','omx_options','')
-        config.set('config','debug','off')
-        config.set('config','youtube_media_format','mp4')
-        config.set('config','omx_location','/usr/bin/omxplayer')
-        config.set('config','ytdl_location','/usr/local/bin/youtube-dl')
-        config.set('config','download_media_url_upon','add')
-        config.set('config','youtube_video_quality','medium')
-        config.set('config','geometry','662x380+350+250')
-        config.set('config','full_screen','0')
-        config.set('config','windowed_mode_coords','+200+200')
-        config.set('config','windowed_mode_resolution','480x360')
-        config.set('config','forbid_windowed_mode','0')
-        config.set('config','cue_track_mode','0')
-        config.set('config','autoplay','1')
-        config.set('config','find_lyrics','0')
-        config.set('config','autolyrics_coords','+350+350')
-        config.set('config','lang','en')
-        config.set('config','ytdl_update','1')
-        with open(filename, 'wb') as configfile:
-            config.write(configfile)
-            configfile.close()
-
-    def save_state(self):
-        config=ConfigParser.ConfigParser()
-        config.add_section('config')
-        config.set('config','audio',self.omx_audio_output.replace("-o ",''))
-        config.set('config','subtitles',"on" if "on" in self.omx_subtitles else "off")       
-        config.set('config','mode',self.mode)
-        config.set('config','playlists',self.initial_playlist_dir)
-        config.set('config','tracks',self.initial_track_dir)
-        config.set('config','omx_options',self.omx_user_options)
-        config.set('config','debug',"on" if self.debug else "off")
-        config.set('config','youtube_media_format',self.youtube_media_format)
-        config.set('config','omx_location',self.omx_location)
-        config.set('config','ytdl_location',self.ytdl_location)
-        config.set('config','download_media_url_upon',self.download_media_url_upon)
-        config.set('config','youtube_video_quality',self.youtube_video_quality)
-        config.set('config','geometry',self.geometry)
-        config.set('config','full_screen',self.full_screen)
-        config.set('config','windowed_mode_coords',self.windowed_mode_coords)
-        config.set('config','windowed_mode_resolution',self.windowed_mode_resolution)
-        config.set('config','forbid_windowed_mode',self.forbid_windowed_mode)
-        config.set('config','cue_track_mode',self.cue_track_mode)
-        config.set('config','autoplay',self.autoplay)
-        config.set('config','find_lyrics',self.find_lyrics)
-        config.set('config','autolyrics_coords',self.autolyrics_coords)
-        config.set('config','lang',self.lang)
-        config.set('config','ytdl_update',self.ytdl_update)
-
-        with open(self.options_file, 'wb') as configfile:
-            config.write(configfile)
-            configfile.close()
 
 
 # *************************************
@@ -2548,11 +1919,9 @@ class OptionsDialog(tkSimpleDialog.Dialog):
     def save_options(self):
         """ save the output of the options edit dialog to file"""
         config=self._config
-        overwrite_lang_file = False
-
+        
         if (self.lang_var.get() != config.get('config','lang',0)):
             tkMessageBox.showinfo("",_("Restart TBOplayer to change language"))
-            overwrite_lang_file = True
             
         config.set('config','audio',self.audio_var.get())
         config.set('config','subtitles',self.subtitles_var.get())
@@ -2582,10 +1951,6 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         with open(self.options_file, 'wb') as configfile:
             config.write(configfile)
             configfile.close()
-            if overwrite_lang_file:
-                lf = open(os.path.expanduser('~') + '/.tboplayer/lang', 'w')
-                lf.write(self.lang_var.get())
-                lf.close()
 
 
 # *************************************
@@ -2658,89 +2023,6 @@ class LoadYtPlaylistDialog(tkSimpleDialog.Dialog):
         self.result = self.field1.get()
 
         return self.result
-
-# *************************************
-# PLAYLIST CLASS
-# ************************************
-
-class PlayList():
-    """https://en.wikipedia.org/wiki/Media_type
-    manages a playlist of tracks and the track selected from the playlist
-    """
-
-    #field definition constants
-    LOCATION=0
-    TITLE=1
-    DURATION=2
-    ARTIST=3
-
-    # template for a new track
-    _new_track=['','','','']
-    
-
-    def __init__(self):
-        self._num_tracks=0
-        self._tracks = []                   # list of track titles
-        self._selected_track = PlayList._new_track
-        self._selected_track_index = -1     # index of currently selected track
-
-    def length(self):
-        return self._num_tracks
-
-    def track_is_selected(self):
-            if self._selected_track_index>=0:
-                return True
-            else:
-                return False
-            
-    def selected_track_index(self):
-        return self._selected_track_index
-
-    def selected_track(self):
-        return self._selected_track
-
-    def append(self, track):
-        """appends a track to the end of the playlist store"""
-        self._tracks.append(track)
-        self._num_tracks+=1
-
-
-    def remove(self,index):
-        self._tracks.pop(index)
-        self._num_tracks-=1
-        # is the deleted track always the selcted one?
-        self._selected_track_index=-1
-
-
-    def clear(self):
-        self._tracks = []
-        self._num_tracks=0
-        self._track_locations = []
-        self._selected_track_index=-1
-        self.selected_track_title=""
-        self.selected_track_location=""
-
-
-    def replace(self,index,replacement):
-        self._tracks[index]= replacement
-            
-
-    def select(self,index):
-        """does housekeeping necessary when a track is selected"""
-        if self._num_tracks>0 and index<= self._num_tracks:
-        # save location and title to currently selected variables
-            self._selected_track_index=index
-            self._selected_track = self._tracks[index]
-            self.selected_track_location = self._selected_track[PlayList.LOCATION]
-            self.selected_track_title = self._selected_track[PlayList.TITLE]
-
-    def waiting_tracks(self):
-        waiting = []
-        l = len(Ytdl.WAIT_TAG)
-        for i in range(len(self._tracks)):
-            if self._tracks[i][1][:l] == Ytdl.WAIT_TAG:
-                waiting += [(i, self._tracks[i])]
-        return waiting if len(waiting) else False
 
 
 from urllib import quote_plus
@@ -2827,32 +2109,6 @@ class YoutubeSearchDialog(Toplevel):
         return
 
 
-from HTMLParser import HTMLParser
-
-class YtsearchParser(HTMLParser):
-
-    def __init__(self):
-        self.result = []
-        HTMLParser.__init__(self)
-
-    def handle_starttag(self, tag, attrs):
-        if tag == 'div' : 
-            for t in attrs:
-                if "yt-lockup-dismissable" in t[1]: 
-                    self.result.append(['',''])
-                    break
-        elif tag == 'a' : 
-            if not len(self.result): return
-            for t in attrs:
-                if t[0] == "class" and "yt-uix-tile-link" in t[1]: 
-                    self.result[len(self.result) - 1][0] = attrs[0][1]
-                    for y in attrs:
-                        if y[0] == "title":
-                            self.result[len(self.result) - 1][1] = y[1]
-                            break
-                    break
-
-
 class YtresultCell(Frame):
 
     def __init__(self, parent, add_url_function, link, title):
@@ -2881,238 +2137,6 @@ class YtresultCell(Frame):
 
     def add_link(self,*event):
         self.add_url(self.video_link.get())
-
-
-class VerticalScrolledFrame(Frame):
-    """A pure Tkinter scrollable frame that actually works!
-
-    * Use the 'interior' attribute to place widgets inside the scrollable frame
-    * Construct and pack/place/grid normally
-    * This frame only allows vertical scrolling
-    
-    """
-    def _configure_interior(self,event):
-        # update the scrollbars to match the size of the inner frame
-        size = (self.interior.winfo_reqwidth(), self.interior.winfo_reqheight())
-        self.canvas.config(scrollregion="0 0 %s %s" % size)
-        if self.interior.winfo_reqwidth() != self.canvas.winfo_width():
-            # update the canvas's width to fit the inner frame
-            self.canvas.config(width=self.interior.winfo_reqwidth())
-        self.interior.bind('<Configure>', _configure_interior)
-
-    def _configure_canvas(self,event):
-        if self.interior.winfo_reqwidth() != self.canvas.winfo_width():
-            # update the inner frame's width to fill the canvas
-            self.canvas.itemconfigure(self.interior_id, width=self.canvas.winfo_width())
-        self.canvas.bind('<Configure>', _configure_canvas)
-        return
-
-    def configure_scrolling(self):
-        # create a canvas object and a vertical scrollbar for scrolling it
-        vscrollbar = Scrollbar(self, orient=VERTICAL)
-        vscrollbar.grid(row=0,column=1,sticky=N+S+W)
-        self.canvas = Canvas(self, bd=0, highlightthickness=0,
-                        yscrollcommand=vscrollbar.set)
-        self.canvas.grid(row=0,column=0,sticky=N+S+E+W)
-        vscrollbar.config(command=self.canvas.yview)
-
-        # reset the view
-        self.canvas.xview_moveto(0)
-        self.canvas.yview_moveto(0)
-
-        # create a frame inside the canvas which will be scrolled with it
-        self.interior = interior = Frame(self.canvas)
-        self.interior.grid(row=0,column=0,sticky=N+S+E+W)
-        self.interior_id = self.canvas.create_window(0, 0, window=interior,
-                                           anchor=NW)
-
-        # track changes to the canvas and frame width and sync them,
-        # also updating the scrollbar    
-
-
-import logging
-import cStringIO
-import traceback
-class Logger(logging.Logger):
-    log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-    def __init__(self, name, level=logging.INFO, logFile=None):
-        logging.Logger.__init__(self, name, level=logging.INFO)
-        if logFile is not None:
-            self.setLogFile(logFile)
-        log_sh = logging.StreamHandler()
-        log_sh.setLevel(logging.NOTSET)
-        log_sh.setFormatter(self.log_formatter)
-        self.addHandler(log_sh)
-
-    def enableLogging(self):
-        self.setLevel(logging.DEBUG)
-
-    def disableLogging(self):
-        self.setLevel(logging.ERROR)
-
-    def logException(self):
-        s = cStringIO.StringIO()
-        traceback.print_exc(file=s)
-        self.error(s.getvalue())
-
-    def setLogFile(self, filePath):
-        log_fh = logging.FileHandler(filePath)
-        log_fh.setLevel(logging.ERROR)
-        log_fh.setFormatter(self.log_formatter)
-        self.addHandler(log_fh)
-
-
-# global logger
-log = Logger(__file__)
-
-class ExceptionCatcher:
-    '''
-    Exception handler for Tkinter
-    when set to Tkinter.CallWrapper, catches unhandled exceptions thrown by window elements,
-    logs the exception and signals quit to the erroring window.
-    Exiting tboplayer is preferable when errors occure rather than possibly having
-    uncontrollable omxplayer running in fullscreen.
-    '''
-    def __init__(self, func, subst, widget):
-        self.func = func
-        self.subst = subst
-        self.widget = widget
-
-    def __call__(self, *args):
-        try:
-            if self.subst:
-                args = apply(self.subst, args)
-            return apply(self.func, args)
-        except dbus.DBusException:
-            pass
-        except SystemExit, msg:
-            raise SystemExit, msg
-        except Exception:
-            log.logException()
-            sys.exc_clear()
-
-
-class DnD:
-    '''
-    Python wrapper for the tkDnD tk extension.
-    source: https://mail.python.org/pipermail/tkinter-discuss/2005-July/000476.html
-    '''
-    _subst_format = ('%A', '%a', '%T', '%W', '%X', '%Y', '%x', '%y','%D')
-    _subst_format_str = " ".join(_subst_format)
-
-    def __init__(self, tkroot):
-        self._tkroot = tkroot
-        tkroot.tk.eval('package require tkdnd')
-
-    def bindtarget(self, widget, type=None, sequence=None, command=None, priority=50):
-        command = self._generate_callback(command, self._subst_format)
-        tkcmd = self._generate_tkcommand('bindtarget', widget, type, sequence, command, priority)
-        res = self._tkroot.tk.eval(tkcmd)
-        if type == None:
-            res = res.split()
-        return res
-
-    def cleartarget(self, widget):
-        '''Unregister widget as drop target.'''
-        self._tkroot.tk.call('dnd', 'cleartarget', widget)
-
-    def _generate_callback(self, command, arguments):
-        '''Register command as tk callback with an optional list of arguments.'''
-        cmd = None
-        if command:
-            cmd = self._tkroot._register(command)
-            if arguments:
-                cmd = '{%s %s}' % (cmd, ' '.join(arguments))
-        return cmd
-
-    def _generate_tkcommand(self, base, widget, *opts):
-        '''Create the command string that will be passed to tk.'''
-        tkcmd = 'dnd %s %s' % (base, widget)
-        for i in opts:
-            if i is not None:
-                tkcmd += ' %s' % i
-        return tkcmd
-
-    def tcl_list_to_python_list(self, lst):
-        tk_inst = self._tkroot.tk.eval
-        tcl_list_len = int(tk_inst("set lst {%s}; llength $lst" % lst))
-        result = []
-        for i in range(tcl_list_len):
-            result.append(tk_inst("lindex $lst %d" % i))
-        return result
-
-
-from dbus.service import Object
-from dbus.mainloop.glib import DBusGMainLoop
-
-TBOPLAYER_DBUS_OBJECT = "org.tboplayer.TBOPlayer"
-TBOPLAYER_DBUS_PATH = "/org/tboplayer/TBOPlayer"
-TBOPLAYER_DBUS_INTERFACE = "org.tboplayer.TBOPlayer"
-
-class TBOPlayerDBusInterface (Object):
-    tboplayer_instance = None
-
-    def __init__(self, tboplayer_instance):
-        self.tboplayer_instance = tboplayer_instance
-        dbus_loop = DBusGMainLoop(set_as_default=True)
-        bus_name = dbus.service.BusName(TBOPLAYER_DBUS_OBJECT, bus = dbus.SessionBus(mainloop = dbus_loop))
-        Object.__init__(self, bus_name, TBOPLAYER_DBUS_PATH)
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature = 'as')
-    def openFiles(self, files):
-        self.tboplayer_instance._add_files(files)
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature='s')
-    def openPlaylist(self, file):
-        self.tboplayer_instance._open_list(file)
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature='s')
-    def openUrl(self, url):
-        self.tboplayer_instance._add_url(url)
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature = 'i')
-    def play(self, track_index=0):
-        self.tboplayer_instance.play_track_by_index(track_index)
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
-    def pause(self):
-        self.tboplayer_instance.toggle_pause()
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
-    def stop(self):
-        self.tboplayer_instance.stop_track()
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
-    def next(self):
-        self.tboplayer_instance.skip_to_next_track()
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
-    def previous(self):
-        self.tboplayer_instance.skip_to_previous_track()
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
-    def fullscreen(self):
-        self.tboplayer_instance.toggle_full_screen()
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
-    def volumnDown(self):
-        self.tboplayer_instance.volminus()
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
-    def volumnUp(self):
-        self.tboplayer_instance.volplus()
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE)
-    def clearList(self):
-        self.tboplayer_instance.clear_list()
-
-    @dbus.service.method(TBOPLAYER_DBUS_INTERFACE, in_signature='ss')
-    def setOption(self, option, value):
-        try:
-            self.tboplayer_instance.set_option(option, value)
-        except Exception, e:
-            raise e
 
 
 class AutoLyrics(Toplevel):
@@ -3188,44 +2212,12 @@ class AutoLyrics(Toplevel):
         self.after(3000, lambda: self.destroy())
 
 
-class LyricWikiParser(HTMLParser):
-
-    result = ""
-    grab = False
-
-    def __init__(self):
-        HTMLParser.__init__(self)
-
-    def handle_starttag(self, tag, attrs):
-        if tag == "div" : 
-            for t in attrs:
-                if "lyricbox" in t[1]: 
-                    self.grab = True
-                    break
-                    
-    def handle_startendtag(self, tag, attrs):
-        if self.grab and tag == "br":
-            self.result += "\n"
-
-    def handle_endtag(self, tag):
-        if self.grab and tag == "div":
-            self.grab = False
-
-    def handle_charref(self, name):
-        if self.grab:
-            if name.startswith('x'):
-                c = unichr(int(name[1:], 16))
-            else:
-                c = unichr(int(name))
-            self.result += c
-
-
 # ***************************************
 # MAIN
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 6 Fev 2018"
+    datestring=" 29 Apr 2018"
 
     dbusif_tboplayer = None
     try:
@@ -3236,7 +2228,7 @@ if __name__ == "__main__":
 
     if dbusif_tboplayer is None:
         tk.CallWrapper = ExceptionCatcher
-        bplayer = TBOPlayer()
+        bplayer = TBOPlayer(options)
         TBOPlayerDBusInterface(bplayer)
         gobject_loop = gobject.MainLoop()
         def refresh_player():
