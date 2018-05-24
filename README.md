@@ -222,6 +222,8 @@ CONTRIBUTE
 ==========
 Want to contribute with code? [Follow CONTRIBUTING guidelines](https://github.com/KenT2/tboplayer/blob/master/CONTRIBUTING.md).
 
+Want to contribute with a translation? [Follow translating guidelines](https://github.com/KenT2/tboplayer/issues/111).
+
 Contributors/Who to blame:
 ==========
 
