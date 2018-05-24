@@ -218,6 +218,10 @@ To uninstall tboplayer, open a terminal window and type:
 
         /opt/tboplayer/setup.sh uninstall
 
+CONTRIBUTE
+==========
+Want to contribute with code? [Follow CONTRIBUTING guidelines](https://github.com/KenT2/tboplayer/blob/master/CONTRIBUTING.md).
+
 Contributors/Who to blame:
 ==========
 
