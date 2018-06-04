@@ -41,13 +41,13 @@ if [ "$1" == "uninstall" ]; then
         sudo update-desktop-database
         echo ""
 	echoGreen "ATENTION"
-        echo "Would you like to remove all of TBOPlayer dependencies too? [Y/N]"
+        echo "Would you like to remove all of TBOPlayer dependencies too?"
+	echo "These may also be used by other programs and removing them can make these programs to stop working. [Y/N]"
         read answer
         if [ "$answer" == "Y" ] || [ "$answer" == "y" ]; then
             echo ""
             echo "* Removing TBOPlayer dependencies..."
-            yes | pip uninstall pexpect ptyprocess python-magic >/dev/null 2>&1
-            sudo apt-get -y remove python-gobject-2 python-dbus python-tk python-gtk2 python-requests tkdnd >/dev/null 2>&1
+            sudo apt-get -y remove python-gobject-2 python-dbus python-tk python-gtk2 python-requests python-magic python-pexpect tkdnd >/dev/null 2>&1
             sudo rm -f /usr/local/bin/youtube-dl >/dev/null 2>&1
         fi
         echo ""
@@ -102,7 +102,8 @@ addToAptInstall "python-gobject-2"
 addToAptInstall "python-dbus"
 addToAptInstall "python-tk"
 addToAptInstall "python-gtk2"
-addToAptInstall "python-pip"
+addToAptInstall "python-pexpect"
+addToAptInstall "python-magic"
 addToAptInstall "libav-tools"
 addToAptInstall "tkdnd"
 #addToAptInstall "python-setuptools"
@@ -110,23 +111,6 @@ addToAptInstall "tkdnd"
 if [ "$aptinstall" != "" ]; then
     echo "* Installing dependencies: "$aptinstall"..."
     sudo apt-get -y install $aptinstall >/dev/null
-fi
-#sudo easy_install pip >/dev/null
-
-python -c 'import pexpect' >/dev/null 2>&1
-PEXPECT_INSTALLED=$?
-python -c 'import ptyprocess' >/dev/null 2>&1
-PTYPROCESS_INSTALLED=$?
-if [ $PEXPECT_INSTALLED -eq 1 ]; then
-    echo "* Installing pexpect..."
-    [[ $PTYPROCESS_INSTALLED -eq 1 ]] && ptyprocess='ptyprocess' || ptyprocess=''
-    yes | pip install --user pexpect $ptyprocess >/dev/null 2>&1
-fi
-
-python -c 'import magic' >/dev/null 2>&1
-if [ $? -eq 1 ]; then
-    echo "* Installing magic..."
-    yes | pip install --user python-magic >/dev/null 2>&1
 fi
 
 dpkg -l tkdnd >/dev/null 2>&1
