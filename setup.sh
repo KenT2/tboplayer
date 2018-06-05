@@ -103,7 +103,7 @@ addToAptInstall "python-dbus"
 addToAptInstall "python-tk"
 addToAptInstall "python-gtk2"
 addToAptInstall "python-pexpect"
-addToAptInstall "python-magic"
+addToAptInstall "python-pip"
 addToAptInstall "libav-tools"
 addToAptInstall "tkdnd"
 #addToAptInstall "python-setuptools"
@@ -112,6 +112,17 @@ if [ "$aptinstall" != "" ]; then
     echo "* Installing dependencies: "$aptinstall"..."
     sudo apt-get -y install $aptinstall >/dev/null
 fi
+
+python -c 'import magic' >/dev/null 2>&1
+if [ $? -eq 1 ]; then
+    echo "* Installing magic..."
+    yes | pip install --user python-magic >/dev/null 2>&1
+fi
+function installYoutubedl {
+    echo "* Installing youtube-dl..."
+    sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O $YTDL_EXPECTED_PATH >/dev/null 2>&1
+    sudo chmod a+rx $YTDL_EXPECTED_PATH
+}
 
 dpkg -l tkdnd >/dev/null 2>&1
 if [ $? -eq 1 ] ; then
@@ -124,12 +135,6 @@ if [ $? -eq 1 ] ; then
     sudo make install >/dev/null 2>&1
     cd ..
 fi
-
-function installYoutubedl {
-    echo "* Installing youtube-dl..."
-    sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O $YTDL_EXPECTED_PATH >/dev/null 2>&1
-    sudo chmod a+rx $YTDL_EXPECTED_PATH
-}
 
 # install youtube-dl it's if not installed
 YTDL_PATH="$( command -v youtube-dl )"
