@@ -1431,15 +1431,19 @@ class TBOPlayer:
         # get the filez
         if path:
             filez = path
-        elif self.options.initial_track_dir=='':
-            filez = tkFileDialog.askopenfilenames(parent=self.root,title=_('Choose the file(s)'))
+        elif self.options.initial_track_dir == '':
+            if self.options.last_track_dir != '':
+                filez = tkFileDialog.askopenfilenames(initialdir=self.options.last_track_dir,parent=self.root,title=_('Choose the file(s)'))
+            else:
+                filez = tkFileDialog.askopenfilenames(parent=self.root,title=_('Choose the file(s)'))
+            
         else:
             filez = tkFileDialog.askopenfilenames(initialdir=self.options.initial_track_dir,parent=self.root,title=_('Choose the file(s)'))
 
         filez = self.root.tk.splitlist(filez)
 
         if filez:
-            self.options.initial_track_dir = filez[0][:filez[0].rindex('/')]
+            self.options.last_track_dir = filez[0][:filez[0].rindex('/')]
         else: 
             return
 
@@ -1466,6 +1470,8 @@ class TBOPlayer:
     def get_dir(self):
         if self.options.initial_track_dir:
             d = tkFileDialog.askdirectory(initialdir=self.options.initial_track_dir,title=_("Choose a directory"))
+        elif self.options.last_track_dir:
+            d = tkFileDialog.askdirectory(initialdir=self.options.last_track_dir,title=_("Choose a directory"))
         else:
             d = tkFileDialog.askdirectory(parent=self.root,title=_("Choose a directory"))
         return d
@@ -1492,14 +1498,14 @@ class TBOPlayer:
     def add_dir(self):
         dirname = self.get_dir()
         if dirname:
-            self.options.initial_track_dir = dirname
+            self.options.last_track_dir = dirname
             self.ajoute(dirname,False)
 
 
     def add_dirs(self):
         dirname = self.get_dir()
         if dirname:
-            self.options.initial_track_dir = dirname
+            self.options.last_track_dir = dirname
             self.ajoute(dirname,True)
 
 
@@ -1677,7 +1683,7 @@ class TBOPlayer:
 
 
     def _open_list(self, filename):
-        self.options.initial_playlist_dir = ''
+        #self.options.last_playlist_dir = ''
         ifile  = open(filename, 'rb')
         pl=csv.reader(ifile)
         self.playlist.clear()
@@ -1761,6 +1767,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.windowed_mode_coords_var = config.get('config','windowed_mode_coords',0)
         self.windowed_mode_resolution_var = config.get('config','windowed_mode_resolution',0)
         self.autolyrics_coords_var = config.get('config','autolyrics_coords',0)
+        self.ltracks_var = config.get('config','ltracks',0)
 
         Label(master, text=_("Audio Output:")).grid(row=0, sticky=W)
         self.audio_var=StringVar()
@@ -1931,6 +1938,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','mode',self.mode_var.get())
         config.set('config','playlists',self.e_playlists.get())
         config.set('config','tracks',self.e_tracks.get())
+        config.set('config','ltracks',self.ltracks_var)
         config.set('config','omx_options',self.e_omx_options.get())
         config.set('config','debug',self.debug_var.get())
         config.set('config','youtube_media_format',self.youtube_media_format_var.get())
