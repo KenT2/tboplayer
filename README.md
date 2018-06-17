@@ -228,17 +228,27 @@ Contributors/Who to blame:
 ==========
 
 Original idea and implementation:
+
 KenT2 
 
 GUI enhancements:
+
 heniotierra
+
 eysispeisi
+
 krugg
+
 popiazaza
+
 rstefko
 
 Translations:
+
 heniotierra (Portuguese)
+
 patgmez (Spanish)
+
 Fabien HENON (French)
+
 andrei tanasescu (Romanian)
