@@ -542,7 +542,7 @@ class TBOPlayer:
         if tracks:
             for track in tracks:
                 if track[1][0] == url:
-                    self.playlist.replace(track[0],[media_url, data['title']])
+                    self.playlist.replace(track[0],[media_url, data['title'],track[1][PlayList.LOCATION_BACKUP]])
                     if self.play_state == self._OMX_STARTING:
                         self.start_omx(media_url,skip_ytdl_check=True)
                     self.refresh_playlist_display()
@@ -702,7 +702,7 @@ class TBOPlayer:
                          lambda: tkMessageBox.showinfo("",_("youtube-dl binary is not in the path configured in the Options, please check your configuration")))
 
         #create the internal playlist
-        self.playlist = PlayList()
+        self.playlist = PlayList(self.YTDL_WAIT_TAG)
 
         #root is the Tkinter root widget
         self.root = tk.Tk()
@@ -1527,7 +1527,7 @@ class TBOPlayer:
             self.go_ytdl(url)
             name = self.YTDL_WAIT_TAG + name
 
-        self.playlist.append([url, name])
+        self.playlist.append([url, name, url])
         self.track_titles_display.insert(END, name)
         self.playlist.select(self.playlist.length()-1)
 
@@ -1684,11 +1684,13 @@ class TBOPlayer:
         self.track_titles_display.delete(0,self.track_titles_display.size())
         for pl_row in pl:
             if len(pl_row) != 0:
+                if 'http' in pl_row[0]:
+                    self._add_url(pl_row[0],pl_row[1])
+                    continue
                 self.playlist.append([pl_row[0],pl_row[1],'',''])
                 self.track_titles_display.insert(END, pl_row[1])
         ifile.close()
         self.playlist.select(0)
-        self.display_selected_track(0)
         return
 
 
@@ -1719,8 +1721,9 @@ class TBOPlayer:
             return
         ofile  = open(filename, "wb")
         for idx in range(self.playlist.length()):
-                self.playlist.select(idx)
-                ofile.write ('"' + self.playlist.selected_track()[PlayList.LOCATION] + '","' + self.playlist.selected_track()[PlayList.TITLE]+'"\n')
+            self.playlist.select(idx)
+            item = self.playlist.selected_track()[PlayList.LOCATION]
+            ofile.write ('"' + (item if 'http' in item else self.playlist.selected_track()[PlayList.LOCATION_BACKUP]) + '","' + self.playlist.selected_track()[PlayList.TITLE]+'"\n')
         ofile.close()
         return
 
@@ -2217,7 +2220,7 @@ class AutoLyrics(Toplevel):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring=" 29 Apr 2018"
+    datestring=" 16 Jun 2018"
 
     dbusif_tboplayer = None
     try:
