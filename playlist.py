@@ -1,4 +1,3 @@
-from tboplayer import TBOPlayer
 
 # *************************************
 # PLAYLIST CLASS
@@ -12,14 +11,14 @@ class PlayList():
     #field definition constants
     LOCATION=0
     TITLE=1
-    DURATION=2
-    ARTIST=3
+    LOCATION_BACKUP=2
 
     # template for a new track
-    _new_track=['','','','']
+    _new_track=['','','']
     
 
-    def __init__(self):
+    def __init__(self, YTDL_WAIT_TAG):
+        self.YTDL_WAIT_TAG = YTDL_WAIT_TAG
         self._num_tracks=0
         self._tracks = []                   # list of track titles
         self._selected_track = PlayList._new_track
@@ -77,9 +76,9 @@ class PlayList():
 
     def waiting_tracks(self):
         waiting = []
-        l = len(TBOPlayer.YTDL_WAIT_TAG)
+        l = len(self.YTDL_WAIT_TAG)
         for i in range(len(self._tracks)):
-            if self._tracks[i][1][:l] == TBOPlayer.YTDL_WAIT_TAG:
+            if self._tracks[i][1][:l] == self.YTDL_WAIT_TAG:
                 waiting += [(i, self._tracks[i])]
         return waiting if len(waiting) else False
 
