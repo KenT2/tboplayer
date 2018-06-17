@@ -227,19 +227,18 @@ Want to contribute with a translation? [Follow translating guidelines](https://g
 Contributors/Who to blame:
 ==========
 
-KenT2 - Original idea and implementation
+Original idea and implementation:
+KenT2 
 
-eysispeisi - GUI enhancements
+GUI enhancements:
+heniotierra
+eysispeisi
+krugg
+popiazaza
+rstefko
 
-heniotierra - GUI enhancements, youtube-dl integration, internationalization and setup
-
-krugg - GUI enhancements
-
-popiazaza - GUI enhancements
-
-patgmez - Spanish translation
-
-Fabien HENON - French translation
-
-andrei tanasescu - Romanian translation
-
+Translations:
+heniotierra (Portuguese)
+patgmez (Spanish)
+Fabien HENON (French)
+andrei tanasescu (Romanian)
