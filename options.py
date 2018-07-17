@@ -20,6 +20,7 @@ class Options:
         self.omx_subtitles = "" # omx subtitle option
         self.mode = ""
         self.initial_track_dir =""   # initial directory for add track.
+        self.last_track_dir =""   # last directory for add track.
         self.initial_playlist_dir =""   # initial directory for open playlist      
         self.omx_user_options = ""  # omx options suppplied by user, audio overidden by audio option (HDMI or local)
         self.youtube_media_format = "" # what type of file must be downloded from youtube
@@ -54,6 +55,7 @@ class Options:
             
             self.mode = config.get('config','mode',0)
             self.initial_track_dir = config.get('config','tracks',0)
+            self.last_track_dir = config.get('config','ltracks',0)
             self.initial_playlist_dir = config.get('config','playlists',0)    
             self.omx_user_options = config.get('config','omx_options',0)
             self.youtube_media_format = config.get('config','youtube_media_format',0)
@@ -95,6 +97,7 @@ class Options:
         config.set('config','mode','single')
         config.set('config','playlists','')
         config.set('config','tracks','')
+        config.set('config','ltracks','')
         config.set('config','omx_options','')
         config.set('config','debug','off')
         config.set('config','youtube_media_format','mp4')
@@ -125,6 +128,7 @@ class Options:
         config.set('config','mode',self.mode)
         config.set('config','playlists',self.initial_playlist_dir)
         config.set('config','tracks',self.initial_track_dir)
+        config.set('config','ltracks',self.last_track_dir)
         config.set('config','omx_options',self.omx_user_options)
         config.set('config','debug',"on" if self.debug else "off")
         config.set('config','youtube_media_format',self.youtube_media_format)
