@@ -30,7 +30,7 @@ class Ytdl:
     _WRN_STATUS = ".*WARNING:.*"
     _UPDATED_STATUS = ".*Restart youtube-dl to use the new version.*"
     _ERR_STATUS = ".*ERROR:.*"
-    _SUDO_STATUS = "[sudo]"
+    _SUDO_STATUS = ".*\[sudo\].*"
 
     _SERVICES_REGEXPS = ()
     _ACCEPTED_LINK_REXP_FORMAT = "(http[s]{0,1}://(?:\w|\.{0,1})+%s\.(?:[a-z]{2,3})(?:\.[a-z]{2,3}){0,1}/)"
@@ -190,18 +190,23 @@ class Ytdl:
 
         if current_version_hash != latest_version_hash:
             self._update_process = pexpect.spawn("sudo %s -U" % self._YTLOCATION, timeout=60)
-        
+
             while self.updating_signal:
                 try:
                     index = self._update_process.expect([self._UPDATED_STATUS,
-                                                    pexpect.TIMEOUT,
+                                                    self._SUDO_STATUS,
                                                     self._ERR_STATUS,
-                                                    self._SUDO_STATUS])
-                    if index in (1,2):
+                                                    pexpect.EOF,
+                                                    pexpect.TIMEOUT])
+                    if index == 0:
+                        self.updating_signal = False
+                        self.updated_signal = True
+                        break
+                    elif index in (2,3,4):
                         self.update_failed_signal = True
                         self.updating_signal = False
                         break
-                    elif index == 3:
+                    elif index == 1:
                         if self._sudo_password:                            
                             self.password_requested_signal = False
                             self._update_process.sendline(self._sudo_password)
@@ -209,15 +214,11 @@ class Ytdl:
                         elif self._sudo_password == None:
                             self.password_requested_signal = False
                             self.updating_signal = False
-                            self._sudo_password = ''
+                            self._sudo_password = False
                             self._update_process.terminate(force=True)
                             break
                         elif not self.has_password_signal:
                             self.password_requested_signal = True
-                    elif index == 0:
-                        self.updating_signal = False
-                        self.updated_signal = True
-                        break
                 except Exception, e:
                     print e
                     break
