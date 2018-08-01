@@ -1,5 +1,6 @@
-1. Make sure your fork is up-to-date in relation to this repostory's master branch;
-2. Create a new branch for your contribution, or fetch the devel remote branch; 
-3. Add your files and commit a message that somewhat describes the changes; Avoid making many or messy commits;
-4. Push the branch to your own remote branch;
-5. Make a pull request to this repository.
+1. Fork this repository;
+2. Clone your fork / Make sure your fork is up-to-date with the original repository;
+3. Create a new branch locally for your contribution; 
+4. Add your files and commit a message that describes the changes made; Avoid making many or messy commits;
+5. Push the branch to your own remote branch;
+6. Make a pull request to this repository.
