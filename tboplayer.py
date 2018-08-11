@@ -1545,7 +1545,7 @@ class TBOPlayer:
                 self.display_selected_track_title.set(_("Wait. Loading playlist content..."))
                 return
 
-            result = [link,'']
+            result = [link,'','']
             self.go_ytdl(link)
             result[1] = self.YTDL_WAIT_TAG + result[0]
             self.playlist.append(result)
