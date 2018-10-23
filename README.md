@@ -1,4 +1,4 @@
-A GUI interface using jbaiter's pyomxplayer wrapper to control omxplayer, with youtube-dl integration and ability to find lyrics
+A GUI interface using jbaiter's pyomxplayer wrapper to control omxplayer, with youtube-dl integration and support for lyrics
 
 INSTALLATION
 ============
