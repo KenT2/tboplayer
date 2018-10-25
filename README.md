@@ -252,3 +252,5 @@ patgmez (Spanish)
 Fabien HENON (French)
 
 andrei tanasescu (Romanian)
+
+Mikhail Kuznetsov (Russian)
