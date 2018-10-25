@@ -167,9 +167,12 @@ class Ytdl:
 
     def quit(self):
         self._terminate_sent_signal = True
-        for url in self._running_processes:
-            self._running_processes[url][0].terminate(force=True)
-    
+        try:
+            for url in self._running_processes:
+                self._running_processes[url][0].terminate(force=True)
+        except:
+            return
+
     def check_for_update(self):
         if not os.path.isfile(self._YTLOCATION):
             return
