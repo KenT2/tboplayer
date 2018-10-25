@@ -76,9 +76,8 @@ class PlayList():
 
     def waiting_tracks(self):
         waiting = []
-        l = len(self.YTDL_WAIT_TAG)
         for i in range(len(self._tracks)):
-            if self._tracks[i][1][:l] == self.YTDL_WAIT_TAG:
+            if self._tracks[i][1].startswith(self.YTDL_WAIT_TAG):
                 waiting += [(i, self._tracks[i])]
         return waiting if len(waiting) else False
 

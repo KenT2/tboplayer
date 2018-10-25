@@ -1473,7 +1473,7 @@ class TBOPlayer:
         elif self.options.last_track_dir:
             d = tkFileDialog.askdirectory(initialdir=self.options.last_track_dir,title=_("Choose a directory"))
         else:
-            d = tkFileDialog.askdirectory(parent=self.root,title=_("Choose a directory"))
+            d = tkFileDialog.askdirectory(title=_("Choose a directory"))
         return d
  
 
@@ -1555,7 +1555,7 @@ class TBOPlayer:
 
     def remove_track(self,*event):
         if  self.playlist.length()>0 and self.playlist.track_is_selected():
-            if self.playlist.selected_track()[1][:6] == self.YTDL_WAIT_TAG and self.ytdl_state==self._YTDL_WORKING:
+            if self.playlist.selected_track()[1].startswith(self.YTDL_WAIT_TAG) and self.ytdl_state==self._YTDL_WORKING:
                 # tell ytdl_state_machine to stop
                 self.quit_ytdl_sent_signal = True
             index= self.playlist.selected_track_index()
@@ -1574,7 +1574,7 @@ class TBOPlayer:
             do_ytdl = False
 
             if d.result and d.result[1] != '':            
-                if (self.options.download_media_url_upon == "add" and self.playlist.selected_track()[1][:6] != self.YTDL_WAIT_TAG and 
+                if (self.options.download_media_url_upon == "add" and not self.playlist.selected_track()[1].startswith(self.YTDL_WAIT_TAG) and 
                                                                 self.ytdl.whether_to_use_youtube_dl(d.result[1])):
                     do_ytdl = True
                     d.result[0] = self.YTDL_WAIT_TAG + d.result[0]
