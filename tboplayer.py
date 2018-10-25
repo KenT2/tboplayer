@@ -1856,7 +1856,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         Label(master, text=_("Interface language:")).grid(row=23, column=0, sticky=W)
         self.lang_var=StringVar()
         self.lang_var.set(config.get('config','lang',0))
-        om_lang = OptionMenu(master, self.lang_var, 'en', 'es' , 'fr', 'pt', 'ro')
+        om_lang = OptionMenu(master, self.lang_var, 'en', 'es' , 'fr', 'pt', 'ro', 'ru')
         om_lang.grid(row=23, column=2, sticky=W)
         
 

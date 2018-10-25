@@ -1,0 +1,462 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2018-02-06 10:59+BRT\n"
+"PO-Revision-Date: 2018-10-25 13:40+0300\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.4\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Language: ru\n"
+
+#: tboplayer.py:366
+msgid "Problem retreiving content. Do you have up-to-date dependencies?"
+msgstr "Проблемы с получением контента. У вас есть своевременные зависимости?"
+
+#: tboplayer.py:367
+msgid ""
+"Problem retreiving content. Content may be copyrighted or the link may be "
+"invalid."
+msgstr ""
+"Проблема извлечения контента. Содержание может быть защищено авторским "
+"правом или ссылка может быть недействительной."
+
+#: tboplayer.py:368
+msgid "Problem retrieving content. Content may have been truncated."
+msgstr "Проблема получения содержимого. Контент может быть усечен."
+
+#: tboplayer.py:369
+msgid "wait"
+msgstr "подождите"
+
+#: tboplayer.py:774
+msgid "Paused"
+msgstr "Приостановлено"
+
+#: tboplayer.py:777
+msgid "Starting"
+msgstr "Стартуем"
+
+#: tboplayer.py:782
+msgid "End"
+msgstr "Конец"
+
+#: tboplayer.py:861 tboplayer.py:1290
+msgid "Play"
+msgstr "Воспроизвести"
+
+#: tboplayer.py:863
+msgid "Pause"
+msgstr "Пауза"
+
+#: tboplayer.py:1070
+msgid "youtube-dl has been updated."
+msgstr "youtube-dl был обновлен."
+
+#: tboplayer.py:1072
+msgid "Failed to update youtube-dl."
+msgstr "Не удалось обновить youtube-dl."
+
+#: tboplayer.py:1075
+msgid ""
+"youtube-dl needs to be updated.\n"
+"Please inform your password."
+msgstr "youTube-dl должен быть обновлен. Пожалуйста, введите ваш пароль."
+
+#: tboplayer.py:1184
+msgid ""
+"youtube-dl binary is not in the path configured in the Options, please check "
+"your configuration"
+msgstr ""
+"youTube-dl двоичный файл не находится в пути, настроенные в параметрах, "
+"пожалуйста, проверьте ваши настройки"
+
+#: tboplayer.py:1232
+msgid "Track"
+msgstr "Трек"
+
+#: tboplayer.py:1233 tboplayer.py:1265 tboplayer.py:2876
+msgid "Add"
+msgstr "Добавить"
+
+#: tboplayer.py:1234 tboplayer.py:1269
+msgid "Add Dir"
+msgstr "Добавить директорию"
+
+#: tboplayer.py:1235
+msgid "Add Dirs"
+msgstr "Добавить директории"
+
+#: tboplayer.py:1236 tboplayer.py:1273 tboplayer.py:1989
+msgid "Add URL"
+msgstr "Добавить ссылку"
+
+#: tboplayer.py:1237 tboplayer.py:2756
+msgid "Youtube search"
+msgstr "Поиск в Youtube"
+
+#: tboplayer.py:1238
+msgid "Remove"
+msgstr "Восстановить"
+
+#: tboplayer.py:1239 tboplayer.py:1254
+msgid "Edit"
+msgstr "Изменить"
+
+#: tboplayer.py:1242
+msgid "Playlists"
+msgstr "Плейлисты"
+
+#: tboplayer.py:1243
+msgid "Open playlist"
+msgstr "Открыть плейлист"
+
+#: tboplayer.py:1244
+msgid "Save playlist"
+msgstr "Сохранить плейлист"
+
+#: tboplayer.py:1245 tboplayer.py:2640
+msgid "Load Youtube playlist"
+msgstr "Загрузть Youtube плейлист"
+
+#: tboplayer.py:1246 tboplayer.py:2767
+msgid "Clear"
+msgstr "Очистить"
+
+#: tboplayer.py:1250
+msgid "Track Info"
+msgstr "Инф. о треке"
+
+#: tboplayer.py:1253
+msgid "Options"
+msgstr "Настройки"
+
+#: tboplayer.py:1257 tboplayer.py:1258 tboplayer.py:1414
+msgid "Help"
+msgstr "Помощь"
+
+#: tboplayer.py:1259 tboplayer.py:1424
+msgid "About"
+msgstr "О программе"
+
+#: tboplayer.py:1278
+msgid "Open List"
+msgstr "Открыть лист"
+
+#: tboplayer.py:1282
+msgid "Save List"
+msgstr "Сохранить лист"
+
+#: tboplayer.py:1286
+msgid "Clear List"
+msgstr "Очистить лист"
+
+#: tboplayer.py:1295
+msgid "Stop"
+msgstr "Стоп"
+
+#: tboplayer.py:1299
+msgid "Previous"
+msgstr "Предыдущий"
+
+#: tboplayer.py:1303
+msgid "Next"
+msgstr "Следующий"
+
+#: tboplayer.py:1408
+msgid "Edit Options"
+msgstr "Изменить параметры"
+
+#: tboplayer.py:1415
+msgid ""
+"To control playing, type a key\n"
+"p - pause/play\n"
+"spacebar - pause/play\n"
+"q - quit\n"
+msgstr ""
+"Чтобы контролировать воспроизведение: нажмите \"p\" что-бы поставить на "
+"паузу/начать воспроизведение, нажмите \"q\" что-бы выйти\n"
+
+#: tboplayer.py:1416
+msgid ""
+"+ - increase volume\n"
+"- - decrease volume\n"
+"z - tv show info\n"
+"1 - reduce speed\n"
+"o - forward a chapter\n"
+msgstr ""
+"+ - увеличить громкость\n"
+" - - уменьшить громкость \n"
+"z - tv показать информацию \n"
+"1 - уменьшить скорость \n"
+"o - переслать главу \n"
+
+#: tboplayer.py:1417
+msgid ""
+"2 - increase speed\n"
+"j - previous audio index\n"
+"k - next audio index\n"
+"i - back a chapter\n"
+"n - previous subtitle index\n"
+msgstr ""
+"2 - увеличить скорость j - предыдущая аудиодорожка k - следующая "
+"аудиодорожка i - обратно n - предыдущий индекс субтитров\n"
+
+#: tboplayer.py:1418
+msgid ""
+"m - next subtitle index\n"
+"s - toggle subtitles\n"
+">cursor - seek forward 30\n"
+"<cursor - seek back 30\n"
+msgstr ""
+"m - следующий подзаголовок индекс\n"
+"s - переключение субтитров \n"
+"> курсор - стремиться вперед 30\n"
+"< курсор - искать обратно 30\n"
+
+#: tboplayer.py:1419
+msgid ""
+"SHIFT >cursor - seek forward 600\n"
+"SHIFT <cursor - seek back 600\n"
+"CTRL >cursor - next track\n"
+"CTRL <cursor - previous track\n"
+msgstr ""
+"SHIFT> курсор - поиск вперед 600\n"
+"SHIFT <cursor - seek back 600\n"
+"CTRL > курсор - следующий трек\n"
+"CTRL <cursor - previous track\n"
+
+#: tboplayer.py:1420
+msgid ""
+"F11 - toggle full screen/windowed mode\n"
+"\n"
+"For more help, consult the 'Operation' section of the README file"
+msgstr ""
+"F11 - полный экран/оконный режим переключения для более лучшей помощи, "
+"обратитесь к разделу «Операция» файла README"
+
+#: tboplayer.py:1424
+msgid "GUI for omxplayer using jbaiter's pyomxplayer wrapper\n"
+msgstr ""
+"Графический интерфейс для omxplayer с использованием jbaiter в pyomxplayer "
+"оболочке\n"
+
+#: tboplayer.py:1425
+msgid ""
+"Version dated: %s \n"
+"Author:\n"
+"    Ken Thompson  - KenT2\n"
+msgstr ""
+"Версия от: %s \n"
+"Автор: \n"
+"    Кен Томпсон - KenT2\n"
+
+#: tboplayer.py:1426
+msgid ""
+"Contributors:\n"
+"    eysispeisi\n"
+"    heniotierra\n"
+"    krugg\n"
+"    popiazaza"
+msgstr "Авторы: eysispeisi heniotierra krugg popiazaza"
+
+#: tboplayer.py:1913 tboplayer.py:1915
+msgid "Choose the file(s)"
+msgstr "Выбрать файл(ы)"
+
+#: tboplayer.py:1946 tboplayer.py:1948
+msgid "Choose a directory"
+msgstr "Выберите папку"
+
+#: tboplayer.py:1990 tboplayer.py:2044
+msgid "Title"
+msgstr "Заголовок"
+
+#: tboplayer.py:1991 tboplayer.py:2045
+msgid "Location"
+msgstr "Местоположение"
+
+#: tboplayer.py:2017 tboplayer.py:2187
+msgid "Wait. Loading playlist content..."
+msgstr "Подождите. Загрузка списков воспроизведения содержимого..."
+
+#: tboplayer.py:2043
+msgid "Edit Track"
+msgstr "Редактировать трек"
+
+#: tboplayer.py:2174
+msgid "Clear Playlist"
+msgstr "Очистить плейлист"
+
+#: tboplayer.py:2208
+msgid "Track Information"
+msgstr "Сведения о дорожке"
+
+#: tboplayer.py:2209
+msgid "Video: "
+msgstr "Видео: "
+
+#: tboplayer.py:2210
+msgid "Audio: "
+msgstr "Аудио: "
+
+#: tboplayer.py:2211
+msgid "Time: "
+msgstr "Время: "
+
+#: tboplayer.py:2212
+msgid "Misc: "
+msgstr "Разное "
+
+#: tboplayer.py:2389
+msgid "Audio Output:"
+msgstr "Аудиовыход:"
+
+#: tboplayer.py:2392
+msgid "HDMI"
+msgstr "HDMI"
+
+#: tboplayer.py:2394
+msgid "Local"
+msgstr "Локальный"
+
+#: tboplayer.py:2396
+msgid "Auto"
+msgstr "Авто"
+
+#: tboplayer.py:2402
+msgid "Mode:"
+msgstr "Режим:"
+
+#: tboplayer.py:2405
+msgid "Single"
+msgstr "Единая (Внутренняя)"
+
+#: tboplayer.py:2407
+msgid "Repeat"
+msgstr "Повторить"
+
+#: tboplayer.py:2409
+msgid "Playlist"
+msgstr "Плэйлист"
+
+#: tboplayer.py:2411
+msgid "Repeat playlist"
+msgstr "Повторять список"
+
+#: tboplayer.py:2413
+msgid "Shuffle"
+msgstr "В случайном порядке"
+
+#: tboplayer.py:2417
+msgid "Download from Youtube:"
+msgstr "Скачать с Youtube:"
+
+#: tboplayer.py:2420
+msgid "Video and audio"
+msgstr "Видео и аудио"
+
+#: tboplayer.py:2422
+msgid "Audio only"
+msgstr "Только аудио"
+
+#: tboplayer.py:2425
+msgid "Youtube media quality:"
+msgstr "Качество YouTube:"
+
+#: tboplayer.py:2431
+msgid "Initial directory for tracks:"
+msgstr "Выберите папку для треков:"
+
+#: tboplayer.py:2435
+msgid "Inital directory for playlists:"
+msgstr "Установить директорию для плейлистов:"
+
+#: tboplayer.py:2441
+msgid "OMXPlayer location:"
+msgstr "Местоположение OMX плеера:"
+
+#: tboplayer.py:2445
+msgid "OMXPlayer options:"
+msgstr "Параметры OMX плеера:"
+
+#: tboplayer.py:2451
+msgid "Subtitles"
+msgstr "Субтитры"
+
+#: tboplayer.py:2459
+msgid "youtube-dl location:"
+msgstr "местоположение youtube-dl:"
+
+#: tboplayer.py:2465
+msgid "Download actual media URL:"
+msgstr "Скачать актуальную медиа ссылку:"
+
+#: tboplayer.py:2467 tboplayer.py:2468
+msgid "when playing URL"
+msgstr "когда играть ссылку"
+
+#: tboplayer.py:2467 tboplayer.py:2468 tboplayer.py:2565
+msgid "when adding URL"
+msgstr "когда добавлять ссылку"
+
+#: tboplayer.py:2473
+msgid "Interface language:"
+msgstr "Язык интерфейса:"
+
+#: tboplayer.py:2482
+msgid "Forbid windowed mode"
+msgstr "Дай оконный режим"
+
+#: tboplayer.py:2493
+msgid "Begin/End track paused"
+msgstr "Начальный / конечный трек приостановлен"
+
+#: tboplayer.py:2504
+msgid "Autoplay on start up"
+msgstr "Автовоспроизведение при запуске"
+
+#: tboplayer.py:2513
+msgid "Keep youtube-dl up-to-date"
+msgstr "Сохранять yotube-dl обновленным"
+
+#: tboplayer.py:2521
+msgid "Find lyrics"
+msgstr "Найти лирику"
+
+#: tboplayer.py:2529
+msgid "Debug"
+msgstr "Отладчик"
+
+#: tboplayer.py:2552
+msgid "Restart TBOplayer to change language"
+msgstr "Перезапустить TBOplayer, чтобы изменить язык"
+
+#: tboplayer.py:2764
+msgid "Search!"
+msgstr "Найти!"
+
+#: tboplayer.py:2771
+msgid "Page: "
+msgstr "Страница: "
+
+#: tboplayer.py:3129
+msgid "Lyrics Finder"
+msgstr "Писковик Текста"
+
+#: tboplayer.py:3134
+msgid "Trying to grab lyrics from the web..."
+msgstr "Попытка захвататекстов из Интернета ..."
+
+#: tboplayer.py:3185
+msgid "Unable to retrieve lyrics for this track."
+msgstr "Не удается получить тексты для этого трека."
