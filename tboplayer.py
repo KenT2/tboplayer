@@ -1030,7 +1030,7 @@ class TBOPlayer:
             "omx_user_options": "str",
             "omx_location": "str",
             "ytdl_location": "str",
-            "omx_audio_output": ["hdmi","local","auto","alsa"],
+            "omx_audio_output": ["hdmi","local","both","alsa"],
             "mode": ["single", "repeat","playlist","repeat playlist", "shuffle"],
             "debug": ["on", "off"],
             "youtube_media_format": ["mp4", "m4a"],
@@ -1776,10 +1776,10 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         rb_hdmi.grid(row=1,column=0,sticky=W)
         rb_local=Radiobutton(master, text=_("Local"), variable=self.audio_var,value="local")
         rb_local.grid(row=2,column=0,sticky=W)
-        rb_auto=Radiobutton(master, text=_("Auto"), variable=self.audio_var,value="auto")
+        rb_auto=Radiobutton(master, text=_("Both"), variable=self.audio_var,value="both")
         rb_auto.grid(row=3,column=0,sticky=W)
-        rb_auto=Radiobutton(master, text="ALSA", variable=self.audio_var,value="alsa")
-        rb_auto.grid(row=4,column=0,sticky=W)
+        rb_alsa=Radiobutton(master, text="ALSA", variable=self.audio_var,value="alsa")
+        rb_alsa.grid(row=4,column=0,sticky=W)
 
         Label(master, text="").grid(row=9, sticky=W)
         Label(master, text=_("Mode:")).grid(row=10, sticky=W)
@@ -2228,7 +2228,7 @@ class AutoLyrics(Toplevel):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring="11 Ago 2018"
+    datestring="30 Out 2018"
 
     dbusif_tboplayer = None
     try:

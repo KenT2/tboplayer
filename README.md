@@ -29,7 +29,7 @@ Install dependencies
 
 Type this into the terminal to install TBOPlayer's dependencies:
 
-        # install pip, gobject, dbus, tk, gtk, requests, avconv, ffmpeg, tkdnd
+        # install pip, gobject, dbus, tk, gtk, requests, avconv, tkdnd
         sudo apt-get install -y python-pip python-gobject-2 python-dbus python-tk python-gtk2 python-requests libav-tools tkdnd
         # install pexpect, ptyprocess, magic
         yes | pip install --user pexpect ptyprocess python-magic
@@ -96,7 +96,7 @@ Menus
  
 * `Options` -
 
-    * Audio Output - play sound to hdmi, local, auto or ALSA device.
+    * Audio Output - play sound to hdmi, local, both or ALSA device.
 	
     * Mode - play the Single selected track, Repeat the single track, rotate around the Playlist starting from the selected track, randomly play a track from the Playlist.
 	
@@ -183,7 +183,7 @@ Available options and respective accepted values are:
 
 | Option                   | Allowed values/pattern                             |
 |--------------------------|----------------------------------------------------|
-| omx_audio_output         | hdmi, local, auto, alsa                            |
+| omx_audio_output         | hdmi, local, both, alsa                            |
 | mode                     | single, repeat, playlist, repeat playlist, shuffle |
 | youtube_media_format     | mp4, m4a                                           |
 | download_media_url_upon  | add, play                                          |
