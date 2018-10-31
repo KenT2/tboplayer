@@ -48,11 +48,7 @@ class Options:
         config=ConfigParser.ConfigParser()
         config.read(filename)
         try:
-            if  config.get('config','audio',0) == 'auto':
-                self.omx_audio_output = ""
-            else:
-                self.omx_audio_output = "-o "+config.get('config','audio',0)
-            
+            self.omx_audio_output = "-o " + config.get('config','audio',0)
             self.mode = config.get('config','mode',0)
             self.initial_track_dir = config.get('config','tracks',0)
             self.last_track_dir = config.get('config','ltracks',0)
@@ -123,7 +119,7 @@ class Options:
     def save_state(self):
         config=ConfigParser.ConfigParser()
         config.add_section('config')
-        config.set('config','audio',self.omx_audio_output.replace("-o ",''))
+        config.set('config','audio',self.omx_audio_output.replace("-o ",""))
         config.set('config','subtitles',"on" if "on" in self.omx_subtitles else "off")       
         config.set('config','mode',self.mode)
         config.set('config','playlists',self.initial_playlist_dir)
