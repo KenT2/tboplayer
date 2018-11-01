@@ -296,7 +296,7 @@ msgid "Local"
 msgstr ""
 
 #: tboplayer.py:2396
-msgid "Auto"
+msgid "Both"
 msgstr ""
 
 #: tboplayer.py:2402
