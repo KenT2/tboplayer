@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-02-06 11:00-0300\n"
-"PO-Revision-Date: 2018-02-06 11:03-0300\n"
+"PO-Revision-Date: 2018-10-31 22:58-0300\n"
 "Last-Translator: Hẽnio Tierra <heniotster@gmail.com>\n"
 "Language-Team: \n"
 "Language: es_ES\n"
@@ -341,8 +341,8 @@ msgid "Local"
 msgstr "Local"
 
 #: tboplayer.py:2396
-msgid "Auto"
-msgstr "Auto"
+msgid "Both"
+msgstr "Ambos"
 
 #: tboplayer.py:2402
 msgid "Mode:"
