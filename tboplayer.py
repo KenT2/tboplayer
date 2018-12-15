@@ -472,6 +472,13 @@ class TBOPlayer:
         if self.ytdl_state==self._YTDL_STARTING:
             self.ytdl_state_machine()
 
+    def go_ytdl_subtitles(self, track):
+        self.ytdl.download_subtitles(self.options.subtitles_lang, track[2])
+        while (not self.ytdl.subtitle_ready_signal and 
+                    not self.ytdl.download_subtitle_failed_signal):
+            sleep(0.2)
+        self.start_omx(track[0], skip_ytdl_check = True)
+        
 
     def ytdl_state_machine(self):
         if self.ytdl_state == self._YTDL_CLOSED:
@@ -542,7 +549,7 @@ class TBOPlayer:
         if tracks:
             for track in tracks:
                 if track[1][0] == url:
-                    self.playlist.replace(track[0],[media_url, data['title'],track[1][PlayList.LOCATION_BACKUP]])
+                    self.playlist.replace(track[0],[media_url, data['title'], url])
                     if self.play_state == self._OMX_STARTING:
                         self.start_omx(media_url,skip_ytdl_check=True)
                     self.refresh_playlist_display()
@@ -556,7 +563,7 @@ class TBOPlayer:
                 media_url = self._treat_video_data(entry, data['extractor'], "medium")
             if not media_url:
                 media_url = entry['url']
-            self.playlist.append([media_url,entry['title'],'',''])
+            self.playlist.append([media_url,entry['title'],''])
         self.playlist.select(self.playlist.length() - len(data['entries']))
         self.refresh_playlist_display()
         self.root.after(3000, lambda: self.display_selected_track())
@@ -613,9 +620,19 @@ class TBOPlayer:
             self.playlist.select(index)               
             self.refresh_playlist_display()
             return
+
+        if (self.options.omx_subtitles and 
+                    not self.ytdl.subtitle_ready_signal and 
+                    not self.ytdl.download_subtitle_failed_signal):
+            track = self.playlist.selected_track()
+            self.go_ytdl_subtitles(track)
+            return
+
         track= "'"+ track.replace("'","'\\''") + "'"
         opts= (self.options.omx_user_options + " " + self.options.omx_audio_output + " " +
-                                                        self.options.omx_subtitles + " --vol " + str(self.get_mB()))
+                    " --vol " + str(self.get_mB()) + " " + self.options.omx_subtitles + " " +
+                    " --subtitles " + self.ytdl._YTLAUNCH_SUB_DIR + "/subtitle." + self.options.subtitles_lang + ".srt" if self.ytdl.subtitle_ready_signal else "")
+
         if self.media_is_video():
             if not self.options.forbid_windowed_mode and not self.options.full_screen and '--win' not in opts:
                 mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
@@ -632,7 +649,7 @@ class TBOPlayer:
 
         self.monitor('starting omxplayer with args: "%s"' % (opts,))
 
-	self.omx = OMXPlayer(track, args=opts, start_playback=True)
+        self.omx = OMXPlayer(track, args=opts, start_playback=True)
 
         self.monitor("            >Play: " + track + " with " + opts)
 
@@ -1850,7 +1867,6 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.download_media_url_upon_var.set(_("when adding URL") if config.get('config','download_media_url_upon',0) == "add" else _("when playing URL"))
         om_download_media = OptionMenu(master, self.download_media_url_upon_var, _("when adding URL"), _("when playing URL"))
         om_download_media.grid(row=21, column=2, sticky=W)
-
         
         Label(master, text="").grid(row=22, sticky=W) 
         Label(master, text=_("Interface language:")).grid(row=23, column=0, sticky=W)
@@ -1858,7 +1874,15 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.lang_var.set(config.get('config','lang',0))
         om_lang = OptionMenu(master, self.lang_var, 'en', 'es' , 'fr', 'pt', 'ro', 'ru')
         om_lang.grid(row=23, column=2, sticky=W)
-        
+
+
+        Label(master, text="").grid(row=24, sticky=W) 
+        Label(master, text=_("Subtitles language:")).grid(row=25, column=0, sticky=W)
+        self.subtitles_lang_var=StringVar()
+        self.subtitles_lang_var.set(config.get('config','subtitles_lang',0))
+        om_lang = OptionMenu(master, self.subtitles_lang_var, 'ar','de', 'en', 'es' , 'fr', 'ko', 'pt', 'ro', 'ru', 'ch', 'ja')
+        om_lang.grid(row=25, column=2, sticky=W)
+
 
         self.forbid_windowed_mode_var = IntVar()
         self.forbid_windowed_mode_var.set(int(config.get('config','forbid_windowed_mode',0)))
@@ -1956,6 +1980,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','find_lyrics',self.find_lyrics_var.get())
         config.set('config','autolyrics_coords',self.autolyrics_coords_var)
         config.set('config','lang',self.lang_var.get())
+        config.set('config','subtitles_lang',self.lang_var.get())
         config.set('config','ytdl_update',self.ytdl_update_var.get())
         
         
@@ -2228,7 +2253,7 @@ class AutoLyrics(Toplevel):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring="30 Out 2018"
+    datestring="15 Dec 2018"
 
     dbusif_tboplayer = None
     try:

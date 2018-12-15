@@ -27,6 +27,7 @@ class Options:
         self.debug = False  # print debug information to terminal
         self.generate_track_info = False  # generate track information from omxplayer output
         self.lang = ""
+        self.subtitles_lang = ""
 
         # create an options file if necessary
         confdir = os.path.expanduser("~") + '/.tboplayer'
@@ -69,6 +70,7 @@ class Options:
             self.find_lyrics = int(config.get('config','find_lyrics',0))
             self.autolyrics_coords = config.get('config','autolyrics_coords',0)
             self.lang = config.get('config','lang',0)
+            self.subtitles_lang = config.get('config','subtitles_lang',0)
             self.ytdl_update = int(config.get('config','ytdl_update',0))
 
             if config.get('config','debug',0) == 'on':
@@ -111,6 +113,7 @@ class Options:
         config.set('config','find_lyrics','0')
         config.set('config','autolyrics_coords','+350+350')
         config.set('config','lang','en')
+        config.set('config','subtitles_lang','en')
         config.set('config','ytdl_update','1')
         with open(filename, 'wb') as configfile:
             config.write(configfile)
@@ -142,8 +145,8 @@ class Options:
         config.set('config','find_lyrics',self.find_lyrics)
         config.set('config','autolyrics_coords',self.autolyrics_coords)
         config.set('config','lang',self.lang)
+        config.set('config','subtitles_lang',self.subtitles_lang)
         config.set('config','ytdl_update',self.ytdl_update)
-
         with open(self.options_file, 'wb') as configfile:
             config.write(configfile)
             configfile.close()
