@@ -621,7 +621,8 @@ class TBOPlayer:
             self.refresh_playlist_display()
             return
 
-        if (self.options.omx_subtitles and 
+        if ("http" in track and
+                    self.options.omx_subtitles and 
                     not self.ytdl.subtitle_ready_signal and 
                     not self.ytdl.download_subtitle_failed_signal):
             track = self.playlist.selected_track()
