@@ -10,6 +10,8 @@ from hashlib import sha256
 from threading import Thread
 from time import sleep
 
+from vtt2srt import vtt2srt 
+
 # ***************************************
 # YTDL CLASS
 # ***************************************
@@ -25,13 +27,18 @@ class Ytdl:
     _YTLAUNCH_ARGS_FORMAT = ' -j -f %s --youtube-skip-dash-manifest "%s"'
     _YTLAUNCH_PLST_CMD = ''
     _YTLAUNCH_PLST_ARGS_FORMAT = ' -J -f mp4 --youtube-skip-dash-manifest "%s"'
+    _YTLAUNCH_SUB_DIR = '/dev/shm/tbopsubs'
+    _YTLAUNCH_SUBT_ARGS_FORMAT = ' --write-sub --sub-lang %s --skip-download "%s" --output %s/subtitle'
+    _YTLAUNCH_AUTOSUBT_ARGS_FORMAT = ' --write-auto-sub --sub-lang %s --skip-download "%s" --output %s/subtitle'
     
     _FINISHED_STATUS = "\n"
     _WRN_STATUS = ".*WARNING:.*"
     _UPDATED_STATUS = ".*Restart youtube-dl to use the new version.*"
     _ERR_STATUS = ".*ERROR:.*"
     _SUDO_STATUS = ".*\[sudo\].*"
-
+    _NO_SUB_STATUS = ".*WARNING: video doesn't have subtitles.*"
+    _FOUND_SUB_STATUS = ".*\[info\] Writing video subtitles to:.*"
+    
     _SERVICES_REGEXPS = ()
     _ACCEPTED_LINK_REXP_FORMAT = "(http[s]{0,1}://(?:\w|\.{0,1})+%s\.(?:[a-z]{2,3})(?:\.[a-z]{2,3}){0,1}/)"
     
@@ -47,10 +54,20 @@ class Ytdl:
     update_failed_signal = False
     password_requested_signal = False
     has_password_signal = False
-
+    downloading_subtitle_signal = False
+    downloaded_subtitle_signal = False
+    downloaded_partial_subtitle_signal = False
+    download_subtitle_failed_signal = False
+    subtitle_ready_signal = False
+    
     _sudo_password = ''
     
     def __init__(self, options, yt_not_found_callback):
+        os.system("mount > /dev/null")
+        try:
+            os.mkdir(self._YTLAUNCH_SUB_DIR)
+        except:
+            pass
         self.set_options(options)
         self.yt_not_found_callback = yt_not_found_callback
         self.compile_regexps()
@@ -144,7 +161,7 @@ class Ytdl:
     def whether_to_use_youtube_dl(self, url): 
         to_use = url[:4] == "http" and any(regxp.match(url) for regxp in self._SERVICES_REGEXPS)
         if to_use and not os.path.isfile(self._YTLOCATION):
-            self.yt_not_found_callback();
+            self.yt_not_found_callback()
             return False
         return to_use
 
@@ -172,6 +189,57 @@ class Ytdl:
                 self._running_processes[url][0].terminate(force=True)
         except:
             return
+
+    def download_subtitles(self, lang, url):
+        self.downloaded_subtitle_signal = False
+        self.download_subtitle_failed_signal = False
+        self.subtitle_ready_signal = False
+        self.downloaded_partial_subtitle_signal = False
+
+        if not os.path.isfile(self._YTLOCATION):
+            self.download_subtitle_failed_signal = True
+            return
+        ytcmd = self._YTLOCATION + ((self._YTLAUNCH_SUBT_ARGS_FORMAT) % (lang, url, self._YTLAUNCH_SUB_DIR))
+        self._subtitled_process = pexpect.spawn(ytcmd)
+        self.downloading_subtitle_signal = True
+        Thread(target=self._download_subtitles,args=[lang, url]).start()
+        
+    def _download_subtitles(self, lang, url, trying = 1):
+        while self.downloading_subtitle_signal:
+            try:
+                index = self._subtitled_process.expect([self._FOUND_SUB_STATUS,
+                                                pexpect.EOF,
+                                                self._NO_SUB_STATUS,
+                                                pexpect.TIMEOUT])
+                if index == 0:
+                    self.downloaded_partial_subtitle_signal = True
+                elif index == 1:
+                    if self.downloaded_partial_subtitle_signal:
+                        self.downloaded_subtitle_signal = True
+                    else:
+                        self.download_subtitle_failed_signal = True
+                    self.downloading_subtitle_signal = False
+                    break
+                elif index in (2,3):
+                    self.downloading_subtitle_signal = False
+                    if trying == 2:
+                        self.download_subtitle_failed_signal = True
+                    break
+                sleep(0.2)
+            except Exception, e:
+                print e
+                self.download_subtitle_failed_signal = True
+                self.downloading_subtitle_signal = False
+                return
+        if trying == 1 and not self.downloaded_subtitle_signal:
+            self.downloading_subtitle_signal = True
+            ytcmd = self._YTLOCATION + ((self._YTLAUNCH_AUTOSUBT_ARGS_FORMAT) % (lang, url, self._YTLAUNCH_SUB_DIR))
+            self._subtitled_process = pexpect.spawn(ytcmd)
+            self._download_subtitles(lang, url, trying = 2)
+        if self.downloaded_subtitle_signal:
+            vtt2srt(self._YTLAUNCH_SUB_DIR)
+            os.remove(self._YTLAUNCH_SUB_DIR + "/subtitle." + lang + ".vtt")
+            self.subtitle_ready_signal = True
 
     def check_for_update(self):
         if not os.path.isfile(self._YTLOCATION):
@@ -225,7 +293,7 @@ class Ytdl:
                 except Exception, e:
                     print e
                     break
-                sleep(5)
+                sleep(0.5)
             if self.updated_signal:
                 self.compile_regexps(updated=True)
             self.updating_signal = False
