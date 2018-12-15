@@ -631,7 +631,7 @@ class TBOPlayer:
         track= "'"+ track.replace("'","'\\''") + "'"
         opts= (self.options.omx_user_options + " " + self.options.omx_audio_output + " " +
                     " --vol " + str(self.get_mB()) + " " + self.options.omx_subtitles + " " +
-                    " --subtitles " + self.ytdl._YTLAUNCH_SUB_DIR + "/subtitle." + self.options.subtitles_lang + ".srt" if self.ytdl.subtitle_ready_signal else "")
+                    (" --subtitles " + self.ytdl._YTLAUNCH_SUB_DIR + "/subtitle." + self.options.subtitles_lang + ".srt" if self.ytdl.subtitle_ready_signal else ""))
 
         if self.media_is_video():
             if not self.options.forbid_windowed_mode and not self.options.full_screen and '--win' not in opts:
@@ -1873,15 +1873,15 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         self.lang_var=StringVar()
         self.lang_var.set(config.get('config','lang',0))
         om_lang = OptionMenu(master, self.lang_var, 'en', 'es' , 'fr', 'pt', 'ro', 'ru')
-        om_lang.grid(row=23, column=2, sticky=W)
+        om_lang.grid(row=24, column=0, sticky=W)
 
 
-        Label(master, text="").grid(row=24, sticky=W) 
-        Label(master, text=_("Subtitles language:")).grid(row=25, column=0, sticky=W)
+        Label(master, text="").grid(row=22, sticky=W) 
+        Label(master, text=_("Subtitles language:")).grid(row=23, column=2, sticky=W)
         self.subtitles_lang_var=StringVar()
         self.subtitles_lang_var.set(config.get('config','subtitles_lang',0))
-        om_lang = OptionMenu(master, self.subtitles_lang_var, 'ar','de', 'en', 'es' , 'fr', 'ko', 'pt', 'ro', 'ru', 'ch', 'ja')
-        om_lang.grid(row=25, column=2, sticky=W)
+        om_lang = OptionMenu(master, self.subtitles_lang_var, 'ar','ch','de','en','es','fr','ja','ko','pt','ro','ru')
+        om_lang.grid(row=24, column=2, sticky=W)
 
 
         self.forbid_windowed_mode_var = IntVar()
