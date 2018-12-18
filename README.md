@@ -104,7 +104,7 @@ Menus
 	
     * Initial directory for playlists - where Open Playlist starts looking
 	
-    * Enable subtitles
+    * Enable subtitles - Download subtitles from streamming services
 
     * OMXPlayer location - path to omxplayer binary
 
