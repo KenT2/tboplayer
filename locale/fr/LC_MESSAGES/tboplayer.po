@@ -4,8 +4,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2018-02-06 11:03-0300\n"
-"PO-Revision-Date: 2018-10-31 22:58-0300\n"
+"POT-Creation-Date: 2018-12-21 04:42-0300\n"
+"PO-Revision-Date: 2018-12-21 04:43-0300\n"
 "Last-Translator: Hẽnio Tierra <heniotster@gmail.com>\n"
 "Language-Team: \n"
 "Language: fr_FR\n"
@@ -402,6 +402,10 @@ msgstr "Options OMXPlayer :"
 #: tboplayer.py:2451
 msgid "Subtitles"
 msgstr "Sous-titres"
+
+#: tboplayer.py:1881
+msgid "Subtitles language:"
+msgstr "Sous-titres langue:"
 
 #: tboplayer.py:2459
 msgid "youtube-dl location:"

@@ -5,18 +5,18 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2018-02-06 10:59+BRT\n"
-"PO-Revision-Date: 2018-10-31 22:58-0300\n"
+"POT-Creation-Date: 2018-12-21 04:48-0300\n"
+"PO-Revision-Date: 2018-12-21 04:49-0300\n"
+"Last-Translator: Hẽnio Tierra <heniotster@gmail.com>\n"
 "Language-Team: \n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 "X-Generator: Poedit 1.8.7.1\n"
-"Last-Translator: Hẽnio Tierra <heniotster@gmail.com>\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"Language: ru\n"
 
 #: tboplayer.py:366
 msgid "Problem retreiving content. Do you have up-to-date dependencies?"
@@ -391,7 +391,11 @@ msgstr "Параметры OMX плеера:"
 
 #: tboplayer.py:2451
 msgid "Subtitles"
-msgstr "Субтитры"
+msgstr "Субтитры:"
+
+#: tboplayer.py:1881
+msgid "Subtitles language:"
+msgstr "Язык Субтитры:"
 
 #: tboplayer.py:2459
 msgid "youtube-dl location:"
