@@ -1881,7 +1881,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         Label(master, text=_("Subtitles language:")).grid(row=23, column=2, sticky=W)
         self.subtitles_lang_var=StringVar()
         self.subtitles_lang_var.set(config.get('config','subtitles_lang',0))
-        om_lang = OptionMenu(master, self.subtitles_lang_var, 'ar','ch','de','en','es','fr','ja','ko','pt','ro','ru')
+        om_lang = OptionMenu(master, self.subtitles_lang_var, 'ar','ch','de','en','es','fr','it','ja','ko','pt','ro','ru')
         om_lang.grid(row=24, column=2, sticky=W)
 
 
@@ -2254,7 +2254,7 @@ class AutoLyrics(Toplevel):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring="15 Dec 2018"
+    datestring="21 Dec 2018"
 
     dbusif_tboplayer = None
     try:

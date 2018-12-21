@@ -359,6 +359,10 @@ msgstr ""
 msgid "Subtitles"
 msgstr ""
 
+#: tboplayer.py:1881
+msgid "Subtitles language:"
+msgstr ""
+
 #: tboplayer.py:2459
 msgid "youtube-dl location:"
 msgstr ""
