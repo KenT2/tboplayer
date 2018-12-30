@@ -302,3 +302,10 @@ class Ytdl:
         self._running_processes = {}
         self.finished_processes = {}
 
+    def reset_subtitle_attributes(self):
+        self.downloading_subtitle_signal = False
+        self.downloaded_subtitle_signal = False
+        self.downloaded_partial_subtitle_signal = False
+        self.download_subtitle_failed_signal = False
+        self.subtitle_ready_signal = False
+

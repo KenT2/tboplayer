@@ -182,7 +182,8 @@ class TBOPlayer:
     # kick off the state machine by playing a track
     def play(self):
             #initialise all the state machine variables
-        if  self.play_state==self._OMX_CLOSED and self.playlist.track_is_selected():
+        if  self.play_state==self._OMX_CLOSED and self.playlist.track_is_selected():            
+            self.ytdl.reset_subtitle_attributes()
             self.iteration = 0                           # for debugging
             self.paused = False
             self.stop_required_signal=False     # signal that user has pressed stop
@@ -2254,7 +2255,7 @@ class AutoLyrics(Toplevel):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring="21 Dec 2018"
+    datestring="30 Dec 2018"
 
     dbusif_tboplayer = None
     try:
