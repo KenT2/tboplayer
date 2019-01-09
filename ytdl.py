@@ -10,7 +10,7 @@ from hashlib import sha256
 from threading import Thread
 from time import sleep
 
-from vtt2srt import vtt2srt 
+from vtt_to_srt import vtts_to_srt
 
 # ***************************************
 # YTDL CLASS
@@ -237,7 +237,7 @@ class Ytdl:
             self._subtitled_process = pexpect.spawn(ytcmd)
             self._download_subtitles(lang, url, trying = 2)
         if self.downloaded_subtitle_signal:
-            vtt2srt(self._YTLAUNCH_SUB_DIR)
+            vtts_to_srt(self._YTLAUNCH_SUB_DIR, rec = False)
             os.remove(self._YTLAUNCH_SUB_DIR + "/subtitle." + lang + ".vtt")
             self.subtitle_ready_signal = True
 
