@@ -91,7 +91,8 @@ options = Options()
 
 try:
     gettext.translation('tboplayer', localedir=sys.path[0] + '/locale', languages=[options.lang]).install()
-except:
+except Exception, e:
+    print e
     _ = lambda x:x
 
 
@@ -1982,7 +1983,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         config.set('config','find_lyrics',self.find_lyrics_var.get())
         config.set('config','autolyrics_coords',self.autolyrics_coords_var)
         config.set('config','lang',self.lang_var.get())
-        config.set('config','subtitles_lang',self.lang_var.get())
+        config.set('config','subtitles_lang',self.subtitles_lang_var.get())
         config.set('config','ytdl_update',self.ytdl_update_var.get())
         
         
