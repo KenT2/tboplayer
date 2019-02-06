@@ -91,8 +91,7 @@ options = Options()
 
 try:
     gettext.translation('tboplayer', localedir=sys.path[0] + '/locale', languages=[options.lang]).install()
-except Exception, e:
-    print e
+except:
     _ = lambda x:x
 
 
