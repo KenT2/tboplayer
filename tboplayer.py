@@ -1874,7 +1874,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         Label(master, text=_("Interface language:")).grid(row=23, column=0, sticky=W)
         self.lang_var=StringVar()
         self.lang_var.set(config.get('config','lang',0))
-        om_lang = OptionMenu(master, self.lang_var, 'en', 'es' , 'fr', 'pt', 'ro', 'ru')
+        om_lang = OptionMenu(master, self.lang_var,'en','es','fr','pt','pl','ro','ru')
         om_lang.grid(row=24, column=0, sticky=W)
 
 
@@ -1882,7 +1882,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         Label(master, text=_("Subtitles language:")).grid(row=23, column=2, sticky=W)
         self.subtitles_lang_var=StringVar()
         self.subtitles_lang_var.set(config.get('config','subtitles_lang',0))
-        om_lang = OptionMenu(master, self.subtitles_lang_var, 'ar','ch','de','en','es','fr','it','ja','ko','pt','ro','ru')
+        om_lang = OptionMenu(master, self.subtitles_lang_var,'ar','ch','de','en','es','fr','it','ja','ko','pt','pl','ro','ru')
         om_lang.grid(row=24, column=2, sticky=W)
 
 
