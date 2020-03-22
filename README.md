@@ -9,7 +9,7 @@ You can use the automatic installer, or if that does not work for some reason yo
 
 To download and run the installer, from a terminal window, type (or copy-paste):
 
-        cd ~ && wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz &&
+        cd ~ && wget https://github.com/KenT2/tboplayer/tarball/py2_version -O - | tar xz &&
         cd KenT2-tboplayer-* && chmod +x setup.sh && ./setup.sh
 	
 After that, TBOPlayer will have been installed on your system. To run it, just type 'tboplayer', or use the shortcut created in your Desktop.
@@ -44,7 +44,7 @@ Download and Install TBOPlayer
 
 From a terminal window, type:
 
-        cd ~ && wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
+        cd ~ && wget https://github.com/KenT2/tboplayer/tarball/py2_version -O - | tar xz
 
 Move the resulting directory to /opt:
 
