@@ -192,7 +192,7 @@ echo '[Desktop Entry]' >> $DESKTOP_ENTRY
 echo 'Name=TBOPlayer' >> $DESKTOP_ENTRY
 echo 'Comment=GUI for omxplayer' >> $DESKTOP_ENTRY
 echo 'Exec=python '$TBOPLAYER_PATH'/tboplayer.py %F' >> $DESKTOP_ENTRY
-echo 'Icon=/usr/share/pixmaps/python.xpm' >> $DESKTOP_ENTRY
+echo 'Icon='$TBOPLAYER_PATH'/ico/48x48.png' >> $DESKTOP_ENTRY
 echo 'Terminal=false' >> $DESKTOP_ENTRY
 echo 'Type=Application' >> $DESKTOP_ENTRY
 echo 'Categories=Application;Multimedia;Audio;AudioVideo;' >> $DESKTOP_ENTRY
