@@ -105,12 +105,13 @@ addToAptInstall "python-gtk2"
 addToAptInstall "python-pexpect"
 addToAptInstall "python-pip"
 addToAptInstall "libav-tools"
-addToAptInstall "tkdnd"
+#addToAptInstall "tkdnd"
 #addToAptInstall "python-setuptools"
 
 if [ "$aptinstall" != "" ]; then
     echo "* Installing dependencies: "$aptinstall"..."
     sudo apt-get -y install $aptinstall >/dev/null
+    sudo apt-get -y install tkdnd --no-install-recommends >/dev/null
 fi
 
 python -c 'import magic' >/dev/null 2>&1
