@@ -117,9 +117,16 @@ fi
 
 python -c 'import magic' >/dev/null 2>&1
 if [ $? -eq 1 ]; then
-    echo "* Installing magic, youtube-search-python..."
-    yes | pip install --user python-magic youtube-search-python >/dev/null 2>&1
+    echo "* Installing magic..."
+    yes | pip install --user python-magic >/dev/null 2>&1
 fi
+
+python -c 'import youtubesearchpython' >/dev/null 2>&1
+if [ $? -eq 1 ]; then
+    echo "* Installing youtube-search-python..."
+    yes | pip install --user youtube-search-python >/dev/null 2>&1
+fi
+
 function installYoutubedl {
     echo "* Installing youtube-dl..."
     sudo wget https://yt-dl.org/downloads/latest/youtube-dl -O $YTDL_EXPECTED_PATH >/dev/null 2>&1
