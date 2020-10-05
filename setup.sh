@@ -49,6 +49,7 @@ if [ "$1" == "uninstall" ]; then
             echo "* Removing TBOPlayer dependencies..."
             sudo apt-get -y remove python-gobject-2 python-dbus python-tk python-gtk2 python-requests python-magic python-pexpect tkdnd >/dev/null 2>&1
             sudo rm -f /usr/local/bin/youtube-dl >/dev/null 2>&1
+	    pip uninstall youtube-search-python python-magic
         fi
         echo ""
         echo "TBOPlayer has been uninstalled."
@@ -116,8 +117,8 @@ fi
 
 python -c 'import magic' >/dev/null 2>&1
 if [ $? -eq 1 ]; then
-    echo "* Installing magic..."
-    yes | pip install --user python-magic >/dev/null 2>&1
+    echo "* Installing magic, youtube-search-python..."
+    yes | pip install --user python-magic youtube-search-python >/dev/null 2>&1
 fi
 function installYoutubedl {
     echo "* Installing youtube-dl..."

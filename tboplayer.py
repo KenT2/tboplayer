@@ -72,6 +72,7 @@ from pprint import ( pformat, pprint )
 from random import randint
 from math import log10
 from magic import from_file
+from youtubesearchpython import SearchVideos
 import gettext
 import json
 import re
@@ -724,7 +725,13 @@ class TBOPlayer:
         self.playlist = PlayList(self.YTDL_WAIT_TAG)
 
         #root is the Tkinter root widget
+        
         self.root = tk.Tk()
+        
+        icon_photo = tk.PhotoImage(file=os.path.dirname(os.path.realpath(__file__)) + '/ico/48x48.png')
+        self.root.call('wm', 'iconphoto', self.root._w, icon_photo)
+        
+        #self.root.iconphoto()
         self.root.title("GUI for OMXPlayer")
 
         self.root.configure(background='grey')
@@ -1932,7 +1939,7 @@ class OptionsDialog(tkSimpleDialog.Dialog):
         if int(config.get('config','find_lyrics',0)) == 1:
             self.cb_find_lyrics.select()
         else:
-            self.cb_find_lyrics.deselect()	    
+            self.cb_find_lyrics.deselect()      
 
         self.debug_var = StringVar()
         self.cb_debug = Checkbutton(master,text=_("Debug"),variable=self.debug_var, onvalue='on',offvalue='off')
@@ -2070,6 +2077,7 @@ class YoutubeSearchDialog(Toplevel):
 
     def __init__(self, parent, add_url_function):
         # store subclass attributes
+        self.max_results = 20
         self.result_cells = []
         self.add_url = add_url_function
         # init the super class
@@ -2111,14 +2119,16 @@ class YoutubeSearchDialog(Toplevel):
         if fvalue == "": return
         self.clear_search()
         self.page_var.set(self.page_lbl + str(page + 1))
-        pages = [ "SAD", "SBT", "SCj" ]
-        terms = fvalue.decode('latin1').encode('utf8')
-        searchurl = ("https://www.youtube.com/results?search_query=" + quote_plus(terms) + 
-                              "&sp=" + pages[page] + "qAwA%253D")
-        pagesrc = requests.get(searchurl).text
-        parser = YtsearchParser()
-        parser.feed(pagesrc)
-        self.show_result(parser.result)
+        offset = self.max_results * page
+        try:
+            search = SearchVideos(fvalue.decode('latin1').encode('utf8'),
+                                  offset = offset,
+                                  mode = "json",
+                                  max_results = self.max_results)
+            result = json.loads(search.result())['search_result']
+            self.show_result(result)
+        except Exception as e:
+            print("Exception while doing youtube search: ",e)
 
     def search_page(self, event):
         wwidth = event.widget.winfo_width()
@@ -2132,8 +2142,12 @@ class YoutubeSearchDialog(Toplevel):
 
     def show_result(self, result):
         for r in result:
-            if r[0] != "" and r[1] != "":
-                self.result_cells.append(YtresultCell(self.frame.interior,self.add_url,r[0],r[1]))
+            if (r['link'] is not None and r['link'] != "" and
+                r['title'] is not None and r['title'] != ""):
+                yt_result_cell = YtresultCell(
+                    self.frame.interior, self.add_url, r['link'], r['title']
+                )
+                self.result_cells.append(yt_result_cell)
         return
 
     def clear_search(self):
@@ -2154,7 +2168,7 @@ class YtresultCell(Frame):
         self.grid(sticky=W)
         self.video_name = tk.StringVar()
         self.video_link = tk.StringVar()
-        self.video_link.set("https://www.youtube.com" + link)
+        self.video_link.set(link)
         self.add_url = add_url_function
         try: 
             self.video_name.set(title)
