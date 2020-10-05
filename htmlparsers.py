@@ -1,29 +1,5 @@
 from HTMLParser import HTMLParser
 
-class YtsearchParser(HTMLParser):
-
-    def __init__(self):
-        self.result = []
-        HTMLParser.__init__(self)
-
-    def handle_starttag(self, tag, attrs):
-        if tag == 'div' : 
-            for t in attrs:
-                if "yt-lockup-dismissable" in t[1]: 
-                    self.result.append(['',''])
-                    break
-        elif tag == 'a' : 
-            if not len(self.result): return
-            for t in attrs:
-                if t[0] == "class" and "yt-uix-tile-link" in t[1]: 
-                    self.result[len(self.result) - 1][0] = attrs[0][1]
-                    for y in attrs:
-                        if y[0] == "title":
-                            self.result[len(self.result) - 1][1] = y[1]
-                            break
-                    break
-
-
 class LyricWikiParser(HTMLParser):
 
     result = ""
