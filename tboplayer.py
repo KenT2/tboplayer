@@ -636,19 +636,21 @@ class TBOPlayer:
                     " --vol " + str(self.get_mB()) + " " + self.options.omx_subtitles + " " +
                     (" --subtitles " + self.ytdl._YTLAUNCH_SUB_DIR + "/subtitle." + self.options.subtitles_lang + ".srt" if self.ytdl.subtitle_ready_signal else ""))
 
-        if self.media_is_video():
-            if not self.options.forbid_windowed_mode and not self.options.full_screen and '--win' not in opts:
-                mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
-                mg = self.RE_RESOLUTION.match(self.options.windowed_mode_resolution)
-                if mc and mg:
-                    w, h, x, y = [int(v) for v in mg.groups()+mc.groups()]
-                    opts += ' --win %d,%d,%d,%d' % (x, y, x+w, y+h)
+        #print(639, "self.media_is_video()",self.media_is_video())
+        #print(hasattr(self,"omx"), hasattr(self.omx, "video"), len(self.omx.video) > 0)
+        #if self.media_is_video():
+        if not self.options.forbid_windowed_mode and not self.options.full_screen and '--win' not in opts:
+            mc = self.RE_COORDS.match(self.options.windowed_mode_coords)
+            mg = self.RE_RESOLUTION.match(self.options.windowed_mode_resolution)
+            if mc and mg:
+                w, h, x, y = [int(v) for v in mg.groups()+mc.groups()]
+                opts += ' --win %d,%d,%d,%d' % (x, y, x+w, y+h)
 
-            if not '--aspect-mode' in opts:
-                opts += ' --aspect-mode letterbox'
-            
-            if not '--no-osd' in opts:
-                opts += ' --no-osd'
+        if not '--aspect-mode' in opts:
+            opts += ' --aspect-mode letterbox'
+        
+        if not '--no-osd' in opts:
+            opts += ' --no-osd'
 
         self.monitor('starting omxplayer with args: "%s"' % (opts,))
 
@@ -2269,7 +2271,7 @@ class AutoLyrics(Toplevel):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring="5 Feb 2019"
+    datestring="25 Oct 2020"
 
     dbusif_tboplayer = None
     try:
