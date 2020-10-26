@@ -259,4 +259,4 @@ SP5LMA (Polish)
 
 ------
 
-NOTE: TBOPlayer for Python 3 was dumped in favor the one for Python 2, since OMXPlayer deprecation was annouced, thus TBOPlayer maintainers considered not worth investing much in the Python 3 version. The Python 2 version should still be maintained though.
+NOTE: Since OMXPlayer deprecation was annouced, TBOPlayer for Python 3 was dumped in favor of the one for Python 2, for the maintainers considered not worth investing much in the Python 3 version. The Python 2 version should still be maintained though.
