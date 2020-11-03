@@ -243,6 +243,8 @@ popiazaza
 
 rstefko
 
+Botspot
+
 Translations:
 
 heniotierra (Portuguese)
