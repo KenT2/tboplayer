@@ -1075,7 +1075,7 @@ class TBOPlayer:
         }
         try:
             allowed_option_values = allowed_options_values[option]
-        except KeyError, er:
+        except KeyError:
             raise KeyError("Option " + option + " is invalid")
         option_type = str(type(allowed_option_values))
         if (allowed_option_values == "str" or 
@@ -1276,7 +1276,7 @@ class TBOPlayer:
         try:
             self.omx.set_video_geometry(0, 0, screenres[0], screenres[1])
             self.vprogress_grip.lower(self.vprogress_bar_frame)
-        except Exception, e:
+        except Exception as e:
             self.monitor('      [!] set_full_screen failed')
             self.monitor(e)
 
@@ -1329,7 +1329,7 @@ class TBOPlayer:
             y2 -= self.vprogress_bar.winfo_height()
         try:
             self.omx.set_video_geometry(x1, y1, x2, y2)
-        except Exception, e:
+        except Exception as e:
                 self.monitor('      [!] move_video failed')
                 self.monitor(e)
         self.focus_root()
