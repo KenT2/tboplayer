@@ -44,7 +44,7 @@ Download and Install TBOPlayer
 
 From a terminal window, type:
 
-        cd ~ && wget https://github.com/KenT2/tboplayer/tarball/py2_version -O - | tar xz
+        cd ~ && wget https://github.com/KenT2/tboplayer/tarball/master -O - | tar xz
 
 Move the resulting directory to /opt:
 
