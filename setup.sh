@@ -124,7 +124,7 @@ fi
 python -c 'import youtubesearchpython' >/dev/null 2>&1
 if [ $? -eq 1 ]; then
     echo "* Installing youtube-search-python..."
-    yes | pip install --user youtube-search-python >/dev/null 2>&1
+    yes | pip install --user youtube-search-python==1.3.1 >/dev/null 2>&1
 fi
 
 function installYoutubedl {
