@@ -148,6 +148,8 @@ For a list of streaming services supported by youtube-dl, see this link: https:/
 
 If the option 'Find lyrics' is enabled, TBOPlayer will look for the metatags 'artist' and 'title' in the media file, and if such tags are not found, it will try to find this info in a pattern in the file name (or in the track title for web links), something along the forms 'Artist Name - Song Title' or 'Artist Name : Song Title', in order to grab the lyrics from [LyricWikia](http://lyrics.wikia.com/wiki/Lyrics_Wiki) webservice.
 
+By clicking with the right mouse button, you can add a link that is in the clipboard to the playlist.
+
 DBus Interface
 -------
 

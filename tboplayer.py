@@ -765,7 +765,8 @@ class TBOPlayer:
         self.root.bind("<F11>", self.toggle_full_screen)
         self.root.bind("<Control_L>", self.vwindow_start_resize)
         self.root.bind("<KeyRelease-Control_L>", self.vwindow_stop_resize)
-
+        self.root.bind('<Button-3>', self.add_url)
+        
         self.root.bind("<Key>", self.key_pressed)
 
         self.style = Style()
