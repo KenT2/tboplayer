@@ -90,7 +90,7 @@ class Options:
     def create(self,filename):
         config=ConfigParser.ConfigParser()
         config.add_section('config')
-        config.set('config','audio','hdmi')
+        config.set('config','audio','alsa')
         config.set('config','subtitles','off')       
         config.set('config','mode','single')
         config.set('config','playlists','')

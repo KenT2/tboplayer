@@ -2272,7 +2272,7 @@ class AutoLyrics(Toplevel):
 # ***************************************
 
 if __name__ == "__main__":
-    datestring="25 Oct 2020"
+    datestring="6 Dec 2020"
 
     dbusif_tboplayer = None
     try:
