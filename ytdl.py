@@ -26,7 +26,7 @@ class Ytdl:
     _YTLAUNCH_CMD = ''
     _YTLAUNCH_ARGS_FORMAT = ' -j -f %s --youtube-skip-dash-manifest "%s"'
     _YTLAUNCH_PLST_CMD = ''
-    _YTLAUNCH_PLST_ARGS_FORMAT = ' -J -f mp4 --youtube-skip-dash-manifest "%s"'
+    _YTLAUNCH_PLST_ARGS_FORMAT = ' -J -f %s --youtube-skip-dash-manifest "%s"'
     _YTLAUNCH_SUB_DIR = '/dev/shm/tbopsubs'
     _YTLAUNCH_SUBT_ARGS_FORMAT = ' --write-sub --sub-lang %s --skip-download "%s" --output %s/subtitle'
     _YTLAUNCH_AUTOSUBT_ARGS_FORMAT = ' --write-auto-sub --sub-lang %s --skip-download "%s" --output %s/subtitle'
@@ -151,9 +151,9 @@ class Ytdl:
         self._running_processes[url] = [process, ''] # process, result
         self._spawn_thread(url)
 
-    def retrieve_youtube_playlist(self, url):
+    def retrieve_youtube_playlist(self, url, f):
         if self.is_running(url): return
-        ytcmd = self._YTLAUNCH_PLST_CMD % (url)
+        ytcmd = self._YTLAUNCH_PLST_CMD % (f, url)
         process = pexpect.spawn(ytcmd, timeout=180, maxread=50000, searchwindowsize=50000)
         self._running_processes[url] = [process, '']
         self._spawn_thread(url)

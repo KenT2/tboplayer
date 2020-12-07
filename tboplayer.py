@@ -466,11 +466,12 @@ class TBOPlayer:
         if self.ytdl_state in (self._YTDL_CLOSED, self._YTDL_ENDING):
             self.ytdl_state=self._YTDL_STARTING
             self.ytdl.start_signal=True
-          
+
+        youtube_media_format = self.options.youtube_media_format
         if not playlist:
-            self.ytdl.retrieve_media_url(url, self.options.youtube_media_format)
+            self.ytdl.retrieve_media_url(url, youtube_media_format)
         else:
-            self.ytdl.retrieve_youtube_playlist(url)
+            self.ytdl.retrieve_youtube_playlist(url, youtube_media_format)
         if self.ytdl_state==self._YTDL_STARTING:
             self.ytdl_state_machine()
 
