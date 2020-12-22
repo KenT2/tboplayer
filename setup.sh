@@ -146,7 +146,7 @@ if [ $? -eq 1 ] ; then
 fi
 
 # install youtube-dl it's if not installed
-YTDL_PATH="$( command -v youtube-dl )"
+YTDL_PATH="$( command -v /usr/local/bin/youtube-dl )"
 if [ $? -eq 1 ]; then
     echo "* Installing youtube-dl..."
     installYoutubedl
